@@ -1,0 +1,24 @@
+## Build and Output directories
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+publish/
+scratch/
+
+## Visual Studio & JetBrains
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## WPF Temporary files
+*_wpftmp.*
+*.lref
+*.baml
+
+## OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini

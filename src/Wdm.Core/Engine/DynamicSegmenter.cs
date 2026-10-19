@@ -3,9 +3,9 @@ using Wdm.Core.Models;
 namespace Wdm.Core.Engine;
 
 /// <summary>
-/// Replicates IDM's dynamic multipart segmentation algorithm.
-/// Slices files into parallel segments and dynamically splits remaining byte spans
-/// of the slowest/largest active segments so idle connections never wait.
+/// WDM dynamic multipart segmentation algorithm.
+/// Slices files into parallel segments and dynamically splits the remaining byte span
+/// of the largest active segment so idle connections never wait.
 /// </summary>
 public class DynamicSegmenter
 {
@@ -80,7 +80,7 @@ public class DynamicSegmenter
     }
 
     /// <summary>
-    /// IDM dynamic split: when a worker is idle, find the active segment with the largest
+    /// Dynamic middle-split: when a worker is idle, find the active segment with the largest
     /// remaining byte span and split it in half, returning the new upper segment for the idle worker.
     /// </summary>
     public DownloadSegment? TrySplitLargestActiveSegment()

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Media;
 using Wdm.Core.Engine;
 using Wdm.Core.Models;
@@ -65,6 +66,9 @@ public class DownloadItemViewModel : INotifyPropertyChanged
             {
                 OnPropertyChanged(nameof(FileExtension));
                 OnPropertyChanged(nameof(CategoryIconKind));
+                OnPropertyChanged(nameof(FileIconResourceKey));
+                OnPropertyChanged(nameof(FileIconGeometry));
+                OnPropertyChanged(nameof(FileIconBrush));
                 OnPropertyChanged(nameof(CategoryColor));
                 OnPropertyChanged(nameof(CategoryBadgeBackground));
             }
@@ -87,9 +91,47 @@ public class DownloadItemViewModel : INotifyPropertyChanged
         }
     }
 
-    public Brush CategoryColor => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#cbd5e1"));
+    public string FileIconResourceKey => CategoryIconKind switch
+    {
+        "Video" => "IconCategoryVideo",
+        "Music" => "IconCategoryMusic",
+        "Archive" => "IconCategoryCompressed",
+        "App" => "IconCategoryPrograms",
+        "Document" => "IconCategoryDocuments",
+        _ => "IconFile"
+    };
+
+    public Geometry? FileIconGeometry
+    {
+        get
+        {
+            try
+            {
+                return Application.Current?.TryFindResource(FileIconResourceKey) as Geometry;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+
+    public Brush FileIconBrush => CategoryIconKind switch
+    {
+        "Video" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#DC2626")),
+        "Music" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#DB2777")),
+        "Archive" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EA580C")),
+        "App" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#7C3AED")),
+        "Document" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2563EB")),
+        _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B"))
+    };
+
+    public Brush CategoryColor => FileIconBrush;
 
     public Brush CategoryBadgeBackground => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#172236"));
+
+    public string Referer { get; set; } = string.Empty;
+    public bool SupportsResume { get; set; } = true;
 
     private void UpdateDomain()
     {
@@ -142,22 +184,43 @@ public class DownloadItemViewModel : INotifyPropertyChanged
     public bool IsCompleted => Status is "Completed";
     public bool IsPaused => Status is "Paused";
 
+    public string CategoryName => CategoryIconKind switch
+    {
+        "Video" => "Video",
+        "Music" => "Music",
+        "Archive" => "Compressed",
+        "App" => "Programs",
+        "Document" => "Documents",
+        _ => "General"
+    };
+
+    public string FormattedPercentage => $"{ProgressPercentage:F1}%";
+
     public Brush StatusColor => Status switch
     {
-        "Downloading" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38bdf8")),
-        "Completed" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#34d399")),
-        "Paused" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#fbbf24")),
-        string s when s.StartsWith("Error") => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#f87171")),
-        _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#94a3b8"))
+        "Downloading" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#059669")),
+        "Completed" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2563EB")),
+        "Paused" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#D97706")),
+        string s when s.StartsWith("Error") => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#DC2626")),
+        _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#475569"))
     };
 
     public Brush StatusBadgeBackground => Status switch
     {
-        "Downloading" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#172554")),
-        "Completed" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#064e3b")),
-        "Paused" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#451a03")),
-        string s when s.StartsWith("Error") => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#450a0a")),
-        _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1e293b"))
+        "Downloading" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ECFDF5")),
+        "Completed" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EFF6FF")),
+        "Paused" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFFBEB")),
+        string s when s.StartsWith("Error") => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FEF2F2")),
+        _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F1F5F9"))
+    };
+
+    public Brush StatusBadgeBorder => Status switch
+    {
+        "Downloading" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A7F3D0")),
+        "Completed" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#BFDBFE")),
+        "Paused" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FDE68A")),
+        string s when s.StartsWith("Error") => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FECACA")),
+        _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0"))
     };
 
     public double ProgressPercentage

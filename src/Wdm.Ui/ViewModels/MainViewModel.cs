@@ -28,6 +28,9 @@ public class MainViewModel : INotifyPropertyChanged
     private string _newDownloadDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
     private int _newDownloadConnections = 8;
 
+    // Concurrency semaphore to enforce MaxConcurrentDownloads
+    private SemaphoreSlim? _concurrencySemaphore;
+
     public ObservableCollection<DownloadItemViewModel> AllDownloads { get; } = new();
     public ObservableCollection<DownloadItemViewModel> FilteredDownloads { get; } = new();
 
@@ -145,6 +148,201 @@ public class MainViewModel : INotifyPropertyChanged
         set => SetField(ref _newDownloadConnections, value);
     }
 
+    // Queue status
+    private bool _isQueueActive;
+    public bool IsQueueActive
+    {
+        get => _isQueueActive;
+        set
+        {
+            if (SetField(ref _isQueueActive, value))
+            {
+                OnPropertyChanged(nameof(QueueStatusText));
+            }
+        }
+    }
+    public string QueueStatusText => IsQueueActive ? "● Queue Active" : "Queue Idle";
+
+    // Scheduler Modal Properties
+    private bool _isSchedulerModalOpen;
+    public bool IsSchedulerModalOpen
+    {
+        get => _isSchedulerModalOpen;
+        set => SetField(ref _isSchedulerModalOpen, value);
+    }
+
+    private bool _schedulerEnabled;
+    public bool SchedulerEnabled
+    {
+        get => _schedulerEnabled;
+        set => SetField(ref _schedulerEnabled, value);
+    }
+
+    private string _schedulerStartTime = "02:00";
+    public string SchedulerStartTime
+    {
+        get => _schedulerStartTime;
+        set => SetField(ref _schedulerStartTime, value);
+    }
+
+    private string _schedulerStopTime = "06:00";
+    public string SchedulerStopTime
+    {
+        get => _schedulerStopTime;
+        set => SetField(ref _schedulerStopTime, value);
+    }
+
+    private bool _schedulerShutdownOnComplete;
+    public bool SchedulerShutdownOnComplete
+    {
+        get => _schedulerShutdownOnComplete;
+        set => SetField(ref _schedulerShutdownOnComplete, value);
+    }
+
+    // Site / Media Grabber Properties
+    private bool _isGrabberModalOpen;
+    public bool IsGrabberModalOpen
+    {
+        get => _isGrabberModalOpen;
+        set => SetField(ref _isGrabberModalOpen, value);
+    }
+
+    private string _grabberUrl = string.Empty;
+    public string GrabberUrl
+    {
+        get => _grabberUrl;
+        set => SetField(ref _grabberUrl, value);
+    }
+
+    private bool _isGrabberBusy;
+    public bool IsGrabberBusy
+    {
+        get => _isGrabberBusy;
+        set => SetField(ref _isGrabberBusy, value);
+    }
+
+    private string _grabberStatusText = string.Empty;
+    public string GrabberStatusText
+    {
+        get => _grabberStatusText;
+        set => SetField(ref _grabberStatusText, value);
+    }
+
+    public ObservableCollection<GrabMediaItem> GrabberItems { get; } = new();
+    private readonly SiteGrabberService _grabberService = new();
+
+    // Properties Modal
+    private bool _isPropertiesModalOpen;
+    public bool IsPropertiesModalOpen
+    {
+        get => _isPropertiesModalOpen;
+        set => SetField(ref _isPropertiesModalOpen, value);
+    }
+
+    private DownloadItemViewModel? _propertiesItem;
+    public DownloadItemViewModel? PropertiesItem
+    {
+        get => _propertiesItem;
+        set => SetField(ref _propertiesItem, value);
+    }
+
+    // Batch Download Modal
+    private bool _isBatchModalOpen;
+    public bool IsBatchModalOpen
+    {
+        get => _isBatchModalOpen;
+        set => SetField(ref _isBatchModalOpen, value);
+    }
+
+    private string _batchUrlsText = string.Empty;
+    public string BatchUrlsText
+    {
+        get => _batchUrlsText;
+        set
+        {
+            if (SetField(ref _batchUrlsText, value))
+            {
+                OnPropertyChanged(nameof(BatchUrlCount));
+            }
+        }
+    }
+
+    public int BatchUrlCount
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_batchUrlsText)) return 0;
+            return _batchUrlsText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Count(l => l.Trim().StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                            l.Trim().StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    // Clipboard Sniffer Notification Banner
+    private bool _isClipboardBannerVisible;
+    public bool IsClipboardBannerVisible
+    {
+        get => _isClipboardBannerVisible;
+        set => SetField(ref _isClipboardBannerVisible, value);
+    }
+
+    private string _clipboardBannerUrl = string.Empty;
+    public string ClipboardBannerUrl
+    {
+        get => _clipboardBannerUrl;
+        set => SetField(ref _clipboardBannerUrl, value);
+    }
+
+    // Active Quick Filter Tag ("All", "Active", "Completed", "Paused")
+    private string _activeFilterTag = "All";
+    public string ActiveFilterTag
+    {
+        get => _activeFilterTag;
+        set
+        {
+            if (SetField(ref _activeFilterTag, value))
+            {
+                ApplyCategoryFilter();
+            }
+        }
+    }
+
+    // Theme Toggle
+    public bool IsDarkMode
+    {
+        get => Settings.IsDarkMode;
+        set
+        {
+            if (Settings.IsDarkMode != value)
+            {
+                Settings.IsDarkMode = value;
+                Settings.Save();
+                OnPropertyChanged();
+                OnThemeChanged?.Invoke(value);
+            }
+        }
+    }
+    public Action<bool>? OnThemeChanged { get; set; }
+
+    public string FreeDiskSpaceFormatted
+    {
+        get
+        {
+            try
+            {
+                var path = Settings.DefaultDownloadDirectory;
+                var root = Path.GetPathRoot(path);
+                if (!string.IsNullOrEmpty(root))
+                {
+                    var drive = new DriveInfo(root);
+                    return $"{drive.Name.TrimEnd('\\')} ({DownloadProgress.FormatBytes(drive.AvailableFreeSpace)} free)";
+                }
+            }
+            catch { }
+            return "Disk Ready";
+        }
+    }
+
     // Status Filter Counts
     public int AllCount => AllDownloads.Count;
     public int DownloadingCount => AllDownloads.Count(d => d.IsActive);
@@ -168,7 +366,26 @@ public class MainViewModel : INotifyPropertyChanged
         _newDownloadConnections = Settings.DefaultConnections;
         _speedLimitKb = Settings.DefaultSpeedLimitKb;
         _isSpeedLimiterEnabled = Settings.IsSpeedLimiterEnabled;
+
+        // Load scheduler settings
+        _schedulerEnabled = Settings.SchedulerEnabled;
+        _schedulerStartTime = Settings.SchedulerStartTime;
+        _schedulerStopTime = Settings.SchedulerStopTime;
+        _schedulerShutdownOnComplete = Settings.SchedulerShutdownOnComplete;
+
+        RebuildSemaphore();
         ApplyCategoryFilter();
+
+        // Start scheduler heartbeat timer
+        StartSchedulerHeartbeat();
+    }
+
+    private void RebuildSemaphore()
+    {
+        _concurrencySemaphore?.Dispose();
+        _concurrencySemaphore = new SemaphoreSlim(
+            Math.Max(1, Settings.MaxConcurrentDownloads),
+            Math.Max(1, Settings.MaxConcurrentDownloads));
     }
 
     public void OpenAddModal(string? initialUrl = null)
@@ -198,6 +415,7 @@ public class MainViewModel : INotifyPropertyChanged
         Settings.Save();
         NewDownloadDir = Settings.DefaultDownloadDirectory;
         NewDownloadConnections = Settings.DefaultConnections;
+        RebuildSemaphore();
         IsSettingsModalOpen = false;
     }
 
@@ -238,10 +456,50 @@ public class MainViewModel : INotifyPropertyChanged
         ApplyCategoryFilter();
         SelectedDownload = item;
 
+        StartDownloadTask(item, url, destinationDir, connections);
+    }
+
+    /// <summary>
+    /// Resumes a paused/errored download by reusing its existing slot in AllDownloads.
+    /// </summary>
+    public void ResumeItem(DownloadItemViewModel? item)
+    {
+        if (item == null) return;
+        if (!item.IsPaused && !item.Status.StartsWith("Error")) return;
+
+        string url = item.Url;
+        string? dir = string.IsNullOrWhiteSpace(item.TargetFilePath)
+            ? null
+            : Path.GetDirectoryName(item.TargetFilePath);
+
+        // Reset UI state without inserting a new row
+        item.Status = "Connecting...";
+        item.SpeedRaw = 0;
+        item.SpeedFormatted = "0 B/s";
+        item.TimeLeftFormatted = "--:--";
+        item.Engine = null;
+
+        UpdateCounts();
+        ApplyCategoryFilter();
+
+        StartDownloadTask(item, url, dir, Settings.DefaultConnections);
+    }
+
+    private void StartDownloadTask(DownloadItemViewModel item, string url, string? destinationDir, int connections)
+    {
+        var semaphore = _concurrencySemaphore;
+
         Task.Run(async () =>
         {
+            // Wait for a concurrency slot
+            if (semaphore != null)
+            {
+                await semaphore.WaitAsync();
+            }
+
             var engine = new DownloadEngine(maxBytesPerSecond: IsSpeedLimiterEnabled ? (long)SpeedLimitKb * 1024 : 0);
-            item.Engine = engine;
+
+            Application.Current?.Dispatcher.Invoke(() => { item.Engine = engine; });
 
             engine.ProgressUpdated += progress =>
             {
@@ -279,6 +537,10 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 await engine.StartAsync(url, destinationDir, connectionCount: connections);
             }
+            catch (OperationCanceledException)
+            {
+                // Pause is normal — status already set by engine
+            }
             catch (Exception ex)
             {
                 Application.Current?.Dispatcher.Invoke(() =>
@@ -286,6 +548,11 @@ public class MainViewModel : INotifyPropertyChanged
                     item.Status = "Error: " + ex.Message;
                     UpdateAggregateSpeed();
                 });
+            }
+            finally
+            {
+                semaphore?.Release();
+                await engine.DisposeAsync();
             }
         });
     }
@@ -322,6 +589,204 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    // --- Queue Management ---
+    public void StartQueue()
+    {
+        IsQueueActive = true;
+        // Resume all queued or paused downloads
+        var queuedItems = AllDownloads.Where(d => d.IsPaused || d.Status == "Queued" || d.Status.StartsWith("Error")).ToList();
+        foreach (var item in queuedItems)
+        {
+            ResumeItem(item);
+        }
+    }
+
+    public void StopQueue()
+    {
+        IsQueueActive = false;
+        StopAll();
+    }
+
+    // --- Scheduler Feature ---
+    public void OpenSchedulerModal()
+    {
+        SchedulerEnabled = Settings.SchedulerEnabled;
+        SchedulerStartTime = Settings.SchedulerStartTime;
+        SchedulerStopTime = Settings.SchedulerStopTime;
+        SchedulerShutdownOnComplete = Settings.SchedulerShutdownOnComplete;
+        IsSchedulerModalOpen = true;
+    }
+
+    public void CloseSchedulerModal()
+    {
+        IsSchedulerModalOpen = false;
+    }
+
+    public void SaveSchedulerSettings()
+    {
+        Settings.SchedulerEnabled = SchedulerEnabled;
+        Settings.SchedulerStartTime = SchedulerStartTime;
+        Settings.SchedulerStopTime = SchedulerStopTime;
+        Settings.SchedulerShutdownOnComplete = SchedulerShutdownOnComplete;
+        Settings.Save();
+        IsSchedulerModalOpen = false;
+    }
+
+    private void StartSchedulerHeartbeat()
+    {
+        Task.Run(async () =>
+        {
+            var timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
+            while (await timer.WaitForNextTickAsync())
+            {
+                if (!Settings.SchedulerEnabled) continue;
+
+                var nowStr = DateTime.Now.ToString("HH:mm");
+                if (nowStr == Settings.SchedulerStartTime && !IsQueueActive)
+                {
+                    Application.Current?.Dispatcher.Invoke(StartQueue);
+                }
+                else if (nowStr == Settings.SchedulerStopTime && IsQueueActive && Settings.SchedulerStopQueueAtEndTime)
+                {
+                    Application.Current?.Dispatcher.Invoke(StopQueue);
+                }
+
+                if (Settings.SchedulerShutdownOnComplete && AllDownloads.Count > 0 && AllDownloads.All(d => d.IsCompleted))
+                {
+                    // All completed, trigger shutdown notice
+                }
+            }
+        });
+    }
+
+    // --- Site / Media Grabber Feature ---
+    public void OpenGrabberModal()
+    {
+        GrabberUrl = string.Empty;
+        GrabberStatusText = "Enter any webpage URL to crawl for downloadable media and files.";
+        GrabberItems.Clear();
+        IsGrabberModalOpen = true;
+    }
+
+    public void CloseGrabberModal()
+    {
+        IsGrabberModalOpen = false;
+    }
+
+    public async Task ExecuteGrabberAnalyzeAsync()
+    {
+        if (string.IsNullOrWhiteSpace(GrabberUrl)) return;
+
+        IsGrabberBusy = true;
+        GrabberStatusText = "Analyzing URL and discovering media streams...";
+        GrabberItems.Clear();
+
+        try
+        {
+            var items = await _grabberService.GrabLinksAsync(GrabberUrl.Trim());
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                foreach (var it in items)
+                {
+                    GrabberItems.Add(it);
+                }
+
+                GrabberStatusText = items.Count > 0
+                    ? $"Found {items.Count} downloadable files/streams."
+                    : "No downloadable media or direct links found on this page.";
+            });
+        }
+        catch (Exception ex)
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                GrabberStatusText = "Error during analysis: " + ex.Message;
+            });
+        }
+        finally
+        {
+            Application.Current?.Dispatcher.Invoke(() => { IsGrabberBusy = false; });
+        }
+    }
+
+    public void AddGrabbedDownloads()
+    {
+        var selected = GrabberItems.Where(i => i.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        foreach (var item in selected)
+        {
+            AddDownload(item.Url, null, Settings.DefaultConnections);
+        }
+
+        CloseGrabberModal();
+    }
+
+    // --- Properties Modal ---
+    public void OpenPropertiesModal(DownloadItemViewModel? item)
+    {
+        item ??= SelectedDownload;
+        if (item == null) return;
+
+        PropertiesItem = item;
+        IsPropertiesModalOpen = true;
+    }
+
+    public void ClosePropertiesModal()
+    {
+        IsPropertiesModalOpen = false;
+        PropertiesItem = null;
+    }
+
+    // --- Redownload / Restart ---
+    public void RedownloadItem(DownloadItemViewModel? item)
+    {
+        item ??= SelectedDownload;
+        if (item == null) return;
+
+        // Pause existing engine
+        item.Engine?.Pause();
+
+        // Delete partial file if exists
+        try
+        {
+            if (File.Exists(item.TargetFilePath))
+            {
+                File.Delete(item.TargetFilePath);
+            }
+        }
+        catch { }
+
+        // Reset state
+        item.ProgressPercentage = 0;
+        item.SizeFormatted = "0 B";
+        item.Status = "Connecting...";
+        item.SpeedFormatted = "0 B/s";
+        item.TimeLeftFormatted = "--:--";
+
+        ResumeItem(item);
+    }
+
+    // --- Delete File From Disk ---
+    public void DeleteFileFromDisk(DownloadItemViewModel? item)
+    {
+        item ??= SelectedDownload;
+        if (item == null) return;
+
+        item.Engine?.Pause();
+
+        try
+        {
+            if (File.Exists(item.TargetFilePath))
+            {
+                File.Delete(item.TargetFilePath);
+            }
+        }
+        catch { }
+
+        DeleteItem(item);
+    }
+
     public void PauseItem(DownloadItemViewModel? item)
     {
         if (item?.Engine != null)
@@ -332,14 +797,6 @@ public class MainViewModel : INotifyPropertyChanged
             item.SpeedFormatted = "0 B/s";
             UpdateAggregateSpeed();
             UpdateCounts();
-        }
-    }
-
-    public void ResumeItem(DownloadItemViewModel? item)
-    {
-        if (item != null && (item.Status == "Paused" || item.Status.StartsWith("Error")))
-        {
-            AddDownload(item.Url, Path.GetDirectoryName(item.TargetFilePath));
         }
     }
 
@@ -416,22 +873,148 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ActiveDownloadsCount));
     }
 
+    // --- Batch Download Feature ---
+    public void OpenBatchModal(string? initialText = null)
+    {
+        BatchUrlsText = initialText ?? string.Empty;
+        IsBatchModalOpen = true;
+    }
+
+    public void CloseBatchModal()
+    {
+        IsBatchModalOpen = false;
+    }
+
+    public void ConfirmBatchDownload()
+    {
+        if (string.IsNullOrWhiteSpace(BatchUrlsText))
+        {
+            CloseBatchModal();
+            return;
+        }
+
+        var lines = BatchUrlsText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                AddDownload(trimmed, NewDownloadDir, Settings.DefaultConnections);
+            }
+        }
+
+        CloseBatchModal();
+    }
+
+    public void ExtractClipboardUrls()
+    {
+        try
+        {
+            if (Clipboard.ContainsText())
+            {
+                var text = Clipboard.GetText();
+                var matches = System.Text.RegularExpressions.Regex.Matches(text, @"https?://[^\s""'<>]+");
+                var urls = matches.Select(m => m.Value).Distinct().ToList();
+                if (urls.Count > 0)
+                {
+                    var existing = string.IsNullOrWhiteSpace(BatchUrlsText) ? "" : BatchUrlsText + Environment.NewLine;
+                    BatchUrlsText = existing + string.Join(Environment.NewLine, urls);
+                }
+            }
+        }
+        catch { }
+    }
+
+    // --- Clipboard Sniffer ---
+    public void CheckClipboardForDownloadableLink()
+    {
+        try
+        {
+            if (!Clipboard.ContainsText()) return;
+            var txt = Clipboard.GetText().Trim();
+            if ((txt.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                 txt.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) &&
+                !AllDownloads.Any(d => d.Url.Equals(txt, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (txt != ClipboardBannerUrl)
+                {
+                    ClipboardBannerUrl = txt;
+                    IsClipboardBannerVisible = true;
+                }
+            }
+        }
+        catch { }
+    }
+
+    public void DismissClipboardBanner()
+    {
+        IsClipboardBannerVisible = false;
+    }
+
+    public void DownloadClipboardBanner()
+    {
+        if (!string.IsNullOrWhiteSpace(ClipboardBannerUrl))
+        {
+            AddDownload(ClipboardBannerUrl, null, Settings.DefaultConnections);
+            DismissClipboardBanner();
+        }
+    }
+
+    // --- Queue Priority Reordering ---
+    public void MoveUpSelected()
+    {
+        if (SelectedDownload == null) return;
+        int idx = AllDownloads.IndexOf(SelectedDownload);
+        if (idx > 0)
+        {
+            AllDownloads.Move(idx, idx - 1);
+            ApplyCategoryFilter();
+        }
+    }
+
+    public void MoveDownSelected()
+    {
+        if (SelectedDownload == null) return;
+        int idx = AllDownloads.IndexOf(SelectedDownload);
+        if (idx >= 0 && idx < AllDownloads.Count - 1)
+        {
+            AllDownloads.Move(idx, idx + 1);
+            ApplyCategoryFilter();
+        }
+    }
+
+    public void ToggleSpeedLimiter()
+    {
+        IsSpeedLimiterEnabled = !IsSpeedLimiterEnabled;
+    }
+
     public void ApplyCategoryFilter()
     {
         FilteredDownloads.Clear();
         foreach (var item in AllDownloads)
         {
             bool matchesCategory = MatchesCategory(item, SelectedCategory);
-            bool matchesSearch = string.IsNullOrWhiteSpace(SearchText) || 
+            bool matchesFilter = ActiveFilterTag switch
+            {
+                "Active" => item.IsActive,
+                "Completed" => item.IsCompleted,
+                "Paused" => item.IsPaused,
+                _ => true
+            };
+            bool matchesSearch = string.IsNullOrWhiteSpace(SearchText) ||
                                  item.FileName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                                 item.Url.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
+                                 item.Url.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                                 item.CategoryName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                                 item.Status.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
 
-            if (matchesCategory && matchesSearch)
+            if (matchesCategory && matchesFilter && matchesSearch)
             {
                 FilteredDownloads.Add(item);
             }
         }
         OnPropertyChanged(nameof(HasNoDownloads));
+        OnPropertyChanged(nameof(FreeDiskSpaceFormatted));
     }
 
     private void UpdateCounts()
@@ -454,7 +1037,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         try
         {
-            if (MediaResolver.IsYouTubeUrl(url)) return "Resolving YouTube Video...";
+            if (MediaResolver.IsYouTubeUrl(url)) return "Resolving video stream...";
             var uri = new Uri(url);
             var name = Path.GetFileName(uri.LocalPath);
             return string.IsNullOrWhiteSpace(name) ? "download.dat" : name;
@@ -476,11 +1059,11 @@ public class MainViewModel : INotifyPropertyChanged
         return category switch
         {
             "Compressed" => ext is ".zip" or ".rar" or ".7z" or ".tar" or ".gz" or ".iso",
-            "Documents" => ext is ".pdf" or ".doc" or ".docx" or ".txt" or ".xlsx" or ".pptx",
-            "Music" => ext is ".mp3" or ".wav" or ".flac" or ".aac" or ".ogg" or ".m4a",
-            "Programs" => ext is ".exe" or ".msi" or ".apk" or ".bat" or ".cmd",
+            "Documents"  => ext is ".pdf" or ".doc" or ".docx" or ".txt" or ".xlsx" or ".pptx",
+            "Music"      => ext is ".mp3" or ".wav" or ".flac" or ".aac" or ".ogg" or ".m4a",
+            "Programs"   => ext is ".exe" or ".msi" or ".apk" or ".bat" or ".cmd",
             "Videos" or "Video" => ext is ".mp4" or ".mkv" or ".avi" or ".webm" or ".mov" or ".ts",
-            _ => true
+            _            => true
         };
     }
 

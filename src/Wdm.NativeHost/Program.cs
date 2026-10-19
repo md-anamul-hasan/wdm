@@ -7,8 +7,9 @@ using Microsoft.Win32;
 namespace Wdm.NativeHost;
 
 /// <summary>
-/// Native Messaging Host replicating IDMMsgHost.exe for Chrome, Edge, and Firefox.
-/// Communicates with web extensions via standard I/O (4-byte length prefix + JSON).
+/// WDM Native Messaging Host for Chrome, Edge, and Firefox.
+/// Communicates with the WDM browser extension via standard I/O (4-byte length-prefix + JSON),
+/// mirroring the same protocol used by IDM's IDMMsgHost.exe.
 /// </summary>
 public class Program
 {
@@ -103,15 +104,33 @@ public class Program
     {
         try
         {
-            // Find Wdm.Cli or Wdm.Ui executable
             string currentExeDir = AppContext.BaseDirectory;
+            string uiPath = Path.Combine(currentExeDir, "Wdm.Ui.exe");
             string cliPath = Path.Combine(currentExeDir, "Wdm.Cli.exe");
-            
-            if (File.Exists(cliPath))
+
+            string? targetExe = null;
+            if (File.Exists(uiPath))
+            {
+                targetExe = uiPath;
+            }
+            else if (File.Exists(cliPath))
+            {
+                targetExe = cliPath;
+            }
+            else
+            {
+                // In local development layout, resolve sibling build directories
+                string devUi = Path.GetFullPath(Path.Combine(currentExeDir, @"..\..\..\..\Wdm.Ui\bin\Debug\net10.0-windows\Wdm.Ui.exe"));
+                string devCli = Path.GetFullPath(Path.Combine(currentExeDir, @"..\..\..\..\Wdm.Cli\bin\Debug\net10.0\Wdm.Cli.exe"));
+                if (File.Exists(devUi)) targetExe = devUi;
+                else if (File.Exists(devCli)) targetExe = devCli;
+            }
+
+            if (targetExe != null)
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = cliPath,
+                    FileName = targetExe,
                     Arguments = $"\"{url}\"",
                     UseShellExecute = true
                 };

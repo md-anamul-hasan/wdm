@@ -23,14 +23,29 @@ public static class ResumeManager
 
         var json = JsonSerializer.Serialize(metadata, JsonOptions);
         await File.WriteAllTextAsync(tempPath, json, cancellationToken);
-        try
+        int retries = 5;
+        while (true)
         {
-            File.Move(tempPath, checkpointPath, overwrite: true);
-        }
-        catch
-        {
-            try { File.Delete(tempPath); } catch { }
-            throw;
+            try
+            {
+                File.Move(tempPath, checkpointPath, overwrite: true);
+                break;
+            }
+            catch (IOException) when (retries > 0)
+            {
+                retries--;
+                await Task.Delay(25, cancellationToken);
+            }
+            catch (UnauthorizedAccessException) when (retries > 0)
+            {
+                retries--;
+                await Task.Delay(25, cancellationToken);
+            }
+            catch
+            {
+                try { File.Delete(tempPath); } catch { }
+                throw;
+            }
         }
     }
 

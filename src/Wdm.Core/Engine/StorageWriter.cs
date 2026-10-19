@@ -5,7 +5,7 @@ namespace Wdm.Core.Engine;
 /// <summary>
 /// High-performance concurrent direct-offset file writer.
 /// Multiple workers write directly into their disjoint byte ranges in the destination file,
-/// completely avoiding IDM's legacy post-download file assembly phase.
+/// avoiding any post-download file assembly phase.
 /// </summary>
 public class StorageWriter : IAsyncDisposable
 {

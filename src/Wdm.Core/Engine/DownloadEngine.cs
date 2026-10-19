@@ -4,7 +4,8 @@ using Wdm.Core.Models;
 namespace Wdm.Core.Engine;
 
 /// <summary>
-/// Core orchestration engine replicating IDM's multi-connection dynamic segmentation download pipeline.
+/// WDM core orchestration engine: multi-connection dynamic-segmentation download pipeline
+/// with middle-split load balancing and zero-merge direct file writes.
 /// </summary>
 public class DownloadEngine : IAsyncDisposable
 {
@@ -201,7 +202,7 @@ public class DownloadEngine : IAsyncDisposable
             // 1. Try to get an idle segment
             segment = _segmenter.GetNextIdleSegment();
 
-            // 2. If no idle segments, try dynamic IDM split from largest active segment
+            // 2. If no idle segments, try dynamic middle-split from largest active segment
             if (segment == null && _metadata.SupportsRanges)
             {
                 segment = _segmenter.TrySplitLargestActiveSegment();

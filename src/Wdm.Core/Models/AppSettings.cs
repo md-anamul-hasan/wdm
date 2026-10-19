@@ -18,6 +18,16 @@ public class AppSettings
     public int NetworkTimeoutSeconds { get; set; } = 30;
     public string UserAgent { get; set; } = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36";
 
+    // Scheduler settings
+    public bool SchedulerEnabled { get; set; } = false;
+    public string SchedulerStartTime { get; set; } = "02:00";
+    public string SchedulerStopTime { get; set; } = "06:00";
+    public bool SchedulerShutdownOnComplete { get; set; } = false;
+    public bool SchedulerStopQueueAtEndTime { get; set; } = true;
+
+    // Theme & UI settings
+    public bool IsDarkMode { get; set; } = false;
+
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     private static string SettingsFilePath =>

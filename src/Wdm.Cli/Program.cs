@@ -98,7 +98,7 @@ public class Program
 
             lines.Add($"Progress: [{bar}] {progress.Percentage,5:F1}% | {progress.FormattedDownloaded} | {progress.FormattedSpeed,10} | ETA: {etaStr}");
 
-            // Segment details breakdown (IDM visualizer)
+            // Segment details breakdown (WDM stream visualizer)
             var segments = progress.Segments;
             lines.Add($"Active Dynamic Segments ({segments.Count}):");
 

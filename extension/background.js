@@ -24,6 +24,14 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 });
 
+// Handle messages from content script (e.g. floating video grabber)
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.action === "download" && msg.url) {
+    sendDownloadToWdm(msg.url, msg.referer || sender.tab?.url);
+    sendResponse({ success: true });
+  }
+});
+
 // Intercept browser downloads
 chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
   // If download was not triggered by user canceling WDM, pass to WDM

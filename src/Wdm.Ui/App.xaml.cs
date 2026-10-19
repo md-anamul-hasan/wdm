@@ -1,13 +1,10 @@
-﻿using System.Configuration;
-using System.Data;
 using System.Windows;
 
 namespace Wdm.Ui;
 
 /// <summary>
-/// Interaction logic for App.xaml
+/// WDM Application startup class.
 /// </summary>
 public partial class App : Application
 {
 }
-

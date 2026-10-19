@@ -1,4 +1,4 @@
-// WDM Video / Media floating download panel (IDM style)
+// WDM Video / Media floating download panel
 (() => {
   let floatingBtn = null;
   let activeMediaUrls = new Set();

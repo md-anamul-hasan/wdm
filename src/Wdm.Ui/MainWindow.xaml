@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Wdm.Ui.ViewModels"
         mc:Ignorable="d"
-        Title="Internet Download Manager 6.43" Height="700" Width="1060"
+        Title="WDM - Windows Download Manager" Height="700" Width="1060"
         MinHeight="450" MinWidth="750"
         WindowStartupLocation="CenterScreen"
         Icon="Assets/app.png"
@@ -17,35 +17,89 @@
         <vm:MainViewModel x:Name="ViewModel" />
     </Window.DataContext>
 
+    <!-- Keyboard shortcuts -->
+    <Window.InputBindings>
+        <KeyBinding Gesture="Ctrl+N" Command="{x:Null}" />
+    </Window.InputBindings>
+
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- Modern Clean Monochromatic Toolbar Button Style -->
-        <Style x:Key="IdmModernToolbarButton" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
+        <!-- Theme Dynamic Resource Defaults (Light Mode Defaults) -->
+        <SolidColorBrush x:Key="ThemeWindowBg" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="ThemeSurfaceBg" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="ThemeSurfaceAltBg" Color="#F1F5F9"/>
+        <SolidColorBrush x:Key="ThemeBorder" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="ThemeTextPrimary" Color="#0F172A"/>
+        <SolidColorBrush x:Key="ThemeTextSecondary" Color="#334155"/>
+        <SolidColorBrush x:Key="ThemeTextMuted" Color="#64748B"/>
+        <SolidColorBrush x:Key="ThemeSubtleHover" Color="#F1F5F9"/>
+        <SolidColorBrush x:Key="ThemeHeaderBg" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="ThemeRowSelected" Color="#E0F2FE"/>
+        <SolidColorBrush x:Key="ThemeRowSelectedText" Color="#0369A1"/>
+        <SolidColorBrush x:Key="ThemeCardBg" Color="#FFFFFF"/>
+
+        <!-- Quick Filter Pill Button Style -->
+        <Style x:Key="FilterChipBtn" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceAltBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextSecondary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="Padding" Value="10,6"/>
-            <Setter Property="Margin" Value="2,2"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="14" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#E9ECEF"/>
-                                <Setter TargetName="bd" Property="BorderBrush" Value="#CED4DA"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource ThemeSubtleHover}"/>
+                                <Setter TargetName="b" Property="BorderBrush" Value="#0D6EFD"/>
+                                <Setter Property="Foreground" Value="#0D6EFD"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#DEE2E6"/>
-                                <Setter TargetName="bd" Property="BorderBrush" Value="#ADB5BD"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource ThemeBorder}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Clean Monochromatic Toolbar Button Style -->
+        <Style x:Key="WdmToolbarButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Margin" Value="2,1"/>
+            <Setter Property="MinWidth" Value="58"/>
+            <Setter Property="MinHeight" Value="58"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource ThemeSubtleHover}"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource ThemeBorder}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource ThemeBorder}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.4"/>
@@ -58,29 +112,35 @@
 
         <!-- Clean Modern Dialog Button -->
         <Style x:Key="ClassicDialogBtn" TargetType="Button">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#212529"/>
-            <Setter Property="BorderBrush" Value="#CED4DA"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="16,5"/>
-            <Setter Property="Height" Value="28"/>
-            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Padding" Value="18,7"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="MinWidth" Value="86"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#F8F9FA"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource ThemeSubtleHover}"/>
                                 <Setter TargetName="b" Property="BorderBrush" Value="#0D6EFD"/>
                                 <Setter Property="Foreground" Value="#0D6EFD"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#E9ECEF"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource ThemeBorder}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -88,16 +148,21 @@
             </Setter>
         </Style>
 
+        <!-- Primary Modern Dialog Button -->
         <Style x:Key="PrimaryDialogBtn" TargetType="Button" BasedOn="{StaticResource ClassicDialogBtn}">
             <Setter Property="Background" Value="#0D6EFD"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
             <Setter Property="BorderBrush" Value="#0D6EFD"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,7"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="MinWidth" Value="96"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -108,6 +173,40 @@
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="b" Property="Background" Value="#0A58CA"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modal Dialog Close Button Style -->
+        <Style x:Key="ModalCloseBtn" TargetType="Button">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextMuted}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6" HorizontalAlignment="Center" VerticalAlignment="Center" Width="28" Height="28">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#FEE2E2"/>
+                                <Setter Property="Foreground" Value="#EF4444"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#FECACA"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -122,7 +221,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Separator">
-                        <Rectangle Width="1" Fill="#DEE2E6" HorizontalAlignment="Center"/>
+                        <Rectangle Width="1" Fill="{DynamicResource ThemeBorder}" HorizontalAlignment="Center"/>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -130,19 +229,19 @@
 
         <!-- Modern DataGrid Header -->
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#F8F9FA"/>
-            <Setter Property="Foreground" Value="#495057"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeHeaderBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextSecondary}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="11.5"/>
             <Setter Property="Padding" Value="10,7"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="BorderBrush" Value="#E9ECEF"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridColumnHeader">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         </Border>
@@ -153,67 +252,66 @@
 
         <!-- Clean DataGrid Row -->
         <Style TargetType="DataGridRow">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#212529"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextPrimary}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="BorderBrush" Value="#F1F3F5"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#E7F1FF"/>
-                    <Setter Property="Foreground" Value="#0C63E4"/>
+                    <Setter Property="Background" Value="{DynamicResource ThemeRowSelected}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource ThemeRowSelectedText}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
     </Window.Resources>
 
-    <Grid Background="#F5F6F8">
+    <Grid Background="{DynamicResource ThemeWindowBg}">
         <!-- Main Structure -->
         <DockPanel LastChildFill="True">
 
-            <!-- 1. AUTHENTIC IDM MENU BAR WITH MONOCHROMATIC ICONS -->
-            <Menu DockPanel.Dock="Top" Background="#FFFFFF" BorderBrush="#E9ECEF" BorderThickness="0,0,0,1" Padding="4,2">
-                <MenuItem Header="_Tasks">
+            <!-- 1. WDM MENU BAR -->
+            <Menu DockPanel.Dock="Top" Background="{DynamicResource ThemeSurfaceBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,0,0,1" Padding="4,2">
+                <MenuItem Header="_Tasks" Foreground="{DynamicResource ThemeTextPrimary}">
                     <MenuItem Header="_Add new download" InputGestureText="Ctrl+N" Click="OnAddUrlClick">
                         <MenuItem.Icon>
-                            <Path Data="{StaticResource IconAddUrl}" Fill="#2B303A" Width="14" Height="14" Stretch="Uniform"/>
+                            <Path Data="{StaticResource IconAddUrl}" Fill="#0284C7" Width="14" Height="14" Stretch="Uniform"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="_Batch download..."/>
-                    <MenuItem Header="Add _batch download from clipboard"/>
-                    <Separator/>
-                    <MenuItem Header="_Export">
-                        <MenuItem Header="To text file..."/>
-                        <MenuItem Header="To IDM export file..."/>
+                    <MenuItem Header="_Batch download..." InputGestureText="Ctrl+B" Click="OnBatchDownloadClick">
+                        <MenuItem.Icon>
+                            <Path Data="{StaticResource GeoDownload}" Stroke="#2563EB" StrokeThickness="1.5" Width="14" Height="14" Stretch="Uniform"/>
+                        </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="_Import">
-                        <MenuItem Header="From text file..."/>
-                        <MenuItem Header="From IDM export file..."/>
+                    <MenuItem Header="Add _batch download from clipboard" Click="OnBatchFromClipboardClick">
+                        <MenuItem.Icon>
+                            <Path Data="{StaticResource GeoCopy}" Stroke="#2563EB" StrokeThickness="1.5" Width="14" Height="14" Stretch="Uniform"/>
+                        </MenuItem.Icon>
                     </MenuItem>
                     <Separator/>
                     <MenuItem Header="E_xit" Click="OnCloseClick"/>
                 </MenuItem>
 
-                <MenuItem Header="_File">
+                <MenuItem Header="_File" Foreground="{DynamicResource ThemeTextPrimary}">
                     <MenuItem Header="_Stop Download" Click="OnPauseClick">
                         <MenuItem.Icon>
-                            <Path Data="{StaticResource IconStop}" Fill="#2B303A" Width="13" Height="13" Stretch="Uniform"/>
+                            <Path Data="{StaticResource IconStop}" Fill="#D97706" Width="13" Height="13" Stretch="Uniform"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="_Redownload" Click="OnResumeClick">
+                    <MenuItem Header="_Resume" Click="OnResumeClick">
                         <MenuItem.Icon>
-                            <Path Data="{StaticResource IconResume}" Fill="#2B303A" Width="13" Height="13" Stretch="Uniform"/>
+                            <Path Data="{StaticResource IconResume}" Fill="#16A34A" Width="13" Height="13" Stretch="Uniform"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator/>
                     <MenuItem Header="_Delete" Click="OnDeleteClick">
                         <MenuItem.Icon>
-                            <Path Data="{StaticResource IconDelete}" Fill="#2B303A" Width="13" Height="13" Stretch="Uniform"/>
+                            <Path Data="{StaticResource IconDelete}" Fill="#DC2626" Width="13" Height="13" Stretch="Uniform"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Delete _All Completed" Click="OnDeleteCompletedClick">
                         <MenuItem.Icon>
-                            <Path Data="{StaticResource IconDeleteCompleted}" Fill="#2B303A" Width="13" Height="13" Stretch="Uniform"/>
+                            <Path Data="{StaticResource IconDeleteCompleted}" Fill="#0D9488" Width="13" Height="13" Stretch="Uniform"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator/>
@@ -221,171 +319,203 @@
                     <MenuItem Header="Open _Folder" Click="OnOpenFileLocationClick"/>
                 </MenuItem>
 
-                <MenuItem Header="_Downloads">
+                <MenuItem Header="_Downloads" Foreground="{DynamicResource ThemeTextPrimary}">
                     <MenuItem Header="_Pause" Click="OnPauseClick"/>
                     <MenuItem Header="_Resume" Click="OnResumeClick"/>
                     <MenuItem Header="Stop _All" Click="OnStopAllClick">
                         <MenuItem.Icon>
-                            <Path Data="{StaticResource IconStopAll}" Fill="#2B303A" Width="13" Height="13" Stretch="Uniform"/>
+                            <Path Data="{StaticResource IconStopAll}" Fill="#DC2626" Width="13" Height="13" Stretch="Uniform"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator/>
                     <MenuItem Header="_Delete selected" Click="OnDeleteClick"/>
                     <Separator/>
                     <MenuItem Header="_Speed Limiter">
-                        <MenuItem Header="_Turn ON/OFF" IsCheckable="True" IsChecked="{Binding IsSpeedLimiterEnabled}"/>
+                        <MenuItem Header="_Toggle Speed Limiter" IsCheckable="True" IsChecked="{Binding IsSpeedLimiterEnabled}" Click="OnToggleSpeedLimiterClick"/>
                     </MenuItem>
                     <Separator/>
                     <MenuItem Header="_Options" Click="OnOpenSettingsClick">
                         <MenuItem.Icon>
-                            <Path Data="{StaticResource IconOptions}" Fill="#2B303A" Width="13" Height="13" Stretch="Uniform"/>
+                            <Path Data="{StaticResource IconOptions}" Fill="#4F46E5" Width="13" Height="13" Stretch="Uniform"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </MenuItem>
 
-                <MenuItem Header="_View">
-                    <MenuItem Header="_Toolbar" IsCheckable="True" IsChecked="True"/>
-                    <MenuItem Header="_Categories Tree" IsCheckable="True" IsChecked="True"/>
-                    <MenuItem Header="_Status Bar" IsCheckable="True" IsChecked="True"/>
+                <MenuItem Header="_View" Foreground="{DynamicResource ThemeTextPrimary}">
+                    <MenuItem Header="Toggle _Dark Theme" IsCheckable="True" IsChecked="{Binding IsDarkMode, Mode=TwoWay}" Click="OnToggleThemeClick"/>
                     <Separator/>
                     <MenuItem Header="_Segment Download Progress Pane" IsCheckable="True" IsChecked="{Binding IsSegmentPanelVisible}" Click="OnToggleSegmentPanelClick"/>
                 </MenuItem>
 
-                <MenuItem Header="_Help">
-                    <MenuItem Header="_Index" InputGestureText="F1"/>
-                    <MenuItem Header="_About IDM..." Click="OnAboutClick">
+                <MenuItem Header="_Help" Foreground="{DynamicResource ThemeTextPrimary}">
+                    <MenuItem Header="_Documentation" InputGestureText="F1"/>
+                    <MenuItem Header="_About WDM..." Click="OnAboutClick">
                         <MenuItem.Icon>
-                            <Path Data="{StaticResource IconFile}" Fill="#2B303A" Width="13" Height="13" Stretch="Uniform"/>
+                            <Path Data="{StaticResource IconFile}" Fill="#4F46E5" Width="13" Height="13" Stretch="Uniform"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </MenuItem>
             </Menu>
 
-            <!-- 2. MODERN MONOCHROMATIC IDM TOOLBAR -->
-            <Border DockPanel.Dock="Top" Background="#FFFFFF" BorderBrush="#E9ECEF" BorderThickness="0,0,0,1" Padding="6,4">
-                <ToolBarTray Background="#FFFFFF" IsLocked="True">
-                    <ToolBar Background="#FFFFFF" ToolBarTray.IsLocked="True" Loaded="ToolBar_Loaded">
+
+
+            <!-- 2. WDM MODERN TOOLBAR -->
+            <Border DockPanel.Dock="Top" Background="{DynamicResource ThemeSurfaceBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,0,0,1" Padding="6,4">
+                <ToolBarTray Background="Transparent" IsLocked="True">
+                    <ToolBar Background="Transparent" ToolBarTray.IsLocked="True" Loaded="ToolBar_Loaded">
                         <!-- Add URL -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" Click="OnAddUrlClick" ToolTip="Add URL">
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnAddUrlClick" ToolTip="Add URL (Ctrl+N)">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconAddUrl}" Fill="#1E293B" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#E0F2FE" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconAddUrl}" Fill="#0284C7" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Add URL" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Add URL" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Batch URL -->
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnBatchDownloadClick" ToolTip="Batch Download Multiple URLs (Ctrl+B)">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#EDE9FE" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource GeoDownload}" Stroke="#6D28D9" StrokeThickness="1.5" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Batch Add" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
                         <!-- Resume -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" Click="OnResumeClick" ToolTip="Resume Download">
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnResumeClick" ToolTip="Resume Download">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconResume}" Fill="#1E293B" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#DCFCE7" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconResume}" Fill="#16A34A" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Resume" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Resume" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
-                        <!-- Stop -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" Click="OnPauseClick" ToolTip="Stop Download">
+                        <!-- Stop / Pause -->
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnPauseClick" ToolTip="Pause Download">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconStop}" Fill="#1E293B" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#FEF3C7" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconStop}" Fill="#D97706" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Stop" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Pause" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
                         <!-- Stop All -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" Click="OnStopAllClick" ToolTip="Stop All Downloads">
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnStopAllClick" ToolTip="Pause All Downloads">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconStopAll}" Fill="#1E293B" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#FEE2E2" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconStopAll}" Fill="#DC2626" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Stop All" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Stop All" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
                         <!-- Delete -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" Click="OnDeleteClick" ToolTip="Delete selected download">
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnDeleteClick" ToolTip="Delete selected download (Delete key)">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconDelete}" Fill="#1E293B" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#FFE4E6" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconDelete}" Fill="#E11D48" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Delete" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Delete" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
                         <!-- Delete Completed -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" Click="OnDeleteCompletedClick" ToolTip="Delete Completed Downloads">
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnDeleteCompletedClick" ToolTip="Delete Completed Downloads">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconDeleteCompleted}" Fill="#1E293B" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#CCFBF1" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconDeleteCompleted}" Fill="#0D9488" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Delete Comp." HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Del. Compl." HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Separator Style="{StaticResource ToolbarSep}"/>
+
+                        <!-- Move Up in Queue -->
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnMoveUpClick" ToolTip="Move Up in Queue Priority (Alt+Up)">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#E0E7FF" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource GeoChevronUp}" Stroke="#4338CA" StrokeThickness="2" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Move Up" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Move Down in Queue -->
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnMoveDownClick" ToolTip="Move Down in Queue Priority (Alt+Down)">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#E0E7FF" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource GeoChevronDown}" Stroke="#4338CA" StrokeThickness="2" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Move Down" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
                         <Separator Style="{StaticResource ToolbarSep}"/>
 
                         <!-- Options -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" Click="OnOpenSettingsClick" ToolTip="Options">
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnOpenSettingsClick" ToolTip="Options &amp; Preferences">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconOptions}" Fill="#1E293B" Width="23" Height="23" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#EEF2FF" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconOptions}" Fill="#4F46E5" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Options" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Options" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
                         <!-- Scheduler -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" ToolTip="Scheduler">
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnSchedulerClick" ToolTip="Download Scheduler &amp; Timers">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconScheduler}" Fill="#1E293B" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#F3E8FF" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconScheduler}" Fill="#7C3AED" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Scheduler" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Scheduler" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
                         <!-- Start Queue -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" ToolTip="Start Queue">
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnStartQueueClick" ToolTip="Start Download Queue">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconStartQueue}" Fill="#1E293B" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#D1FAE5" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconStartQueue}" Fill="#059669" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Start Queue" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Start Queue" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
                         <!-- Stop Queue -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" ToolTip="Stop Queue">
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnStopQueueClick" ToolTip="Stop Download Queue">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconStopQueue}" Fill="#1E293B" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#FFEDD5" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconStopQueue}" Fill="#EA580C" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Stop Queue" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Stop Queue" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
                         <Separator Style="{StaticResource ToolbarSep}"/>
 
                         <!-- Grabber -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" ToolTip="Site Grabber">
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnGrabberClick" ToolTip="Site &amp; Media Grabber">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconGrabber}" Stroke="#1E293B" StrokeThickness="1.5" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#DBEAFE" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconGrabber}" Stroke="#2563EB" StrokeThickness="1.5" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Grabber" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Grabber" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
 
-                        <!-- Tell a Friend -->
-                        <Button Style="{StaticResource IdmModernToolbarButton}" ToolTip="Tell a Friend">
+                        <!-- Theme Toggle Button -->
+                        <Button Style="{StaticResource WdmToolbarButton}" Click="OnToggleThemeClick" ToolTip="Toggle Light / Dark Slate Theme">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Border Width="38" Height="34" HorizontalAlignment="Center">
-                                    <Path Data="{StaticResource IconTellFriend}" Fill="#1E293B" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Width="38" Height="32" CornerRadius="8" Background="#F1F5F9" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource GeoBolt}" Fill="#F59E0B" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Tell a Friend" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="11" FontWeight="Medium" Foreground="#334155"/>
+                                <TextBlock Text="Theme" HorizontalAlignment="Center" Margin="0,3,0,0" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextSecondary}"/>
                             </StackPanel>
                         </Button>
                     </ToolBar>
@@ -393,20 +523,30 @@
             </Border>
 
             <!-- 3. AUTHENTIC 3-PANE STATUS BAR -->
-            <StatusBar DockPanel.Dock="Bottom" Background="#FFFFFF" BorderBrush="#E9ECEF" BorderThickness="0,1,0,0" Height="26" Padding="8,0">
+            <StatusBar DockPanel.Dock="Bottom" Background="{DynamicResource ThemeSurfaceBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,1,0,0" Height="28" Padding="10,0">
                 <StatusBarItem>
-                    <TextBlock Text="{Binding AllCount, StringFormat='{}{0} downloads'}" FontSize="11" Foreground="#495057"/>
+                    <TextBlock Text="{Binding AllCount, StringFormat='{}{0} downloads'}" FontSize="11" Foreground="{DynamicResource ThemeTextSecondary}"/>
                 </StatusBarItem>
-                <Separator Width="1" Background="#DEE2E6" Margin="6,3"/>
+                <Separator Width="1" Background="{DynamicResource ThemeBorder}" Margin="6,3"/>
                 <StatusBarItem>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Transfer rate: " FontSize="11" Foreground="#495057"/>
-                        <TextBlock Text="{Binding TotalSpeedFormatted}" FontSize="11" FontWeight="SemiBold" Foreground="#0D6EFD"/>
+                        <TextBlock Text="{Binding QueueStatusText}" FontSize="11" FontWeight="SemiBold" Foreground="#16A34A"/>
                     </StackPanel>
                 </StatusBarItem>
-                <Separator Width="1" Background="#DEE2E6" Margin="6,3"/>
-                <StatusBarItem HorizontalContentAlignment="Stretch">
-                    <TextBlock Text="Ready" FontSize="11" Foreground="#495057"/>
+                <Separator Width="1" Background="{DynamicResource ThemeBorder}" Margin="6,3"/>
+                <StatusBarItem>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Transfer rate: " FontSize="11" Foreground="{DynamicResource ThemeTextMuted}"/>
+                        <TextBlock Text="{Binding TotalSpeedFormatted}" FontSize="11" FontWeight="Bold" Foreground="#0284C7"/>
+                    </StackPanel>
+                </StatusBarItem>
+                <Separator Width="1" Background="{DynamicResource ThemeBorder}" Margin="6,3"/>
+                <StatusBarItem>
+                    <TextBlock Text="{Binding ActiveDownloadsCount, StringFormat='{}{0} active streams'}" FontSize="11" Foreground="{DynamicResource ThemeTextSecondary}"/>
+                </StatusBarItem>
+                <Separator Width="1" Background="{DynamicResource ThemeBorder}" Margin="6,3"/>
+                <StatusBarItem HorizontalContentAlignment="Right">
+                    <TextBlock Text="{Binding FreeDiskSpaceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource ThemeTextMuted}"/>
                 </StatusBarItem>
             </StatusBar>
 
@@ -420,9 +560,9 @@
                     </Grid.RowDefinitions>
 
                     <DockPanel Grid.Row="0" Margin="0,0,0,6">
-                        <TextBlock Text="Connection Stream Segmentation (Middle-Split Zero-Merge Engine)" 
+                        <TextBlock Text="Connection Stream Segmentation (Dynamic Middle-Split Engine)"
                                    FontWeight="SemiBold" FontSize="11.5" Foreground="#212529" DockPanel.Dock="Left"/>
-                        <TextBlock Text="{Binding SelectedDownload.FileName, StringFormat='Target: {0}'}" 
+                        <TextBlock Text="{Binding SelectedDownload.FileName, StringFormat='Target: {0}'}"
                                    FontSize="11" Foreground="#6C757D" DockPanel.Dock="Right" TextTrimming="CharacterEllipsis" MaxWidth="500"/>
                     </DockPanel>
 
@@ -436,13 +576,13 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border BorderBrush="#E9ECEF" BorderThickness="1" Background="#F8F9FA" 
+                                        <Border BorderBrush="#E9ECEF" BorderThickness="1" Background="#F8F9FA"
                                                 CornerRadius="4" Margin="3" Padding="6,3" Width="190">
                                             <StackPanel>
                                                 <DockPanel>
-                                                    <TextBlock Text="{Binding SegmentIndex, StringFormat='Stream #{0}'}" 
+                                                    <TextBlock Text="{Binding SegmentIndex, StringFormat='Stream #{0}'}"
                                                                FontSize="10" FontWeight="Bold" Foreground="#1E293B" DockPanel.Dock="Left"/>
-                                                    <TextBlock Text="{Binding Percentage, StringFormat='{}{0:F1}%'}" 
+                                                    <TextBlock Text="{Binding Percentage, StringFormat='{}{0:F1}%'}"
                                                                FontSize="10" FontWeight="SemiBold" Foreground="#0D6EFD" DockPanel.Dock="Right"/>
                                                 </DockPanel>
                                                 <ProgressBar Value="{Binding Percentage, Mode=OneWay}" Maximum="100" Height="6" Margin="0,3" Foreground="#0D6EFD" Background="#DEE2E6"/>
@@ -468,16 +608,16 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: Monochromatic TreeView -->
+                <!-- Left: Categories TreeView -->
                 <Border Grid.Column="0" Background="#F8F9FA" BorderBrush="#E9ECEF" BorderThickness="0,0,1,0">
-                    <TreeView x:Name="CategoriesTree" Background="Transparent" BorderThickness="0" 
+                    <TreeView x:Name="CategoriesTree" Background="Transparent" BorderThickness="0"
                               SelectedItemChanged="OnCategoriesTreeSelectedItemChanged" Padding="6">
                         <TreeViewItem Header="Categories" IsExpanded="True" FontWeight="SemiBold" FontSize="12">
                             <TreeViewItem Header="All Downloads" Tag="All Downloads" IsSelected="True" FontWeight="Normal" Margin="0,2">
                                 <TreeViewItem.HeaderTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{StaticResource IconCategoryAll}" Fill="#495057" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <Path Data="{StaticResource IconCategoryAll}" Fill="#0284C7" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="All Downloads" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding DataContext.AllCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=' ({0})'}" Foreground="#6C757D" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -489,7 +629,7 @@
                                 <TreeViewItem.HeaderTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{StaticResource IconCategoryCompressed}" Fill="#495057" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <Path Data="{StaticResource IconCategoryCompressed}" Fill="#EA580C" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="Compressed" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding DataContext.CompressedCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=' ({0})'}" Foreground="#6C757D" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -501,7 +641,7 @@
                                 <TreeViewItem.HeaderTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{StaticResource IconCategoryDocuments}" Fill="#495057" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <Path Data="{StaticResource IconCategoryDocuments}" Fill="#2563EB" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="Documents" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding DataContext.DocumentsCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=' ({0})'}" Foreground="#6C757D" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -513,7 +653,7 @@
                                 <TreeViewItem.HeaderTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{StaticResource IconCategoryMusic}" Fill="#495057" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <Path Data="{StaticResource IconCategoryMusic}" Fill="#DB2777" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="Music" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding DataContext.MusicCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=' ({0})'}" Foreground="#6C757D" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -525,7 +665,7 @@
                                 <TreeViewItem.HeaderTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{StaticResource IconCategoryPrograms}" Fill="#495057" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <Path Data="{StaticResource IconCategoryPrograms}" Fill="#7C3AED" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="Programs" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding DataContext.ProgramsCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=' ({0})'}" Foreground="#6C757D" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -537,7 +677,7 @@
                                 <TreeViewItem.HeaderTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{StaticResource IconCategoryVideo}" Fill="#495057" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <Path Data="{StaticResource IconCategoryVideo}" Fill="#DC2626" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="Video" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding DataContext.VideoCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=' ({0})'}" Foreground="#6C757D" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -549,7 +689,7 @@
                                 <TreeViewItem.HeaderTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{StaticResource IconCategoryUnfinished}" Fill="#495057" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <Path Data="{StaticResource IconCategoryUnfinished}" Fill="#D97706" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="Unfinished" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding DataContext.UnfinishedCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=' ({0})'}" Foreground="#6C757D" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -561,7 +701,7 @@
                                 <TreeViewItem.HeaderTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{StaticResource IconCategoryFinished}" Fill="#495057" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <Path Data="{StaticResource IconCategoryFinished}" Fill="#16A34A" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="Finished" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding DataContext.FinishedCount, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=' ({0})'}" Foreground="#6C757D" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -573,113 +713,250 @@
                                 <TreeViewItem.HeaderTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{StaticResource IconCategoryQueues}" Fill="#495057" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <Path Data="{StaticResource IconCategoryQueues}" Fill="#0D9488" Width="14" Height="14" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="Queues" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </TreeViewItem.HeaderTemplate>
                                 <TreeViewItem Header="Main download queue" Tag="Queues" FontWeight="Normal"/>
-                                <TreeViewItem Header="Synchronization queue" Tag="Queues" FontWeight="Normal"/>
+                                <TreeViewItem Header="Scheduled queue" Tag="Queues" FontWeight="Normal"/>
                             </TreeViewItem>
                         </TreeViewItem>
                     </TreeView>
                 </Border>
 
                 <!-- Splitter -->
-                <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="#E9ECEF" ShowsPreview="True"/>
+                <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="{DynamicResource ThemeBorder}" ShowsPreview="True"/>
 
-                <!-- Right: Monochromatic Downloads DataGrid -->
-                <Grid Grid.Column="2" Background="#FFFFFF">
-                    <DataGrid x:Name="DownloadsGrid" ItemsSource="{Binding FilteredDownloads}" 
-                              SelectedItem="{Binding SelectedDownload, Mode=TwoWay}"
-                              AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
-                              GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#F1F3F5"
-                              BorderThickness="0" Background="#FFFFFF" SelectionMode="Single"
-                              SelectionUnit="FullRow" HeadersVisibility="Column"
-                              RowHeight="28" VerticalScrollBarVisibility="Auto">
+                <!-- Right: Downloads Workspace -->
+                <DockPanel Grid.Column="2" Background="{DynamicResource ThemeSurfaceBg}">
 
-                        <!-- Context Menu -->
-                        <DataGrid.ContextMenu>
-                            <ContextMenu Background="#FFFFFF" BorderBrush="#DEE2E6">
-                                <MenuItem Header="Resume Download" Click="OnResumeClick">
-                                    <MenuItem.Icon>
-                                        <Path Data="{StaticResource IconResume}" Fill="#2B303A" Width="13" Height="13" Stretch="Uniform"/>
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="Pause Download" Click="OnPauseClick">
-                                    <MenuItem.Icon>
-                                        <Path Data="{StaticResource IconStop}" Fill="#2B303A" Width="13" Height="13" Stretch="Uniform"/>
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <Separator/>
-                                <MenuItem Header="Open" Click="OnOpenFileClick"/>
-                                <MenuItem Header="Open Directory" Click="OnOpenFileLocationClick"/>
-                                <Separator/>
-                                <MenuItem Header="Delete" Click="OnDeleteClick">
-                                    <MenuItem.Icon>
-                                        <Path Data="{StaticResource IconDelete}" Fill="#2B303A" Width="13" Height="13" Stretch="Uniform"/>
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="Copy URL to clipboard" Click="OnCopyUrlClick"/>
-                            </ContextMenu>
-                        </DataGrid.ContextMenu>
+                    <!-- 1. QUICK FILTER & LIVE SEARCH BAR -->
+                    <Border DockPanel.Dock="Top" Background="{DynamicResource ThemeSurfaceBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,0,0,1" Padding="10,6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <!-- Search Input -->
+                                <ColumnDefinition Width="260"/>
+                                <!-- Filter Chips -->
+                                <ColumnDefinition Width="*"/>
+                                <!-- Disk Space & Limiter Info -->
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                        <DataGrid.Columns>
-                            <!-- File Name with Clean Monochromatic Icon -->
-                            <DataGridTemplateColumn Header="File Name" Width="260">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0">
-                                            <Path Data="{StaticResource IconFile}" Fill="#495057" Width="14" Height="14" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontWeight="Medium"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                            <!-- Modern Search Input -->
+                            <Border Grid.Column="0" Background="{DynamicResource ThemeSurfaceAltBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Height="30">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="28"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="24"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Path Grid.Column="0" Data="{StaticResource GeoSearch}" Stroke="{DynamicResource ThemeTextMuted}" StrokeThickness="1.5"
+                                          Width="12" Height="12" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             Background="Transparent" BorderThickness="0" VerticalAlignment="Center"
+                                             FontSize="11.5" Foreground="{DynamicResource ThemeTextPrimary}"/>
+                                    <Button Grid.Column="2" Content="✕" FontSize="11" Background="Transparent" BorderThickness="0"
+                                            Foreground="{DynamicResource ThemeTextMuted}" Cursor="Hand" Click="OnClearSearchClick"
+                                            Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            ToolTip="Clear search filter"/>
+                                </Grid>
+                            </Border>
 
-                            <!-- Size -->
-                            <DataGridTextColumn Header="Size" Binding="{Binding SizeFormatted}" Width="85"/>
+                            <!-- Quick Filter Chips -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                                <Button Content="All" Tag="All" Click="OnFilterTagClick" Style="{StaticResource FilterChipBtn}" Margin="0,0,6,0"/>
+                                <Button Content="Active" Tag="Active" Click="OnFilterTagClick" Style="{StaticResource FilterChipBtn}" Margin="0,0,6,0"/>
+                                <Button Content="Completed" Tag="Completed" Click="OnFilterTagClick" Style="{StaticResource FilterChipBtn}" Margin="0,0,6,0"/>
+                                <Button Content="Paused" Tag="Paused" Click="OnFilterTagClick" Style="{StaticResource FilterChipBtn}"/>
+                            </StackPanel>
 
-                            <!-- Status -->
-                            <DataGridTemplateColumn Header="Status" Width="150">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel VerticalAlignment="Center" Margin="6,0">
-                                            <TextBlock Text="{Binding Status}" FontSize="11" Margin="0,0,0,2" Foreground="#495057"/>
-                                            <ProgressBar Value="{Binding ProgressPercentage}" Maximum="100" Height="5" Foreground="#0D6EFD" Background="#E9ECEF"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                            <!-- Disk Space & Limiter Info Badges -->
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- Free Disk Space -->
+                                <Border Background="{DynamicResource ThemeSurfaceAltBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Padding="10,5" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource GeoStorage}" Stroke="#0284C7" StrokeThickness="1.2" Width="12" Height="12" Stretch="Uniform" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding FreeDiskSpaceFormatted}" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
 
-                            <!-- Time left -->
-                            <DataGridTextColumn Header="Time left" Binding="{Binding TimeLeftFormatted}" Width="80"/>
+                                <!-- Speed Limiter Quick Button -->
+                                <Button Click="OnToggleSpeedLimiterClick" Style="{StaticResource FilterChipBtn}"
+                                        Padding="12,5" Margin="0"
+                                        ToolTip="Click to Toggle Speed Limiter (Direct Throttle)">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource GeoBolt}" Fill="#F59E0B" Width="10" Height="10" Stretch="Uniform" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Limit: " FontSize="11" Foreground="{DynamicResource ThemeTextSecondary}"/>
+                                        <TextBlock Text="{Binding SpeedLimitKb, StringFormat='{}{0} KB/s'}" FontSize="11" FontWeight="Bold" Foreground="#D97706"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
 
-                            <!-- Transfer rate -->
-                            <DataGridTextColumn Header="Transfer rate" Binding="{Binding SpeedFormatted}" Width="100"/>
+                    <!-- 2. CLIPBOARD SNIFFER NOTIFICATION BANNER -->
+                    <Border DockPanel.Dock="Top" Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="0,0,0,1" Padding="14,8"
+                            Visibility="{Binding IsClipboardBannerVisible, Converter={StaticResource BoolToVis}}">
+                        <DockPanel LastChildFill="True">
+                            <Button Content="✕" Click="OnDismissClipboardBannerClick" DockPanel.Dock="Right"
+                                    Style="{StaticResource ModalCloseBtn}" Width="24" Height="24" Margin="10,0,0,0"/>
+                            <Button Content="⚡ Download Now" Click="OnDownloadClipboardBannerClick" DockPanel.Dock="Right"
+                                    Style="{StaticResource PrimaryDialogBtn}" MinHeight="28" Padding="14,4" FontSize="11.5"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Path Data="{StaticResource GeoCopy}" Stroke="#2563EB" StrokeThickness="1.5" Width="14" Height="14" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Clipboard Link Detected: " FontWeight="SemiBold" FontSize="11.5" Foreground="#1E40AF" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding ClipboardBannerUrl}" TextTrimming="CharacterEllipsis" MaxWidth="520" FontSize="11.5" Foreground="#3B82F6" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
 
-                            <!-- Last Try Date -->
-                            <DataGridTextColumn Header="Last Try Date" Binding="{Binding LastTryDate}" Width="130"/>
+                    <!-- 3. MAIN DOWNLOADS DATAGRID -->
+                    <Grid Background="{DynamicResource ThemeSurfaceBg}">
+                        <DataGrid x:Name="DownloadsGrid" ItemsSource="{Binding FilteredDownloads}"
+                                  SelectedItem="{Binding SelectedDownload, Mode=TwoWay}"
+                                  MouseDoubleClick="OnDownloadsGridMouseDoubleClick"
+                                  AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}"
+                                  BorderThickness="0" Background="{DynamicResource ThemeSurfaceBg}" SelectionMode="Single"
+                                  SelectionUnit="FullRow" HeadersVisibility="Column"
+                                  RowHeight="34" VerticalScrollBarVisibility="Auto">
 
-                            <!-- Description -->
-                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                            <!-- Context Menu -->
+                            <DataGrid.ContextMenu>
+                                <ContextMenu Background="{DynamicResource ThemeSurfaceBg}" BorderBrush="{DynamicResource ThemeBorder}">
+                                    <MenuItem Header="Resume Download" Click="OnResumeClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource IconResume}" Fill="#16A34A" Width="13" Height="13" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Pause Download" Click="OnPauseClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource IconStop}" Fill="#D97706" Width="13" Height="13" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Redownload / Restart" Click="OnRedownloadClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource IconCategoryUnfinished}" Fill="#0284C7" Width="13" Height="13" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator/>
+                                    <MenuItem Header="Move Up in Queue" InputGestureText="Alt+Up" Click="OnMoveUpClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource GeoChevronUp}" Stroke="#4F46E5" StrokeThickness="2" Width="12" Height="12" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Move Down in Queue" InputGestureText="Alt+Down" Click="OnMoveDownClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource GeoChevronDown}" Stroke="#4F46E5" StrokeThickness="2" Width="12" Height="12" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator/>
+                                    <MenuItem Header="Open File" Click="OnOpenFileClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource IconFile}" Fill="#4F46E5" Width="13" Height="13" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Open Folder Location" Click="OnOpenFileLocationClick"/>
+                                    <Separator/>
+                                    <MenuItem Header="Delete from List" Click="OnDeleteClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource IconDelete}" Fill="#E11D48" Width="13" Height="13" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Delete File from Disk" Click="OnDeleteFileFromDiskClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource IconDelete}" Fill="#DC2626" Width="13" Height="13" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator/>
+                                    <MenuItem Header="Copy URL to Clipboard" Click="OnCopyUrlClick"/>
+                                    <MenuItem Header="Properties" Click="OnPropertiesClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource IconOptions}" Fill="#64748B" Width="13" Height="13" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
 
-                    <!-- Watermark if empty -->
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" 
-                                Visibility="{Binding HasNoDownloads, Converter={StaticResource BoolToVis}}">
-                        <Path Data="{StaticResource IconAddUrl}" Fill="#CED4DA" Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                        <TextBlock Text="No downloads in this view" FontSize="14" FontWeight="Medium" Foreground="#6C757D" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Click 'Add URL' to start a new download" FontSize="12" Foreground="#ADB5BD" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Grid>
+                            <DataGrid.Columns>
+                                <!-- File Name with Colored Category Icon -->
+                                <DataGridTemplateColumn Header="File Name" Width="260">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                                                <Path Data="{Binding FileIconGeometry}" Fill="{Binding FileIconBrush}" Width="15" Height="15" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontWeight="Medium" Foreground="{DynamicResource ThemeTextPrimary}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Size -->
+                                <DataGridTextColumn Header="Size" Binding="{Binding SizeFormatted}" Width="85"/>
+
+                                <!-- Status with Rounded Modern Badge & Progress Bar -->
+                                <DataGridTemplateColumn Header="Status" Width="165">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel VerticalAlignment="Center" Margin="6,2">
+                                                <Border Background="{Binding StatusBadgeBackground}" BorderBrush="{Binding StatusBadgeBorder}"
+                                                        BorderThickness="1" CornerRadius="9" Padding="7,2" HorizontalAlignment="Left" Margin="0,0,0,3">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Ellipse Width="6" Height="6" Fill="{Binding StatusColor}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Status}" Foreground="{Binding StatusColor}" FontSize="10.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding FormattedPercentage, StringFormat=' ({0})'}" Foreground="{Binding StatusColor}" FontSize="10" VerticalAlignment="Center"
+                                                                   Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ProgressBar Value="{Binding ProgressPercentage}" Maximum="100" Height="4"
+                                                             Foreground="#0D6EFD" Background="{DynamicResource ThemeBorder}" BorderThickness="0"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Time left -->
+                                <DataGridTextColumn Header="Time left" Binding="{Binding TimeLeftFormatted}" Width="80"/>
+
+                                <!-- Transfer rate -->
+                                <DataGridTextColumn Header="Transfer rate" Binding="{Binding SpeedFormatted}" Width="95"/>
+
+                                <!-- Category Badge -->
+                                <DataGridTemplateColumn Header="Category" Width="90">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource ThemeSurfaceAltBg}" BorderBrush="{DynamicResource ThemeBorder}"
+                                                    BorderThickness="1" CornerRadius="8" Padding="6,2" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding CategoryName}" FontSize="10.5" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Last Try Date -->
+                                <DataGridTextColumn Header="Last Try Date" Binding="{Binding LastTryDate}" Width="125"/>
+
+                                <!-- Description / URL -->
+                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- Watermark if empty -->
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                    Visibility="{Binding HasNoDownloads, Converter={StaticResource BoolToVis}}">
+                            <Path Data="{StaticResource IconAddUrl}" Fill="{DynamicResource ThemeTextMuted}" Width="48" Height="48" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="No downloads in this view" FontSize="14" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Click 'Add URL' or drag &amp; drop links to start downloading" FontSize="12" Foreground="{DynamicResource ThemeTextMuted}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </DockPanel>
             </Grid>
         </DockPanel>
 
         <!-- 6. MODAL DIALOG: "ENTER NEW ADDRESS TO DOWNLOAD" -->
         <Grid Background="#7F000000" Visibility="{Binding IsAddModalOpen, Converter={StaticResource BoolToVis}}">
-            <Border Background="#FFFFFF" BorderBrush="#DEE2E6" BorderThickness="1" CornerRadius="8" Width="520" 
+            <Border Background="#FFFFFF" BorderBrush="#DEE2E6" BorderThickness="1" CornerRadius="8" Width="520"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.18" Color="#000000"/>
@@ -692,55 +969,55 @@
                     </Grid.RowDefinitions>
 
                     <!-- Dialog Header -->
-                    <Border Grid.Row="0" Background="#F8F9FA" BorderBrush="#E9ECEF" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
+                    <Border Grid.Row="0" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
                         <DockPanel>
                             <Path Data="{StaticResource IconAddUrl}" Fill="#0D6EFD" Width="18" Height="18" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Left"/>
-                            <TextBlock Text="Enter new address to download" FontWeight="SemiBold" FontSize="13" Foreground="#212529" VerticalAlignment="Center" DockPanel.Dock="Left"/>
-                            <Button Content="✕" FontSize="12" Width="22" Height="22" Click="OnCancelModalClick" DockPanel.Dock="Right" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" Foreground="#6C757D" Cursor="Hand"/>
+                            <TextBlock Text="Enter new address to download" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource ThemeTextPrimary}" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                            <Button Content="✕" Style="{StaticResource ModalCloseBtn}" Click="OnCancelModalClick" DockPanel.Dock="Right"/>
                         </DockPanel>
                     </Border>
 
                     <!-- Body -->
                     <StackPanel Grid.Row="1" Margin="18,14">
-                        <!-- YouTube detection banner -->
+                        <!-- YouTube/Video detection banner -->
                         <Border Background="#E7F1FF" BorderBrush="#B6D4FE" BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,12"
                                 Visibility="{Binding IsYouTubeUrl, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource IconCategoryVideo}" Fill="#0D6EFD" Width="16" Height="16" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="YouTube Video Stream Detected - Engine will extract and mux highest quality stream." 
+                                <TextBlock Text="Video Stream Detected — Engine will extract and mux highest quality stream."
                                            FontSize="11.5" Foreground="#084298" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="Address:" FontSize="11.5" FontWeight="Medium" Foreground="#495057" Margin="0,0,0,5"/>
-                        <TextBox Text="{Binding NewDownloadUrl, UpdateSourceTrigger=PropertyChanged}" 
-                                 Background="#FFFFFF" Foreground="#212529" BorderBrush="#CED4DA" BorderThickness="1" 
+                        <TextBlock Text="Address:" FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding NewDownloadUrl, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="{DynamicResource ThemeSurfaceAltBg}" Foreground="{DynamicResource ThemeTextPrimary}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
                                  Padding="8,6" FontSize="12" Margin="0,0,0,12"/>
 
-                        <TextBlock Text="Save to directory:" FontSize="11.5" FontWeight="Medium" Foreground="#495057" Margin="0,0,0,5"/>
+                        <TextBlock Text="Save to directory:" FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" Margin="0,0,0,5"/>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Text="{Binding NewDownloadDir, UpdateSourceTrigger=PropertyChanged}" 
-                                     Background="#FFFFFF" Foreground="#212529" BorderBrush="#CED4DA" BorderThickness="1" 
+                            <TextBox Grid.Column="0" Text="{Binding NewDownloadDir, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{DynamicResource ThemeSurfaceAltBg}" Foreground="{DynamicResource ThemeTextPrimary}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
                                      Padding="8,5" FontSize="11.5"/>
-                            <Button Grid.Column="1" Content="Browse..." Margin="6,0,0,0" 
+                            <Button Grid.Column="1" Content="Browse..." Margin="8,0,0,0"
                                     Style="{StaticResource ClassicDialogBtn}" Click="OnBrowseFolderClick"/>
                         </Grid>
 
                         <DockPanel Margin="0,0,0,6">
-                            <TextBlock Text="Max connection number:" FontSize="11.5" FontWeight="Medium" Foreground="#495057" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                            <TextBlock Text="Max connection number:" FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" DockPanel.Dock="Left" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding NewDownloadConnections, StringFormat='{}{0} streams'}" FontWeight="Bold" FontSize="11.5" Foreground="#0D6EFD" DockPanel.Dock="Right" VerticalAlignment="Center"/>
                         </DockPanel>
                         <Slider Minimum="1" Maximum="32" Value="{Binding NewDownloadConnections}" Margin="0,0,0,18"/>
 
                         <!-- Action Buttons -->
                         <DockPanel LastChildFill="False">
-                            <Button Content="Download Now" Style="{StaticResource PrimaryDialogBtn}" 
-                                    Click="OnConfirmModalClick" DockPanel.Dock="Right" Margin="8,0,0,0" IsDefault="True"/>
-                            <Button Content="Cancel" Style="{StaticResource ClassicDialogBtn}" 
+                            <Button Content="Download Now" Style="{StaticResource PrimaryDialogBtn}"
+                                    Click="OnConfirmModalClick" DockPanel.Dock="Right" Margin="10,0,0,0" IsDefault="True"/>
+                            <Button Content="Cancel" Style="{StaticResource ClassicDialogBtn}"
                                     Click="OnCancelModalClick" DockPanel.Dock="Right" IsCancel="True"/>
                         </DockPanel>
                     </StackPanel>
@@ -750,7 +1027,7 @@
 
         <!-- 7. MODAL DIALOG: OPTIONS / CONFIGURATION -->
         <Grid Background="#7F000000" Visibility="{Binding IsSettingsModalOpen, Converter={StaticResource BoolToVis}}">
-            <Border Background="#FFFFFF" BorderBrush="#DEE2E6" BorderThickness="1" CornerRadius="8" Width="550" 
+            <Border Background="{DynamicResource ThemeSurfaceBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Width="550"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.18" Color="#000000"/>
@@ -760,18 +1037,19 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- Title bar -->
-                    <Border Grid.Row="0" Background="#F8F9FA" BorderBrush="#E9ECEF" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
+                    <Border Grid.Row="0" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
                         <DockPanel>
                             <Path Data="{StaticResource IconOptions}" Fill="#0D6EFD" Width="18" Height="18" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Left"/>
-                            <TextBlock Text="Internet Download Manager Configuration" FontWeight="SemiBold" FontSize="13" Foreground="#212529" VerticalAlignment="Center" DockPanel.Dock="Left"/>
-                            <Button Content="✕" FontSize="12" Width="22" Height="22" Click="OnCancelSettingsClick" DockPanel.Dock="Right" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" Foreground="#6C757D" Cursor="Hand"/>
+                            <TextBlock Text="WDM — Windows Download Manager Configuration" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource ThemeTextPrimary}" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                            <Button Content="✕" Style="{StaticResource ModalCloseBtn}" Click="OnCancelSettingsClick" DockPanel.Dock="Right"/>
                         </DockPanel>
                     </Border>
 
-                    <TabControl Grid.Row="1" Background="#FFFFFF" Margin="12">
+                    <TabControl Grid.Row="1" Background="{DynamicResource ThemeSurfaceBg}" Margin="12">
                         <TabItem Header="General">
                             <StackPanel Margin="10">
                                 <GroupBox Header="Default Download Directory" Margin="0,0,0,12" Padding="10">
@@ -780,9 +1058,9 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBox Grid.Column="0" Text="{Binding Settings.DefaultDownloadDirectory, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Background="#FFFFFF" Foreground="#212529" BorderBrush="#CED4DA" BorderThickness="1" Padding="6,4"/>
-                                        <Button Grid.Column="1" Content="Browse..." Margin="6,0,0,0" Style="{StaticResource ClassicDialogBtn}" Click="OnBrowseSettingsFolderClick"/>
+                                        <TextBox Grid.Column="0" Text="{Binding Settings.DefaultDownloadDirectory, UpdateSourceTrigger=PropertyChanged}"
+                                                 Background="{DynamicResource ThemeSurfaceAltBg}" Foreground="{DynamicResource ThemeTextPrimary}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="6,4"/>
+                                        <Button Grid.Column="1" Content="Browse..." Margin="8,0,0,0" Style="{StaticResource ClassicDialogBtn}" Click="OnBrowseSettingsFolderClick"/>
                                     </Grid>
                                 </GroupBox>
 
@@ -800,18 +1078,18 @@
                                 <GroupBox Header="Connection Type / Speed" Margin="0,0,0,12" Padding="10">
                                     <StackPanel>
                                         <DockPanel Margin="0,0,0,6">
-                                            <TextBlock Text="Default max. connection number:" FontSize="11.5" Foreground="#495057" DockPanel.Dock="Left"/>
+                                            <TextBlock Text="Default max. connection number:" FontSize="11.5" Foreground="{DynamicResource ThemeTextSecondary}" DockPanel.Dock="Left"/>
                                             <TextBlock Text="{Binding Settings.DefaultConnections, StringFormat='{}{0}'}" FontWeight="Bold" FontSize="11.5" Foreground="#0D6EFD" DockPanel.Dock="Right"/>
                                         </DockPanel>
                                         <Slider Minimum="1" Maximum="32" Value="{Binding Settings.DefaultConnections}" Margin="0,0,0,10"/>
 
                                         <DockPanel Margin="0,0,0,6">
-                                            <TextBlock Text="Max Concurrent Downloads:" FontSize="11.5" Foreground="#495057" DockPanel.Dock="Left"/>
+                                            <TextBlock Text="Max Concurrent Downloads:" FontSize="11.5" Foreground="{DynamicResource ThemeTextSecondary}" DockPanel.Dock="Left"/>
                                             <TextBlock Text="{Binding Settings.MaxConcurrentDownloads, StringFormat='{}{0}'}" FontWeight="Bold" FontSize="11.5" Foreground="#0D6EFD" DockPanel.Dock="Right"/>
                                         </DockPanel>
                                         <Slider Minimum="1" Maximum="10" Value="{Binding Settings.MaxConcurrentDownloads}" Margin="0,0,0,10"/>
 
-                                        <CheckBox Content="Enable Dynamic Middle-Split Load Balancing (IDM Parity)" IsChecked="{Binding Settings.EnableDynamicMiddleSplit}"/>
+                                        <CheckBox Content="Enable Dynamic Middle-Split Load Balancing" IsChecked="{Binding Settings.EnableDynamicMiddleSplit}"/>
                                     </StackPanel>
                                 </GroupBox>
 
@@ -828,6 +1106,300 @@
                             </StackPanel>
                         </TabItem>
                     </TabControl>
+
+                    <!-- Save/Cancel footer -->
+                    <Border Grid.Row="2" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8" Padding="14,10">
+                        <DockPanel LastChildFill="False">
+                            <Button Content="Save" Style="{StaticResource PrimaryDialogBtn}" DockPanel.Dock="Right" Margin="10,0,0,0" Click="OnSaveSettingsClick"/>
+                            <Button Content="Cancel" Style="{StaticResource ClassicDialogBtn}" DockPanel.Dock="Right" Click="OnCancelSettingsClick"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 8. MODAL DIALOG: SCHEDULER & QUEUE -->
+        <Grid Background="#7F000000" Visibility="{Binding IsSchedulerModalOpen, Converter={StaticResource BoolToVis}}">
+            <Border Background="{DynamicResource ThemeSurfaceBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Width="500"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.18" Color="#000000"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
+                        <DockPanel>
+                            <Path Data="{StaticResource IconScheduler}" Fill="#7C3AED" Width="18" Height="18" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                            <TextBlock Text="WDM Scheduler &amp; Download Queue" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource ThemeTextPrimary}" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                            <Button Content="✕" Style="{StaticResource ModalCloseBtn}" Click="OnCancelSchedulerClick" DockPanel.Dock="Right"/>
+                        </DockPanel>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Margin="16,14">
+                        <GroupBox Header="Automated Timers" Margin="0,0,0,12" Padding="10">
+                            <StackPanel>
+                                <CheckBox Content="Enable automated queue scheduler" IsChecked="{Binding SchedulerEnabled}" Margin="0,0,0,12" FontWeight="SemiBold"/>
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Start download queue at:" FontSize="11.5" VerticalAlignment="Center" Foreground="{DynamicResource ThemeTextSecondary}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding SchedulerStartTime, UpdateSourceTrigger=PropertyChanged}" Width="80" HorizontalAlignment="Left" Padding="6,3" FontSize="12"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Stop download queue at:" FontSize="11.5" VerticalAlignment="Center" Foreground="{DynamicResource ThemeTextSecondary}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding SchedulerStopTime, UpdateSourceTrigger=PropertyChanged}" Width="80" HorizontalAlignment="Left" Padding="6,3" FontSize="12"/>
+                                </Grid>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Completion Action" Padding="10">
+                            <StackPanel>
+                                <CheckBox Content="Turn off computer when all downloads are complete" IsChecked="{Binding SchedulerShutdownOnComplete}"/>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+
+                    <Border Grid.Row="2" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8" Padding="14,10">
+                        <DockPanel LastChildFill="False">
+                            <Button Content="Apply &amp; Save" Style="{StaticResource PrimaryDialogBtn}" DockPanel.Dock="Right" Margin="10,0,0,0" Click="OnSaveSchedulerClick"/>
+                            <Button Content="Cancel" Style="{StaticResource ClassicDialogBtn}" DockPanel.Dock="Right" Click="OnCancelSchedulerClick"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 9. MODAL DIALOG: SITE & MEDIA GRABBER -->
+        <Grid Background="#7F000000" Visibility="{Binding IsGrabberModalOpen, Converter={StaticResource BoolToVis}}">
+            <Border Background="{DynamicResource ThemeSurfaceBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Width="680"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.18" Color="#000000"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
+                        <DockPanel>
+                            <Path Data="{StaticResource IconGrabber}" Stroke="#2563EB" StrokeThickness="1.5" Width="18" Height="18" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                            <TextBlock Text="WDM Site &amp; Media Grabber" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource ThemeTextPrimary}" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                            <Button Content="✕" Style="{StaticResource ModalCloseBtn}" Click="OnCancelGrabberClick" DockPanel.Dock="Right"/>
+                        </DockPanel>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Margin="16,12">
+                        <TextBlock Text="Target Webpage Address:" FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" Margin="0,0,0,5"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding GrabberUrl, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{DynamicResource ThemeSurfaceAltBg}" Foreground="{DynamicResource ThemeTextPrimary}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                     Padding="8,5" FontSize="12"/>
+                            <Button Grid.Column="1" Content="Explore &amp; Sniff" Margin="10,0,0,0"
+                                    Style="{StaticResource PrimaryDialogBtn}" Click="OnAnalyzeGrabberClick"/>
+                        </Grid>
+
+                        <TextBlock Text="{Binding GrabberStatusText}" FontSize="11" Foreground="{DynamicResource ThemeTextMuted}" Margin="0,0,0,10"/>
+
+                        <!-- Discovered Items Grid -->
+                        <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Height="210">
+                            <DataGrid ItemsSource="{Binding GrabberItems}" AutoGenerateColumns="False" CanUserAddRows="False"
+                                      CanUserDeleteRows="False" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}"
+                                      HeadersVisibility="Column" SelectionMode="Single" RowHeight="26" VerticalScrollBarVisibility="Auto">
+                                <DataGrid.Columns>
+                                    <DataGridCheckBoxColumn Header="Grab" Binding="{Binding IsSelected, Mode=TwoWay}" Width="45"/>
+                                    <DataGridTextColumn Header="File Name" Binding="{Binding FileName}" Width="200"/>
+                                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="90"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding Extension}" Width="60"/>
+                                    <DataGridTextColumn Header="URL" Binding="{Binding Url}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+                    </StackPanel>
+
+                    <Border Grid.Row="2" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8" Padding="14,10">
+                        <DockPanel LastChildFill="False">
+                            <Button Content="Download Selected to WDM" Style="{StaticResource PrimaryDialogBtn}" DockPanel.Dock="Right" Margin="10,0,0,0" Click="OnAddGrabbedClick"/>
+                            <Button Content="Close" Style="{StaticResource ClassicDialogBtn}" DockPanel.Dock="Right" Click="OnCancelGrabberClick"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 10. MODAL DIALOG: DOWNLOAD PROPERTIES -->
+        <Grid Background="#7F000000" Visibility="{Binding IsPropertiesModalOpen, Converter={StaticResource BoolToVis}}">
+            <Border Background="{DynamicResource ThemeSurfaceBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Width="520"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.18" Color="#000000"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
+                        <DockPanel>
+                            <Path Data="{StaticResource IconOptions}" Fill="#0284C7" Width="18" Height="18" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                            <TextBlock Text="Download Properties" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource ThemeTextPrimary}" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                            <Button Content="✕" Style="{StaticResource ModalCloseBtn}" Click="OnClosePropertiesClick" DockPanel.Dock="Right"/>
+                        </DockPanel>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Margin="18,14">
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="File Name:" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding PropertiesItem.FileName}" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextPrimary}" TextWrapping="Wrap"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Status:" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding PropertiesItem.Status}" Foreground="{Binding PropertiesItem.StatusColor}" FontWeight="SemiBold"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="File Size:" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding PropertiesItem.SizeFormatted}" Foreground="{DynamicResource ThemeTextPrimary}"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Save Path:" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding PropertiesItem.TargetFilePath}" Foreground="{DynamicResource ThemeTextPrimary}" TextWrapping="Wrap"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="URL:" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" VerticalAlignment="Top"/>
+                            <TextBox Grid.Column="1" Text="{Binding PropertiesItem.Url, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Foreground="{DynamicResource ThemeTextPrimary}" TextWrapping="Wrap"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Last Try Date:" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding PropertiesItem.LastTryDate}" Foreground="{DynamicResource ThemeTextMuted}"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <Border Grid.Row="2" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8" Padding="14,10">
+                        <DockPanel LastChildFill="False">
+                            <Button Content="Open File Location" Style="{StaticResource PrimaryDialogBtn}" DockPanel.Dock="Right" Margin="10,0,0,0" Click="OnOpenFileLocationClick"/>
+                            <Button Content="Close" Style="{StaticResource ClassicDialogBtn}" DockPanel.Dock="Right" Click="OnClosePropertiesClick"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 11. MODAL DIALOG: BATCH DOWNLOAD -->
+        <Grid Background="#7F000000" Visibility="{Binding IsBatchModalOpen, Converter={StaticResource BoolToVis}}">
+            <Border Background="{DynamicResource ThemeSurfaceBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Width="580"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.18" Color="#000000"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Border Grid.Row="0" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,0,0,1" CornerRadius="8,8,0,0" Padding="14,10">
+                        <DockPanel>
+                            <Path Data="{StaticResource GeoDownload}" Stroke="#2563EB" StrokeThickness="1.5" Width="18" Height="18" Stretch="Uniform" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                            <TextBlock Text="Batch Download — Add Multiple Addresses" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource ThemeTextPrimary}" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                            <Button Content="✕" Style="{StaticResource ModalCloseBtn}" Click="OnCancelBatchClick" DockPanel.Dock="Right"/>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Body -->
+                    <StackPanel Grid.Row="1" Margin="16,12">
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock Text="Enter or paste URLs (one address per line):" FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" DockPanel.Dock="Left"/>
+                            <Button Content="📋 Paste Clipboard Links" Style="{StaticResource ClassicDialogBtn}" Click="OnExtractBatchClipboardClick"
+                                    DockPanel.Dock="Right" Height="30" Padding="14,5" FontSize="11.5"/>
+                        </DockPanel>
+
+                        <!-- URL text box -->
+                        <TextBox Text="{Binding BatchUrlsText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto" Height="160" Background="{DynamicResource ThemeSurfaceAltBg}"
+                                 Foreground="{DynamicResource ThemeTextPrimary}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                 Padding="8" FontSize="12" FontFamily="Consolas, monospace" Margin="0,0,0,10"/>
+
+                        <!-- Detected count & Directory -->
+                        <DockPanel Margin="0,0,0,10">
+                            <TextBlock Text="{Binding BatchUrlCount, StringFormat='{}{0} valid web addresses detected'}" FontSize="11.5" FontWeight="Bold" Foreground="#059669" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                        </DockPanel>
+
+                        <TextBlock Text="Save batch to directory:" FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" Margin="0,0,0,4"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding NewDownloadDir, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{DynamicResource ThemeSurfaceAltBg}" Foreground="{DynamicResource ThemeTextPrimary}"
+                                     BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="8,5" FontSize="11.5"/>
+                            <Button Grid.Column="1" Content="Browse..." Margin="8,0,0,0" Style="{StaticResource ClassicDialogBtn}" Click="OnBrowseFolderClick"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Footer -->
+                    <Border Grid.Row="2" Background="{DynamicResource ThemeHeaderBg}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8" Padding="14,10">
+                        <DockPanel LastChildFill="False">
+                            <Button Content="Start Batch Download" Style="{StaticResource PrimaryDialogBtn}" DockPanel.Dock="Right" Margin="10,0,0,0" Click="OnConfirmBatchClick"/>
+                            <Button Content="Cancel" Style="{StaticResource ClassicDialogBtn}" DockPanel.Dock="Right" Click="OnCancelBatchClick"/>
+                        </DockPanel>
+                    </Border>
                 </Grid>
             </Border>
         </Grid>
