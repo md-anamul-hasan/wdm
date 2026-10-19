@@ -1,0 +1,1137 @@
+<Window x:Class="Wdm.Ui.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Wdm.Ui.ViewModels"
+        mc:Ignorable="d"
+        Title="WDM • Windows Download Manager" Height="740" Width="1120"
+        MinHeight="580" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="SingleBorderWindow"
+        Icon="Assets/app.png"
+        Background="#080c14"
+        FontFamily="Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI, -apple-system, sans-serif">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="50"
+                      CornerRadius="10"
+                      GlassFrameThickness="0"
+                      UseAeroCaptionButtons="False"
+                      ResizeBorderThickness="6"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.DataContext>
+        <vm:MainViewModel x:Name="ViewModel" />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <!-- Converters -->
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- Modern Primary Button -->
+        <Style x:Key="PrimaryActionBtn" TargetType="Button">
+            <Setter Property="Background" Value="#0284c7"/>
+            <Setter Property="Foreground" Value="#ffffff"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="13,7"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#0369a1"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Clean Toolbar Button -->
+        <Style x:Key="ToolbarBtn" TargetType="Button">
+            <Setter Property="Background" Value="#131d2e"/>
+            <Setter Property="Foreground" Value="#cbd5e1"/>
+            <Setter Property="BorderBrush" Value="#223049"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1c2a42"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#38bdf8"/>
+                                <Setter Property="Foreground" Value="#ffffff"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Row Quick Action Icon Button -->
+        <Style x:Key="RowIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94a3b8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1e293b"/>
+                                <Setter Property="Foreground" Value="#ffffff"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Clean Windows 11 Caption Control Buttons -->
+        <Style x:Key="CaptionBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94a3b8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#1e293b"/>
+                                <Setter Property="Foreground" Value="#ffffff"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CaptionCloseBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94a3b8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#e81123"/>
+                                <Setter Property="Foreground" Value="#ffffff"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Stream Preset Chip Button -->
+        <Style x:Key="PresetChipBtn" TargetType="Button">
+            <Setter Property="Background" Value="#131d2e"/>
+            <Setter Property="Foreground" Value="#94a3b8"/>
+            <Setter Property="BorderBrush" Value="#223049"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#0284c7"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#38bdf8"/>
+                                <Setter Property="Foreground" Value="#ffffff"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Clean DataGrid Styling -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#080c14"/>
+            <Setter Property="Foreground" Value="#f8fafc"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="RowBackground" Value="#0b101b"/>
+            <Setter Property="AlternatingRowBackground" Value="#0e1422"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#141c2c"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#090e18"/>
+            <Setter Property="Foreground" Value="#64748b"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="BorderBrush" Value="#141c2c"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="Height" Value="54"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#16233b"/>
+                    <Setter Property="Foreground" Value="#ffffff"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#121b2d"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <!-- WINDOW FRAME BORDER -->
+    <Border Background="#080c14" BorderBrush="#1a2436" BorderThickness="1" CornerRadius="10">
+        <Grid>
+            <!-- MAIN APPLICATION CONTENT -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/> <!-- Clean Frameless Top Bar -->
+                    <RowDefinition Height="*"/>  <!-- Main Working Area (Sidebar + Downloads Table) -->
+                    <RowDefinition Height="Auto"/> <!-- Bottom IDM Dynamic Segment Visualizer -->
+                    <RowDefinition Height="26"/> <!-- Sleek Minimalist Status Strip -->
+                </Grid.RowDefinitions>
+
+                <!-- 1. TOP SEAMLESS HEADER & CONTROLS -->
+                <Border Grid.Row="0" Background="#090e18" BorderBrush="#141c2c" BorderThickness="0,0,0,1" 
+                        MouseDown="OnTitleBarMouseDown">
+                    <Grid Margin="12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/> <!-- App Brand & Activity -->
+                            <ColumnDefinition Width="*"/>    <!-- Center Action Buttons -->
+                            <ColumnDefinition Width="Auto"/> <!-- Search & Speed Limiter & Window Controls -->
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left: Brand Emblem & Live Activity Badge -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Official WDM App Logo -->
+                            <Image Source="Assets/app.png" Width="26" Height="26" Margin="0,0,10,0" 
+                                   RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
+
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,14,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="WDM" FontSize="14" FontWeight="Bold" Foreground="#f8fafc"/>
+                                    <Border Background="#131d2e" CornerRadius="4" Padding="4,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Text="v2.0" FontSize="9" FontWeight="SemiBold" Foreground="#94a3b8"/>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Live Aggregate Speed Pill -->
+                            <Border Background="#101827" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="12" Padding="8,3" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="5" Height="5" Fill="#34d399" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding ActiveDownloadsCount, StringFormat='{}{0} Active'}" FontSize="11" Foreground="#94a3b8" Margin="0,0,8,0"/>
+                                    <Path Data="{StaticResource GeoDownload}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform" Margin="0,0,4,0"/>
+                                    <TextBlock Text="{Binding TotalSpeedFormatted}" FontSize="11" FontWeight="SemiBold" Foreground="#f8fafc"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Center: Quick Actions Toolbar -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,0">
+                            <!-- Add Download Button -->
+                            <Button Style="{StaticResource PrimaryActionBtn}" Click="OnAddUrlClick" Margin="0,0,8,0"
+                                    WindowChrome.IsHitTestVisibleInChrome="True">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource GeoPlus}" Stroke="#ffffff" StrokeThickness="2" Width="10" Height="10" Stretch="Uniform" Margin="0,0,6,0"/>
+                                    <TextBlock Text="New Download"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Resume Button -->
+                            <Button Style="{StaticResource ToolbarBtn}" Click="OnResumeClick" Margin="0,0,6,0"
+                                    WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Resume selected download">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource GeoPlay}" Fill="#cbd5e1" Width="9" Height="9" Stretch="Uniform" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Resume"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Pause Button -->
+                            <Button Style="{StaticResource ToolbarBtn}" Click="OnPauseClick" Margin="0,0,6,0"
+                                    WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Pause selected download">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource GeoPause}" Fill="#cbd5e1" Width="9" Height="9" Stretch="Uniform" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Pause"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Delete Button -->
+                            <Button Style="{StaticResource ToolbarBtn}" Click="OnDeleteClick" Margin="0,0,6,0"
+                                    WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Delete selected download">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource GeoTrash}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Delete"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Open Folder -->
+                            <Button Style="{StaticResource ToolbarBtn}" Click="OnOpenFileLocationClick" Margin="0,0,6,0"
+                                    WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Open file directory in Explorer">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource GeoFolder}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Folder"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Settings / Setup Options -->
+                            <Button Style="{StaticResource ToolbarBtn}" Click="OnOpenSettingsClick" Margin="0,0,12,0"
+                                    WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Configure WDM preferences">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource GeoSettings}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform" Margin="0,0,5,0"/>
+                                    <TextBlock Text="Settings"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Right: Search Box, Speed Limiter, & Caption Buttons -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Clean Search Bar -->
+                            <Border Background="#101827" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="7" 
+                                    Width="170" Height="28" Margin="0,0,10,0" Padding="8,0"
+                                    WindowChrome.IsHitTestVisibleInChrome="True">
+                                <Grid VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Path Grid.Column="0" Data="{StaticResource GeoSearch}" 
+                                          Stroke="#64748b" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform" Margin="0,0,6,0"/>
+                                    <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                             Background="Transparent" BorderThickness="0" Foreground="#f8fafc" FontSize="11"
+                                             VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="Search downloads..." IsHitTestVisible="False" Foreground="#64748b" FontSize="11"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SearchText}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </Border>
+
+                            <!-- Speed Limiter Pill -->
+                            <Border Background="#101827" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="7" 
+                                    Padding="8,3" Margin="0,0,12,0" WindowChrome.IsHitTestVisibleInChrome="True">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource GeoBolt}" Fill="#cbd5e1" Width="8" Height="8" Stretch="Uniform" Margin="0,0,5,0"/>
+                                    <CheckBox Content="Limit" IsChecked="{Binding IsSpeedLimiterEnabled}" 
+                                              Foreground="#cbd5e1" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <Slider Minimum="256" Maximum="16384" Value="{Binding SpeedLimitKb}" Width="70" 
+                                            IsEnabled="{Binding IsSpeedLimiterEnabled}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding SpeedLimitKb, StringFormat='{}{0} KB/s'}" 
+                                               Foreground="#94a3b8" FontWeight="SemiBold" FontSize="10" Width="55" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Pixel-Perfect Windows 11 Caption Controls -->
+                            <StackPanel Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
+                                <Button Style="{StaticResource CaptionBtn}" Click="OnMinimizeClick" ToolTip="Minimize">
+                                    <Path Data="{StaticResource GeoWinMinimize}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1" SnapsToDevicePixels="True" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Button>
+                                <Button x:Name="MaximizeRestoreBtn" Style="{StaticResource CaptionBtn}" Click="OnMaximizeClick" ToolTip="Maximize">
+                                    <Path x:Name="MaximizeRestoreIcon" Data="{StaticResource GeoWinMaximize}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1" SnapsToDevicePixels="True" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Button>
+                                <Button Style="{StaticResource CaptionCloseBtn}" Click="OnCloseClick" ToolTip="Close">
+                                    <Path Data="{StaticResource GeoWinClose}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1" SnapsToDevicePixels="True" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 2. MAIN WORKSPACE (SIDEBAR + TABLE) -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="210"/> <!-- Left Nav Sidebar -->
+                        <ColumnDefinition Width="*"/>   <!-- Downloads Table -->
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Navigation Sidebar -->
+                    <Border Grid.Column="0" Background="#080c14" BorderBrush="#141c2c" BorderThickness="0,0,1,0" Padding="10,14">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <StackPanel>
+                                    <!-- STATUS FILTERS SECTION -->
+                                    <TextBlock Text="STATUS" Foreground="#475569" FontSize="10" FontWeight="Bold" Margin="8,0,0,8"/>
+
+                                    <ListBox Background="Transparent" BorderThickness="0" SelectedValuePath="Tag"
+                                             SelectedValue="{Binding SelectedCategory, Mode=TwoWay}">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Foreground" Value="#94a3b8"/>
+                                                <Setter Property="Padding" Value="10,7"/>
+                                                <Setter Property="Margin" Value="0,1"/>
+                                                <Setter Property="FontSize" Value="12"/>
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <Border x:Name="itemBorder" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                <Grid>
+                                                                    <Border x:Name="activeIndicator" Width="3" HorizontalAlignment="Left" Background="#cbd5e1" Visibility="Collapsed" Margin="-10,0,0,0" CornerRadius="2"/>
+                                                                    <ContentPresenter/>
+                                                                </Grid>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="itemBorder" Property="Background" Value="#131d2e"/>
+                                                                    <Setter Property="Foreground" Value="#f8fafc"/>
+                                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                    <Setter TargetName="activeIndicator" Property="Visibility" Value="Visible"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="itemBorder" Property="Background" Value="#0e1624"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+
+                                        <!-- All Downloads -->
+                                        <ListBoxItem Tag="All Downloads" IsSelected="True">
+                                            <DockPanel>
+                                                <Image Source="Assets/app.png" Width="13" Height="13" Margin="0,0,8,0" DockPanel.Dock="Left"
+                                                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                <TextBlock Text="All Downloads" DockPanel.Dock="Left"/>
+                                                <Border Background="#101827" CornerRadius="9" Padding="6,1" DockPanel.Dock="Right">
+                                                    <TextBlock Text="{Binding AllCount}" FontSize="10" Foreground="#94a3b8"/>
+                                                </Border>
+                                            </DockPanel>
+                                        </ListBoxItem>
+
+                                        <!-- Downloading -->
+                                        <ListBoxItem Tag="Downloading">
+                                            <DockPanel>
+                                                <Path Data="{StaticResource GeoDownload}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="11" Height="11" Stretch="Uniform" DockPanel.Dock="Left" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Downloading" DockPanel.Dock="Left"/>
+                                                <Border Background="#101827" CornerRadius="9" Padding="6,1" DockPanel.Dock="Right">
+                                                    <TextBlock Text="{Binding DownloadingCount}" FontSize="10" Foreground="#cbd5e1"/>
+                                                </Border>
+                                            </DockPanel>
+                                        </ListBoxItem>
+
+                                        <!-- Completed -->
+                                        <ListBoxItem Tag="Completed">
+                                            <DockPanel>
+                                                <Path Data="{StaticResource GeoCheckCircle}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="11" Height="11" Stretch="Uniform" DockPanel.Dock="Left" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Completed" DockPanel.Dock="Left"/>
+                                                <Border Background="#101827" CornerRadius="9" Padding="6,1" DockPanel.Dock="Right">
+                                                    <TextBlock Text="{Binding CompletedCount}" FontSize="10" Foreground="#cbd5e1"/>
+                                                </Border>
+                                            </DockPanel>
+                                        </ListBoxItem>
+
+                                        <!-- Paused -->
+                                        <ListBoxItem Tag="Paused">
+                                            <DockPanel>
+                                                <Path Data="{StaticResource GeoPause}" Fill="#cbd5e1" Width="10" Height="10" Stretch="Uniform" DockPanel.Dock="Left" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Paused" DockPanel.Dock="Left"/>
+                                                <Border Background="#101827" CornerRadius="9" Padding="6,1" DockPanel.Dock="Right">
+                                                    <TextBlock Text="{Binding PausedCount}" FontSize="10" Foreground="#cbd5e1"/>
+                                                </Border>
+                                            </DockPanel>
+                                        </ListBoxItem>
+                                    </ListBox>
+
+                                    <!-- FILE CATEGORIES SECTION -->
+                                    <TextBlock Text="CATEGORIES" Foreground="#475569" FontSize="10" FontWeight="Bold" Margin="8,16,0,8"/>
+
+                                    <ListBox Background="Transparent" BorderThickness="0" SelectedValuePath="Tag"
+                                             SelectedValue="{Binding SelectedCategory, Mode=TwoWay}">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Foreground" Value="#94a3b8"/>
+                                                <Setter Property="Padding" Value="10,7"/>
+                                                <Setter Property="Margin" Value="0,1"/>
+                                                <Setter Property="FontSize" Value="12"/>
+                                                <Setter Property="Cursor" Value="Hand"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <Border x:Name="itemBorder" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                <Grid>
+                                                                    <Border x:Name="activeIndicator" Width="3" HorizontalAlignment="Left" Background="#cbd5e1" Visibility="Collapsed" Margin="-10,0,0,0" CornerRadius="2"/>
+                                                                    <ContentPresenter/>
+                                                                </Grid>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="itemBorder" Property="Background" Value="#131d2e"/>
+                                                                    <Setter Property="Foreground" Value="#f8fafc"/>
+                                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                    <Setter TargetName="activeIndicator" Property="Visibility" Value="Visible"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="itemBorder" Property="Background" Value="#0e1624"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+
+                                        <!-- Video -->
+                                        <ListBoxItem Tag="Videos">
+                                            <DockPanel>
+                                                <Path Data="{StaticResource GeoVideo}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="11" Height="11" Stretch="Uniform" DockPanel.Dock="Left" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Videos" DockPanel.Dock="Left"/>
+                                                <Border Background="#101827" CornerRadius="9" Padding="6,1" DockPanel.Dock="Right">
+                                                    <TextBlock Text="{Binding VideoCount}" FontSize="10" Foreground="#94a3b8"/>
+                                                </Border>
+                                            </DockPanel>
+                                        </ListBoxItem>
+
+                                        <!-- Music -->
+                                        <ListBoxItem Tag="Music">
+                                            <DockPanel>
+                                                <Path Data="{StaticResource GeoMusic}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="11" Height="11" Stretch="Uniform" DockPanel.Dock="Left" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Music" DockPanel.Dock="Left"/>
+                                                <Border Background="#101827" CornerRadius="9" Padding="6,1" DockPanel.Dock="Right">
+                                                    <TextBlock Text="{Binding MusicCount}" FontSize="10" Foreground="#94a3b8"/>
+                                                </Border>
+                                            </DockPanel>
+                                        </ListBoxItem>
+
+                                        <!-- Compressed -->
+                                        <ListBoxItem Tag="Compressed">
+                                            <DockPanel>
+                                                <Path Data="{StaticResource GeoArchive}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="11" Height="11" Stretch="Uniform" DockPanel.Dock="Left" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Compressed" DockPanel.Dock="Left"/>
+                                                <Border Background="#101827" CornerRadius="9" Padding="6,1" DockPanel.Dock="Right">
+                                                    <TextBlock Text="{Binding CompressedCount}" FontSize="10" Foreground="#94a3b8"/>
+                                                </Border>
+                                            </DockPanel>
+                                        </ListBoxItem>
+
+                                        <!-- Documents -->
+                                        <ListBoxItem Tag="Documents">
+                                            <DockPanel>
+                                                <Path Data="{StaticResource GeoDocument}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="11" Height="11" Stretch="Uniform" DockPanel.Dock="Left" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Documents" DockPanel.Dock="Left"/>
+                                                <Border Background="#101827" CornerRadius="9" Padding="6,1" DockPanel.Dock="Right">
+                                                    <TextBlock Text="{Binding DocumentsCount}" FontSize="10" Foreground="#94a3b8"/>
+                                                </Border>
+                                            </DockPanel>
+                                        </ListBoxItem>
+
+                                        <!-- Programs -->
+                                        <ListBoxItem Tag="Programs">
+                                            <DockPanel>
+                                                <Path Data="{StaticResource GeoProgram}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="11" Height="11" Stretch="Uniform" DockPanel.Dock="Left" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Programs" DockPanel.Dock="Left"/>
+                                                <Border Background="#101827" CornerRadius="9" Padding="6,1" DockPanel.Dock="Right">
+                                                    <TextBlock Text="{Binding ProgramsCount}" FontSize="10" Foreground="#94a3b8"/>
+                                                </Border>
+                                            </DockPanel>
+                                        </ListBoxItem>
+                                    </ListBox>
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <!-- Bottom Sidebar Card: Download Storage Shortcut -->
+                            <Border Grid.Row="1" Background="#101827" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,10,0,0">
+                                <DockPanel LastChildFill="True">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource RowIconBtn}" Click="OnOpenFileLocationClick" ToolTip="Open Downloads Folder">
+                                        <Path Data="{StaticResource GeoStorage}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="13" Height="13" Stretch="Uniform"/>
+                                    </Button>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Storage Folder" FontSize="10" FontWeight="Bold" Foreground="#64748b"/>
+                                        <TextBlock Text="Downloads" FontSize="11" FontWeight="SemiBold" Foreground="#cbd5e1"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Downloads Table & Empty State Area -->
+                    <Grid Grid.Column="1">
+                        <!-- DataGrid -->
+                        <DataGrid ItemsSource="{Binding FilteredDownloads}" SelectedItem="{Binding SelectedDownload}"
+                                  SelectionUnit="FullRow" GridLinesVisibility="Horizontal">
+                            <!-- Clean Monochromatic Context Menu -->
+                            <DataGrid.ContextMenu>
+                                <ContextMenu Background="#0e1624" Foreground="#f8fafc" BorderBrush="#1c283d" BorderThickness="1">
+                                    <MenuItem Header="Resume Download" Click="OnResumeClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource GeoPlay}" Fill="#cbd5e1" Width="10" Height="10" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Pause Download" Click="OnPauseClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource GeoPause}" Fill="#cbd5e1" Width="10" Height="10" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator Background="#1c283d"/>
+                                    <MenuItem Header="Open File" Click="OnItemOpenFile">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource GeoFile}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Open Folder" Click="OnOpenFileLocationClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource GeoFolder}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Copy URL" Click="OnItemCopyUrl">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource GeoCopy}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator Background="#1c283d"/>
+                                    <MenuItem Header="Delete" Click="OnDeleteClick">
+                                        <MenuItem.Icon>
+                                            <Path Data="{StaticResource GeoTrash}" Stroke="#f87171" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
+
+                            <DataGrid.Columns>
+                                <!-- File Name & Dynamic Monochromatic Vector Icon -->
+                                <DataGridTemplateColumn Header="FILE NAME" Width="280">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="10,0" VerticalAlignment="Center">
+                                                <!-- Category Icon Badge with Monochromatic Stroke Icon -->
+                                                <Border Background="#131d2e" BorderBrush="#223049" BorderThickness="1" CornerRadius="6" Width="30" Height="30" Margin="0,0,10,0" VerticalAlignment="Center" DockPanel.Dock="Left">
+                                                    <Path Stroke="#cbd5e1" StrokeThickness="1.5" Width="13" Height="13" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Path.Style>
+                                                            <Style TargetType="Path">
+                                                                <Setter Property="Data" Value="{StaticResource GeoFile}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding CategoryIconKind}" Value="Video">
+                                                                        <Setter Property="Data" Value="{StaticResource GeoVideo}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding CategoryIconKind}" Value="Music">
+                                                                        <Setter Property="Data" Value="{StaticResource GeoMusic}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding CategoryIconKind}" Value="Archive">
+                                                                        <Setter Property="Data" Value="{StaticResource GeoArchive}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding CategoryIconKind}" Value="App">
+                                                                        <Setter Property="Data" Value="{StaticResource GeoProgram}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding CategoryIconKind}" Value="Document">
+                                                                        <Setter Property="Data" Value="{StaticResource GeoDocument}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Path.Style>
+                                                    </Path>
+                                                </Border>
+
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" Foreground="#f8fafc" FontSize="12"
+                                                               TextTrimming="CharacterEllipsis" MaxWidth="220"/>
+                                                    <TextBlock Text="{Binding Domain}" FontSize="10" Foreground="#64748b" TextTrimming="CharacterEllipsis" MaxWidth="220"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- File Size -->
+                                <DataGridTextColumn Header="SIZE" Binding="{Binding SizeFormatted}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="FontSize" Value="11"/>
+                                            <Setter Property="Foreground" Value="#94a3b8"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Progress Bar & Percentage -->
+                                <DataGridTemplateColumn Header="PROGRESS" Width="200">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="6,0" VerticalAlignment="Center">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <!-- Percentage & ETA -->
+                                                <DockPanel Grid.Row="0" Margin="0,0,0,4">
+                                                    <TextBlock Text="{Binding ProgressPercentage, StringFormat='{}{0:F1}%'}" 
+                                                               FontSize="10" FontWeight="SemiBold" Foreground="#cbd5e1" DockPanel.Dock="Left"/>
+                                                    <TextBlock Text="{Binding TimeLeftFormatted, StringFormat='ETA: {0}'}" 
+                                                               FontSize="10" Foreground="#64748b" DockPanel.Dock="Right"/>
+                                                </DockPanel>
+
+                                                <!-- Clean Progress Bar -->
+                                                <ProgressBar Grid.Row="1" Value="{Binding ProgressPercentage, Mode=OneWay}" Minimum="0" Maximum="100" Height="6"
+                                                             Foreground="#0284c7" Background="#141c2c" BorderThickness="0">
+                                                    <ProgressBar.Clip>
+                                                        <RectangleGeometry Rect="0,0,188,6" RadiusX="3" RadiusY="3"/>
+                                                    </ProgressBar.Clip>
+                                                </ProgressBar>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Status Badge -->
+                                <DataGridTemplateColumn Header="STATUS" Width="110">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#101827" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="8" 
+                                                    Padding="8,3" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Ellipse Width="5" Height="5" Fill="{Binding StatusColor}" Margin="0,0,5,0"/>
+                                                    <TextBlock Text="{Binding Status}" Foreground="#cbd5e1" 
+                                                               FontSize="10" FontWeight="Medium"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Speed -->
+                                <DataGridTextColumn Header="SPEED" Binding="{Binding SpeedFormatted}" Width="100">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="FontSize" Value="11"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Foreground" Value="#cbd5e1"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Inline Quick Actions -->
+                                <DataGridTemplateColumn Header="ACTIONS" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <!-- Dynamic Pause / Resume Toggle -->
+                                                <Button Style="{StaticResource RowIconBtn}" Click="OnItemTogglePauseResume" ToolTip="Pause / Resume">
+                                                    <Path Width="10" Height="10" Stretch="Uniform">
+                                                        <Path.Style>
+                                                            <Style TargetType="Path">
+                                                                <Setter Property="Data" Value="{StaticResource GeoPlay}"/>
+                                                                <Setter Property="Fill" Value="#cbd5e1"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                        <Setter Property="Data" Value="{StaticResource GeoPause}"/>
+                                                                        <Setter Property="Fill" Value="#cbd5e1"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Path.Style>
+                                                    </Path>
+                                                </Button>
+
+                                                <!-- Open File -->
+                                                <Button Style="{StaticResource RowIconBtn}" Click="OnItemOpenFile" ToolTip="Open Completed File">
+                                                    <Path Data="{StaticResource GeoFile}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform"/>
+                                                </Button>
+
+                                                <!-- Open Folder -->
+                                                <Button Style="{StaticResource RowIconBtn}" Click="OnItemOpenFolder" ToolTip="Open Containing Folder">
+                                                    <Path Data="{StaticResource GeoFolder}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform"/>
+                                                </Button>
+
+                                                <!-- Delete -->
+                                                <Button Style="{StaticResource RowIconBtn}" Click="OnItemDelete" ToolTip="Delete Download">
+                                                    <Path Data="{StaticResource GeoTrash}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Source URL -->
+                                <DataGridTextColumn Header="URL" Binding="{Binding Url}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="FontSize" Value="10"/>
+                                            <Setter Property="Foreground" Value="#64748b"/>
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- Clean Empty State Placeholder -->
+                        <Border Background="#080c14" Visibility="{Binding HasNoDownloads, Converter={StaticResource BoolToVis}}"
+                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image Source="Assets/app.png" Width="64" Height="64" Margin="0,0,0,16" HorizontalAlignment="Center"
+                                       RenderOptions.BitmapScalingMode="HighQuality">
+                                    <Image.Effect>
+                                        <DropShadowEffect BlurRadius="25" ShadowDepth="4" Opacity="0.3" Color="#000000"/>
+                                    </Image.Effect>
+                                </Image>
+                                <TextBlock Text="No downloads in this view" FontSize="15" FontWeight="SemiBold" Foreground="#f8fafc" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Enter any file or video link to begin downloading at multi-stream speed" 
+                                           FontSize="12" Foreground="#64748b" HorizontalAlignment="Center" Margin="0,6,0,20"/>
+                                <Button Style="{StaticResource PrimaryActionBtn}" Click="OnAddUrlClick" HorizontalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Data="{StaticResource GeoPlus}" Stroke="#ffffff" StrokeThickness="2" Width="10" Height="10" Stretch="Uniform" Margin="0,0,8,0"/>
+                                        <TextBlock Text="New Download"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- 3. BOTTOM IDM DYNAMIC STREAM SEGMENT VISUALIZER -->
+                <Border Grid.Row="2" Background="#090e18" BorderBrush="#141c2c" BorderThickness="0,1,0,0" Padding="14,10"
+                        Visibility="{Binding IsSegmentPanelVisible, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="125"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Visualizer Header -->
+                        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                <Border Background="#101827" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Data="{StaticResource GeoStream}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="MULTI-STREAM ENGINE" Foreground="#cbd5e1" FontSize="10" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="Zero-Merge Direct Storage • Dynamic Middle-Split Balancing" Foreground="#64748b" FontSize="11" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Close / Toggle Button -->
+                            <Button Style="{StaticResource RowIconBtn}" Click="OnToggleSegmentPanelClick" DockPanel.Dock="Right" ToolTip="Toggle Segment Visualizer">
+                                <Path Data="{StaticResource GeoWinClose}" Stroke="#64748b" StrokeThickness="1.5" Width="9" Height="9" Stretch="Uniform"/>
+                            </Button>
+
+                            <TextBlock Text="{Binding SelectedDownload.FileName, StringFormat='Active Task: {0}'}" 
+                                       Foreground="#94a3b8" FontSize="11" FontWeight="Medium" DockPanel.Dock="Right" Margin="0,0,16,0" TextTrimming="CharacterEllipsis" MaxWidth="320" VerticalAlignment="Center"/>
+                        </DockPanel>
+
+                        <!-- Segments Cards Wrap -->
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding SelectedDownload.Segments}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#101827" BorderBrush="#1c283d" BorderThickness="1" 
+                                                CornerRadius="7" Margin="4" Padding="10,8" Width="235">
+                                            <StackPanel>
+                                                <DockPanel Margin="0,0,0,6">
+                                                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                        <Ellipse Width="5" Height="5" Fill="#38bdf8" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding SegmentId, StringFormat='Stream #{0}'}" 
+                                                                   Foreground="#f8fafc" FontWeight="SemiBold" FontSize="11"/>
+                                                    </StackPanel>
+                                                    <Border Background="#131d2e" CornerRadius="4" Padding="5,1" DockPanel.Dock="Right">
+                                                        <TextBlock Text="{Binding State}" Foreground="#94a3b8" FontSize="9" FontWeight="Medium"/>
+                                                    </Border>
+                                                </DockPanel>
+
+                                                <!-- Segment Mini Bar -->
+                                                <ProgressBar Value="{Binding DownloadedBytes, Mode=OneWay}" Maximum="{Binding TotalBytes, Mode=OneWay}" 
+                                                             Height="5" Foreground="#0284c7" Background="#080c14" BorderThickness="0" Margin="0,0,0,6">
+                                                    <ProgressBar.Clip>
+                                                        <RectangleGeometry Rect="0,0,213,5" RadiusX="2.5" RadiusY="2.5"/>
+                                                    </ProgressBar.Clip>
+                                                </ProgressBar>
+
+                                                <DockPanel>
+                                                    <TextBlock Text="{Binding SpeedBytesPerSecond, StringFormat='{}{0:F0} B/s'}" 
+                                                               Foreground="#94a3b8" FontSize="10" DockPanel.Dock="Left"/>
+                                                    <TextBlock Text="{Binding DownloadedBytes, StringFormat='{}{0} B'}" 
+                                                               Foreground="#64748b" FontSize="10" DockPanel.Dock="Right"/>
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- 4. BOTTOM MINIMALIST STATUS STRIP -->
+                <Border Grid.Row="3" Background="#06090f" BorderBrush="#141c2c" BorderThickness="0,1,0,0" Padding="12,4">
+                    <DockPanel LastChildFill="True">
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <Path Data="{StaticResource GeoCheckCircle}" Stroke="#34d399" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="WDM Ready" Foreground="#64748b" FontSize="10" VerticalAlignment="Center"/>
+                            <TextBlock Text=" • .NET 10 Clean-Room Architecture" Foreground="#475569" FontSize="10" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Toggle Segment View Button -->
+                        <Button DockPanel.Dock="Right" Style="{StaticResource RowIconBtn}" Click="OnToggleSegmentPanelClick" ToolTip="Toggle Stream Inspector">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Streams Visualizer " FontSize="10" Foreground="#64748b"/>
+                                <Path Data="{StaticResource GeoChevronDown}" Stroke="#64748b" StrokeThickness="1.5" Width="8" Height="8" Stretch="Uniform" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- 5. INLINE MODAL DIALOG: NEW DOWNLOAD -->
+            <Grid Background="#CC000000" Visibility="{Binding IsAddModalOpen, Converter={StaticResource BoolToVis}}">
+                <Border Background="#0e1624" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="12"
+                        Width="560" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" ShadowDepth="12" Opacity="0.7" Color="#000000"/>
+                    </Border.Effect>
+
+                    <StackPanel>
+                        <!-- Modal Title Bar -->
+                        <DockPanel Margin="0,0,0,18">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                <Image Source="Assets/app.png" Width="24" Height="24" Margin="0,0,10,0" 
+                                       RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
+                                <TextBlock Text="Add New Download" FontSize="16" FontWeight="SemiBold" Foreground="#f8fafc" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button Style="{StaticResource RowIconBtn}" Click="OnCancelModalClick" DockPanel.Dock="Right">
+                                <Path Data="{StaticResource GeoWinClose}" Stroke="#94a3b8" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform"/>
+                            </Button>
+                        </DockPanel>
+
+                        <!-- YouTube Detection Alert Badge -->
+                        <Border Background="#131d2e" BorderBrush="#223049" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,14"
+                                Visibility="{Binding IsYouTubeUrl, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Background="#1e293b" CornerRadius="5" Width="26" Height="20" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource GeoPlay}" Fill="#cbd5e1" Width="8" Height="8" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="YouTube Video Stream Detected" FontWeight="SemiBold" Foreground="#f8fafc" FontSize="11"/>
+                                    <TextBlock Text="WDM will resolve and mux highest-quality video and audio into an MP4 file." Foreground="#94a3b8" FontSize="10"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- URL Input -->
+                        <TextBlock Text="Download URL or Video Page Link:" Foreground="#94a3b8" FontSize="11" FontWeight="Medium" Margin="0,0,0,6"/>
+                        <Border Background="#090e18" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="7" Padding="12,9" Margin="0,0,0,14">
+                            <TextBox Text="{Binding NewDownloadUrl, UpdateSourceTrigger=PropertyChanged}" 
+                                     Background="Transparent" BorderThickness="0" Foreground="#f8fafc" FontSize="12"
+                                     CaretBrush="#cbd5e1"/>
+                        </Border>
+
+                        <!-- Save Destination Folder -->
+                        <TextBlock Text="Save To Directory:" Foreground="#94a3b8" FontSize="11" FontWeight="Medium" Margin="0,0,0,6"/>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="#090e18" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="7" Padding="12,8">
+                                <TextBox Text="{Binding NewDownloadDir, UpdateSourceTrigger=PropertyChanged}" 
+                                         Background="Transparent" BorderThickness="0" Foreground="#f8fafc" FontSize="12"
+                                         CaretBrush="#cbd5e1"/>
+                            </Border>
+                            <Button Grid.Column="1" Click="OnBrowseFolderClick" Style="{StaticResource ToolbarBtn}" Margin="8,0,0,0" Padding="12,7">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource GeoFolder}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Browse..."/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- Parallel Connections & Preset Chips -->
+                        <DockPanel Margin="0,0,0,8">
+                            <TextBlock Text="Parallel Connection Streams:" Foreground="#94a3b8" FontSize="11" FontWeight="Medium" DockPanel.Dock="Left"/>
+                            <Border Background="#131d2e" CornerRadius="6" Padding="8,2" DockPanel.Dock="Right">
+                                <TextBlock Text="{Binding NewDownloadConnections, StringFormat='{}{0} Streams'}" 
+                                           Foreground="#cbd5e1" FontWeight="SemiBold" FontSize="11"/>
+                            </Border>
+                        </DockPanel>
+
+                        <!-- Preset Chips -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Button Style="{StaticResource PresetChipBtn}" Content="4 Streams" Tag="4" Click="OnPresetStreamClick"/>
+                            <Button Style="{StaticResource PresetChipBtn}" Content="8 Streams (Standard)" Tag="8" Click="OnPresetStreamClick"/>
+                            <Button Style="{StaticResource PresetChipBtn}" Content="16 Streams (Turbo)" Tag="16" Click="OnPresetStreamClick"/>
+                            <Button Style="{StaticResource PresetChipBtn}" Content="32 Streams (Extreme)" Tag="32" Click="OnPresetStreamClick"/>
+                        </StackPanel>
+
+                        <Slider Minimum="1" Maximum="32" Value="{Binding NewDownloadConnections}" Margin="0,0,0,22"/>
+
+                        <!-- Action Buttons -->
+                        <DockPanel LastChildFill="False">
+                            <Button Style="{StaticResource ToolbarBtn}" Content="Cancel" Click="OnCancelModalClick" DockPanel.Dock="Left" Width="90" Padding="0,8"/>
+                            <Button Style="{StaticResource PrimaryActionBtn}" Click="OnConfirmModalClick" DockPanel.Dock="Right" Width="150" Padding="0,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource GeoDownload}" Stroke="#ffffff" StrokeThickness="1.5" Width="11" Height="11" Stretch="Uniform" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Start Download"/>
+                                </StackPanel>
+                            </Button>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 6. INLINE MODAL DIALOG: SETTINGS & SETUP OPTIONS -->
+            <Grid Background="#CC000000" Visibility="{Binding IsSettingsModalOpen, Converter={StaticResource BoolToVis}}">
+                <Border Background="#0e1624" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="12"
+                        Width="620" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" ShadowDepth="12" Opacity="0.7" Color="#000000"/>
+                    </Border.Effect>
+
+                    <StackPanel>
+                        <!-- Modal Title Bar -->
+                        <DockPanel Margin="0,0,0,18">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                <Path Data="{StaticResource GeoSettings}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="16" Height="16" Stretch="Uniform" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Preferences &amp; Engine Settings" FontSize="16" FontWeight="SemiBold" Foreground="#f8fafc" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button Style="{StaticResource RowIconBtn}" Click="OnCancelSettingsClick" DockPanel.Dock="Right">
+                                <Path Data="{StaticResource GeoWinClose}" Stroke="#94a3b8" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform"/>
+                            </Button>
+                        </DockPanel>
+
+                        <!-- Group 1: General & Storage -->
+                        <Border Background="#101827" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="STORAGE &amp; DOWNLOADS" Foreground="#64748b" FontSize="10" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="Default Save Directory:" Foreground="#94a3b8" FontSize="11" Margin="0,0,0,4"/>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Background="#090e18" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="6" Padding="10,6">
+                                        <TextBox Text="{Binding Settings.DefaultDownloadDirectory, UpdateSourceTrigger=PropertyChanged}" 
+                                                 Background="Transparent" BorderThickness="0" Foreground="#f8fafc" FontSize="11" CaretBrush="#cbd5e1"/>
+                                    </Border>
+                                    <Button Grid.Column="1" Click="OnBrowseSettingsFolderClick" Style="{StaticResource ToolbarBtn}" Margin="6,0,0,0" Padding="10,6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Path Data="{StaticResource GeoFolder}" Stroke="#cbd5e1" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform" Margin="0,0,5,0"/>
+                                            <TextBlock Text="Browse..."/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+
+                                <CheckBox Content="Automatically open completed files" IsChecked="{Binding Settings.AutoOpenFileOnComplete}" 
+                                          Foreground="#cbd5e1" FontSize="11" Margin="0,0,0,6"/>
+                                <CheckBox Content="Confirm before removing downloads from list" IsChecked="{Binding Settings.ConfirmBeforeDelete}" 
+                                          Foreground="#cbd5e1" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Group 2: Engine & Connections -->
+                        <Border Background="#101827" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="MULTI-CONNECTION ENGINE" Foreground="#64748b" FontSize="10" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                <DockPanel Margin="0,0,0,4">
+                                    <TextBlock Text="Default Parallel Streams Per Task:" Foreground="#94a3b8" FontSize="11" DockPanel.Dock="Left"/>
+                                    <TextBlock Text="{Binding Settings.DefaultConnections, StringFormat='{}{0} Streams'}" Foreground="#cbd5e1" FontWeight="SemiBold" FontSize="11" DockPanel.Dock="Right"/>
+                                </DockPanel>
+                                <Slider Minimum="1" Maximum="32" Value="{Binding Settings.DefaultConnections}" Margin="0,0,0,10"/>
+
+                                <DockPanel Margin="0,0,0,4">
+                                    <TextBlock Text="Maximum Concurrent Downloads:" Foreground="#94a3b8" FontSize="11" DockPanel.Dock="Left"/>
+                                    <TextBlock Text="{Binding Settings.MaxConcurrentDownloads, StringFormat='{}{0} Tasks'}" Foreground="#cbd5e1" FontWeight="SemiBold" FontSize="11" DockPanel.Dock="Right"/>
+                                </DockPanel>
+                                <Slider Minimum="1" Maximum="10" Value="{Binding Settings.MaxConcurrentDownloads}" Margin="0,0,0,10"/>
+
+                                <CheckBox Content="Enable Dynamic Middle-Split Load Balancing (IDM Parity)" IsChecked="{Binding Settings.EnableDynamicMiddleSplit}" 
+                                          Foreground="#cbd5e1" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Group 3: Browser Integration Status -->
+                        <Border Background="#101827" BorderBrush="#1c283d" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,0,0,18">
+                            <DockPanel LastChildFill="True">
+                                <Ellipse Width="6" Height="6" Fill="#34d399" Margin="0,0,8,0" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Browser Extension Integration: Active" Foreground="#f8fafc" FontSize="11" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Native Messaging Host registered: com.wdm.download (Chrome, Edge, Firefox)" Foreground="#64748b" FontSize="10"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Action Buttons -->
+                        <DockPanel LastChildFill="False">
+                            <Button Style="{StaticResource ToolbarBtn}" Content="Cancel" Click="OnCancelSettingsClick" DockPanel.Dock="Left" Width="90" Padding="0,8"/>
+                            <Button Style="{StaticResource PrimaryActionBtn}" Content="Save Preferences" Click="OnSaveSettingsClick" DockPanel.Dock="Right" Width="140" Padding="0,8"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

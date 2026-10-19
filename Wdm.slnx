@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Wdm.Cli/Wdm.Cli.csproj" />
+    <Project Path="src/Wdm.Core/Wdm.Core.csproj" />
+    <Project Path="src/Wdm.NativeHost/Wdm.NativeHost.csproj" />
+    <Project Path="src/Wdm.Ui/Wdm.Ui.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Wdm.Tests/Wdm.Tests.csproj" />
+  </Folder>
+</Solution>

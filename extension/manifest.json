@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "WDM Integration Module",
+  "version": "1.0.0",
+  "description": "Replicates IDM browser integration for WDM (Windows Download Manager). Intercepts downloads and provides video/audio grabber.",
+  "permissions": [
+    "nativeMessaging",
+    "contextMenus",
+    "downloads",
+    "webRequest",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "WDM Download Manager"
+  }
+}
