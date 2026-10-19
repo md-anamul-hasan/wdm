@@ -19,8 +19,20 @@ public class DownloadItemViewModel : INotifyPropertyChanged
 
     private double _speedRaw;
     private string _domain = string.Empty;
+    private string _lastTryDate = DateTime.Now.ToString("g");
+    private string _description = string.Empty;
 
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string LastTryDate
+    {
+        get => _lastTryDate;
+        set => SetField(ref _lastTryDate, value);
+    }
+    public string Description
+    {
+        get => _description;
+        set => SetField(ref _description, value);
+    }
     public string Url
     {
         get => _url;

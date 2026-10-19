@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using Microsoft.Win32;
 using Wdm.Ui.ViewModels;
 
@@ -12,49 +11,21 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        StateChanged += MainWindow_StateChanged;
     }
 
-    private void MainWindow_StateChanged(object? sender, EventArgs e)
+    private void ToolBar_Loaded(object sender, RoutedEventArgs e)
     {
-        if (MaximizeRestoreIcon != null && MaximizeRestoreBtn != null)
+        if (sender is ToolBar toolBar)
         {
-            if (WindowState == WindowState.Maximized)
+            if (toolBar.Template.FindName("OverflowGrid", toolBar) is FrameworkElement overflowGrid)
             {
-                MaximizeRestoreIcon.Data = (Geometry)FindResource("GeoWinRestore");
-                MaximizeRestoreBtn.ToolTip = "Restore";
+                overflowGrid.Visibility = Visibility.Collapsed;
             }
-            else
+            if (toolBar.Template.FindName("MainPanelBorder", toolBar) is FrameworkElement mainPanelBorder)
             {
-                MaximizeRestoreIcon.Data = (Geometry)FindResource("GeoWinMaximize");
-                MaximizeRestoreBtn.ToolTip = "Maximize";
+                mainPanelBorder.Margin = new Thickness(0);
             }
         }
-    }
-
-    private void OnTitleBarMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ChangedButton == MouseButton.Left)
-        {
-            if (e.ClickCount == 2)
-            {
-                OnMaximizeClick(sender, e);
-            }
-            else
-            {
-                DragMove();
-            }
-        }
-    }
-
-    private void OnMinimizeClick(object sender, RoutedEventArgs e)
-    {
-        WindowState = WindowState.Minimized;
-    }
-
-    private void OnMaximizeClick(object sender, RoutedEventArgs e)
-    {
-        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     }
 
     private void OnCloseClick(object sender, RoutedEventArgs e)
@@ -136,14 +107,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnPresetStreamClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && int.TryParse(btn.Tag?.ToString(), out int streams))
-        {
-            ViewModel.SetConnectionsPreset(streams);
-        }
-    }
-
     private void OnToggleSegmentPanelClick(object sender, RoutedEventArgs e)
     {
         ViewModel.ToggleSegmentPanel();
@@ -159,9 +122,19 @@ public partial class MainWindow : Window
         ViewModel.PauseSelected();
     }
 
+    private void OnStopAllClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.StopAll();
+    }
+
     private void OnDeleteClick(object sender, RoutedEventArgs e)
     {
         ViewModel.DeleteSelected();
+    }
+
+    private void OnDeleteCompletedClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.DeleteCompleted();
     }
 
     private void OnOpenFileLocationClick(object sender, RoutedEventArgs e)
@@ -169,55 +142,37 @@ public partial class MainWindow : Window
         ViewModel.OpenFileLocation(ViewModel.SelectedDownload);
     }
 
-    // Row-level actions
-    private void OnItemTogglePauseResume(object sender, RoutedEventArgs e)
+    private void OnOpenFileClick(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement fe && fe.DataContext is DownloadItemViewModel item)
-        {
-            if (item.IsActive)
-            {
-                ViewModel.PauseItem(item);
-            }
-            else
-            {
-                ViewModel.ResumeItem(item);
-            }
-        }
+        ViewModel.OpenFile(ViewModel.SelectedDownload);
     }
 
-    private void OnItemOpenFile(object sender, RoutedEventArgs e)
+    private void OnCopyUrlClick(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement fe && fe.DataContext is DownloadItemViewModel item)
-        {
-            ViewModel.OpenFile(item);
-        }
-    }
-
-    private void OnItemOpenFolder(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement fe && fe.DataContext is DownloadItemViewModel item)
-        {
-            ViewModel.OpenFileLocation(item);
-        }
-    }
-
-    private void OnItemDelete(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement fe && fe.DataContext is DownloadItemViewModel item)
-        {
-            ViewModel.DeleteItem(item);
-        }
-    }
-
-    private void OnItemCopyUrl(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement fe && fe.DataContext is DownloadItemViewModel item && !string.IsNullOrWhiteSpace(item.Url))
+        if (ViewModel.SelectedDownload != null && !string.IsNullOrWhiteSpace(ViewModel.SelectedDownload.Url))
         {
             try
             {
-                Clipboard.SetText(item.Url);
+                Clipboard.SetText(ViewModel.SelectedDownload.Url);
             }
             catch { }
         }
+    }
+
+    private void OnCategoriesTreeSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (e.NewValue is TreeViewItem item && item.Tag is string tag)
+        {
+            ViewModel.SelectedCategory = tag;
+        }
+    }
+
+    private void OnAboutClick(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show(
+            "Internet Download Manager (WDM Engine)\nVersion 6.43 Build 15\n\nHigh-speed multi-connection segmented download engine powered by .NET 10.",
+            "About Internet Download Manager",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 }

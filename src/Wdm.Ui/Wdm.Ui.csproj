@@ -10,12 +10,16 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\idm_app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
     <Resource Include="Assets\app.png" />
+    <Resource Include="Assets\idm_app.ico" />
+    <Resource Include="Assets\idm_app.png" />
+    <Resource Include="Assets\idm_toolbar\*.png" />
+    <Resource Include="Assets\idm_small\*.png" />
     <Content Include="Assets\logo.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

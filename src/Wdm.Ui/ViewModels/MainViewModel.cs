@@ -150,6 +150,8 @@ public class MainViewModel : INotifyPropertyChanged
     public int DownloadingCount => AllDownloads.Count(d => d.IsActive);
     public int CompletedCount => AllDownloads.Count(d => d.IsCompleted);
     public int PausedCount => AllDownloads.Count(d => d.IsPaused);
+    public int UnfinishedCount => AllDownloads.Count(d => !d.IsCompleted);
+    public int FinishedCount => AllDownloads.Count(d => d.IsCompleted);
 
     // Category Counts
     public int CompressedCount => AllDownloads.Count(d => MatchesCategory(d, "Compressed"));
@@ -303,6 +305,23 @@ public class MainViewModel : INotifyPropertyChanged
         DeleteItem(SelectedDownload);
     }
 
+    public void StopAll()
+    {
+        foreach (var item in AllDownloads.Where(d => d.IsActive).ToList())
+        {
+            PauseItem(item);
+        }
+    }
+
+    public void DeleteCompleted()
+    {
+        var completedList = AllDownloads.Where(d => d.IsCompleted).ToList();
+        foreach (var item in completedList)
+        {
+            DeleteItem(item);
+        }
+    }
+
     public void PauseItem(DownloadItemViewModel? item)
     {
         if (item?.Engine != null)
@@ -421,6 +440,8 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(DownloadingCount));
         OnPropertyChanged(nameof(CompletedCount));
         OnPropertyChanged(nameof(PausedCount));
+        OnPropertyChanged(nameof(UnfinishedCount));
+        OnPropertyChanged(nameof(FinishedCount));
         OnPropertyChanged(nameof(CompressedCount));
         OnPropertyChanged(nameof(DocumentsCount));
         OnPropertyChanged(nameof(MusicCount));
@@ -447,8 +468,8 @@ public class MainViewModel : INotifyPropertyChanged
     private static bool MatchesCategory(DownloadItemViewModel item, string category)
     {
         if (category == "All Downloads") return true;
-        if (category == "Downloading") return item.IsActive;
-        if (category == "Completed") return item.IsCompleted;
+        if (category == "Downloading" || category == "Unfinished") return !item.IsCompleted;
+        if (category == "Completed" || category == "Finished") return item.IsCompleted;
         if (category == "Paused") return item.IsPaused;
 
         var ext = Path.GetExtension(item.FileName).ToLowerInvariant();
