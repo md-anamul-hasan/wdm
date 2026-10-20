@@ -1,8 +1,12 @@
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
+using Wdm.Core.Ipc;
 using Wdm.Ui.ViewModels;
 
 namespace Wdm.Ui;
@@ -13,7 +17,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Theme initialization
+        // Theme initialization (title bar is tinted once the window handle exists)
         ViewModel.OnThemeChanged = ApplyTheme;
         ApplyTheme(ViewModel.IsDarkMode);
 
@@ -38,7 +42,7 @@ public partial class MainWindow : Window
 
         // Delete key to delete download
         InputBindings.Add(new KeyBinding(
-            new RelayCommand(_ => ViewModel.DeleteSelected()),
+            new RelayCommand(_ => OnDeleteKey()),
             Key.Delete, ModifierKeys.None));
 
         // Clipboard sniffer on window focus
@@ -49,54 +53,173 @@ public partial class MainWindow : Window
         DragOver += OnWindowDragOver;
         Drop += OnWindowDrop;
 
-        // Auto-handle download URL if passed via command line (e.g. from browser extension or NativeHost)
+        // Download passed on this process's own command line (/d url /p path /f name /n /a, or a bare URL)
         Loaded += (_, _) =>
         {
-            var args = Environment.GetCommandLineArgs();
-            for (int i = 1; i < args.Length; i++)
+            if ((Application.Current as App)?.StartupRequest is { } request)
             {
-                var arg = args[i].Trim('"', ' ');
-                if (arg.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                    arg.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                {
-                    ViewModel.OpenAddModal(arg);
-                    break;
-                }
+                ViewModel.HandleExternalRequest(request);
             }
+        };
+
+        Closing += (_, _) => ViewModel.Shutdown();
+
+        PreviewKeyDown += OnWindowPreviewKeyDown;
+        InputBindings.Add(new KeyBinding(new RelayCommand(_ => { SearchBox.Focus(); SearchBox.SelectAll(); }), Key.F, ModifierKeys.Control));
+
+        FocusAfterOpen(nameof(ViewModels.MainViewModel.IsAddModalOpen), () => AddUrlBox);
+        FocusAfterOpen(nameof(ViewModels.MainViewModel.IsBatchModalOpen), () => BatchBox);
+        FocusAfterOpen(nameof(ViewModels.MainViewModel.IsGrabberModalOpen), () => GrabberBox);
+    }
+
+    public void BringToFront()
+    {
+        if (!IsVisible) Show();
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+
+        // Topmost toggle is the reliable way to defeat foreground-lock without P/Invoke
+        Activate();
+        Topmost = true;
+        Topmost = false;
+        Focus();
+    }
+
+    private bool ConfirmDelete(int count)
+    {
+        if (!ViewModel.Settings.ConfirmBeforeDelete || count == 0) return true;
+
+        var what = count == 1 ? "this download" : $"these {count} downloads";
+        return MessageBox.Show(
+            $"Remove {what} from the list? Unfinished downloads also lose their partial file.",
+            "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+    }
+
+    /// <summary>The Delete key removes a download only when it is not being used to edit text or inside a dialog.</summary>
+    private void OnDeleteKey()
+    {
+        if (Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase or PasswordBox) return;
+        if (ViewModel.IsAddModalOpen || ViewModel.IsSettingsModalOpen || ViewModel.IsSchedulerModalOpen ||
+            ViewModel.IsGrabberModalOpen || ViewModel.IsPropertiesModalOpen || ViewModel.IsBatchModalOpen) return;
+
+        DeleteSelectedWithConfirm();
+    }
+
+    private void DeleteSelectedWithConfirm()
+    {
+        if (ViewModel.SelectedDownload != null && ConfirmDelete(1))
+        {
+            ViewModel.DeleteSelected();
+        }
+    }
+
+    private static readonly Dictionary<string, string> LightPalette = new()
+    {
+        ["ThemeWindowBg"] = "#F4F6FA", ["ThemeSidebarBg"] = "#EDF0F6", ["ThemeSurfaceBg"] = "#FFFFFF", ["ThemeSurfaceAltBg"] = "#F1F4F9",
+        ["ThemeInputBg"] = "#FFFFFF", ["ThemeHeaderBg"] = "#F8FAFC", ["ThemeCardBg"] = "#FFFFFF", ["ThemeBorder"] = "#E3E8F0",
+        ["ThemeBorderStrong"] = "#C5CEDB", ["ThemeTextPrimary"] = "#0F172A", ["ThemeTextSecondary"] = "#334155", ["ThemeTextMuted"] = "#6B7A90",
+        ["ThemeSubtleHover"] = "#E8EDF5", ["ThemeRowHover"] = "#F5F8FC", ["ThemeRowSelected"] = "#E6EEFF", ["ThemeRowSelectedText"] = "#0F172A",
+        ["ThemeAccent"] = "#2563EB", ["ThemeAccentHover"] = "#1D4FD8", ["ThemeAccentPressed"] = "#1A44BA", ["ThemeAccentSoft"] = "#E0EAFF",
+        ["ThemeOnAccent"] = "#FFFFFF", ["ThemeDanger"] = "#DC2626", ["ThemeDangerSoft"] = "#FEE2E2", ["ThemeSuccess"] = "#16A34A",
+        ["ThemeWarning"] = "#D97706", ["ThemeOverlay"] = "#99000000",
+    };
+
+    private static readonly Dictionary<string, string> DarkPalette = new()
+    {
+        ["ThemeWindowBg"] = "#0E1117", ["ThemeSidebarBg"] = "#12161D", ["ThemeSurfaceBg"] = "#161B22", ["ThemeSurfaceAltBg"] = "#1C222B",
+        ["ThemeInputBg"] = "#0F1319", ["ThemeHeaderBg"] = "#12171E", ["ThemeCardBg"] = "#1C222B", ["ThemeBorder"] = "#262D38",
+        ["ThemeBorderStrong"] = "#3A4452", ["ThemeTextPrimary"] = "#E6EAF0", ["ThemeTextSecondary"] = "#B4BECC", ["ThemeTextMuted"] = "#8091A6",
+        ["ThemeSubtleHover"] = "#222A35", ["ThemeRowHover"] = "#1A2029", ["ThemeRowSelected"] = "#1E2F52", ["ThemeRowSelectedText"] = "#E6EAF0",
+        ["ThemeAccent"] = "#4C8DFF", ["ThemeAccentHover"] = "#6BA0FF", ["ThemeAccentPressed"] = "#3B7AEB", ["ThemeAccentSoft"] = "#1B2B4B",
+        ["ThemeOnAccent"] = "#0B1220", ["ThemeDanger"] = "#F87171", ["ThemeDangerSoft"] = "#3B1818", ["ThemeSuccess"] = "#4ADE80",
+        ["ThemeWarning"] = "#FBBF24", ["ThemeOverlay"] = "#B3000000",
+    };
+
+    /// <summary>Swaps the palette at application level so popups (menus, tooltips) follow the theme too.</summary>
+    private void ApplyTheme(bool isDark)
+    {
+        var palette = isDark ? DarkPalette : LightPalette;
+        foreach (var (key, hex) in palette)
+        {
+            var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+            brush.Freeze();
+            Application.Current.Resources[key] = brush;
+        }
+
+        ApplyTitleBarTheme(isDark, palette["ThemeSurfaceBg"], palette["ThemeTextPrimary"]);
+    }
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+    /// <summary>Tints the native title bar to match the theme (Windows 11; harmlessly ignored on older builds).</summary>
+    private void ApplyTitleBarTheme(bool isDark, string captionHex, string textHex)
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero) return;
+
+        int dark = isDark ? 1 : 0;
+        DwmSetWindowAttribute(hwnd, 20, ref dark, sizeof(int)); // DWMWA_USE_IMMERSIVE_DARK_MODE
+
+        static int ToColorRef(string hex)
+        {
+            var c = (Color)ColorConverter.ConvertFromString(hex);
+            return c.R | (c.G << 8) | (c.B << 16);
+        }
+
+        int caption = ToColorRef(captionHex);
+        int text = ToColorRef(textHex);
+        DwmSetWindowAttribute(hwnd, 35, ref caption, sizeof(int)); // DWMWA_CAPTION_COLOR
+        DwmSetWindowAttribute(hwnd, 36, ref text, sizeof(int));    // DWMWA_TEXT_COLOR
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        ApplyTheme(ViewModel.IsDarkMode);
+    }
+
+    private void FocusAfterOpen(string flagName, Func<Control> target)
+    {
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != flagName) return;
+            bool open = (bool)typeof(ViewModels.MainViewModel).GetProperty(flagName)!.GetValue(ViewModel)!;
+            if (!open) return;
+
+            Dispatcher.BeginInvoke(() =>
+            {
+                var control = target();
+                control.Focus();
+                if (control is TextBox box) box.SelectAll();
+            }, System.Windows.Threading.DispatcherPriority.Input);
         };
     }
 
-    private void ApplyTheme(bool isDark)
+    /// <summary>Esc closes whichever dialog is open.</summary>
+    private void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (isDark)
+        if (e.Key != Key.Escape) return;
+
+        if (ViewModel.IsAddModalOpen) ViewModel.CloseAddModal();
+        else if (ViewModel.IsSettingsModalOpen) ViewModel.CloseSettingsModal();
+        else if (ViewModel.IsSchedulerModalOpen) ViewModel.CloseSchedulerModal();
+        else if (ViewModel.IsGrabberModalOpen) ViewModel.CloseGrabberModal();
+        else if (ViewModel.IsPropertiesModalOpen) ViewModel.ClosePropertiesModal();
+        else if (ViewModel.IsBatchModalOpen) ViewModel.CloseBatchModal();
+        else if (!string.IsNullOrEmpty(ViewModel.SearchText)) ViewModel.SearchText = string.Empty;
+        else return;
+
+        e.Handled = true;
+    }
+
+    private void OnMoreClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { ContextMenu: { } menu } button)
         {
-            Resources["ThemeWindowBg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0B0F19"));
-            Resources["ThemeSurfaceBg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#111827"));
-            Resources["ThemeSurfaceAltBg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
-            Resources["ThemeBorder"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#374151"));
-            Resources["ThemeTextPrimary"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F9FAFB"));
-            Resources["ThemeTextSecondary"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#D1D5DB"));
-            Resources["ThemeTextMuted"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9CA3AF"));
-            Resources["ThemeSubtleHover"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
-            Resources["ThemeHeaderBg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#111827"));
-            Resources["ThemeRowSelected"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1E3A8A"));
-            Resources["ThemeRowSelectedText"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#93C5FD"));
-            Resources["ThemeCardBg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F2937"));
-        }
-        else
-        {
-            Resources["ThemeWindowBg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F8FAFC"));
-            Resources["ThemeSurfaceBg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFFFFF"));
-            Resources["ThemeSurfaceAltBg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F1F5F9"));
-            Resources["ThemeBorder"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0"));
-            Resources["ThemeTextPrimary"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F172A"));
-            Resources["ThemeTextSecondary"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
-            Resources["ThemeTextMuted"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B"));
-            Resources["ThemeSubtleHover"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F1F5F9"));
-            Resources["ThemeHeaderBg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F8FAFC"));
-            Resources["ThemeRowSelected"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E0F2FE"));
-            Resources["ThemeRowSelectedText"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0369A1"));
-            Resources["ThemeCardBg"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFFFFF"));
+            menu.PlacementTarget = button;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.DataContext = ViewModel;
+            menu.IsOpen = true;
         }
     }
 
@@ -125,26 +248,10 @@ public partial class MainWindow : Window
                 {
                     ViewModel.OpenBatchModal(trimmed);
                 }
-                else if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                         trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                else if (ExternalDownloadRequest.IsHttpUrl(trimmed))
                 {
                     ViewModel.OpenAddModal(trimmed);
                 }
-            }
-        }
-    }
-
-    private void ToolBar_Loaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is ToolBar toolBar)
-        {
-            if (toolBar.Template.FindName("OverflowGrid", toolBar) is FrameworkElement overflowGrid)
-            {
-                overflowGrid.Visibility = Visibility.Collapsed;
-            }
-            if (toolBar.Template.FindName("MainPanelBorder", toolBar) is FrameworkElement mainPanelBorder)
-            {
-                mainPanelBorder.Margin = new Thickness(0);
             }
         }
     }
@@ -162,8 +269,7 @@ public partial class MainWindow : Window
             if (Clipboard.ContainsText())
             {
                 var txt = Clipboard.GetText().Trim();
-                if (txt.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                    txt.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                if (ExternalDownloadRequest.IsHttpUrl(txt))
                 {
                     clipText = txt;
                 }
@@ -209,8 +315,7 @@ public partial class MainWindow : Window
 
         if (dialog.ShowDialog() == true)
         {
-            ViewModel.Settings.DefaultDownloadDirectory = dialog.FolderName;
-            ViewModel.NewDownloadDir = dialog.FolderName;
+            ViewModel.SetDefaultDownloadDirectory(dialog.FolderName);
         }
     }
 
@@ -250,12 +355,15 @@ public partial class MainWindow : Window
 
     private void OnDeleteClick(object sender, RoutedEventArgs e)
     {
-        ViewModel.DeleteSelected();
+        DeleteSelectedWithConfirm();
     }
 
     private void OnDeleteCompletedClick(object sender, RoutedEventArgs e)
     {
-        ViewModel.DeleteCompleted();
+        if (ConfirmDelete(ViewModel.CompletedCount))
+        {
+            ViewModel.DeleteCompleted();
+        }
     }
 
     private void OnOpenFileLocationClick(object sender, RoutedEventArgs e)
@@ -277,14 +385,6 @@ public partial class MainWindow : Window
                 Clipboard.SetText(ViewModel.SelectedDownload.Url);
             }
             catch { }
-        }
-    }
-
-    private void OnCategoriesTreeSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-    {
-        if (e.NewValue is TreeViewItem item && item.Tag is string tag)
-        {
-            ViewModel.SelectedCategory = tag;
         }
     }
 
@@ -437,15 +537,6 @@ public partial class MainWindow : Window
         ViewModel.IsDarkMode = !ViewModel.IsDarkMode;
     }
 
-    // Quick Filter Chips & Search Handlers
-    private void OnFilterTagClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && btn.Tag is string tag)
-        {
-            ViewModel.ActiveFilterTag = tag;
-        }
-    }
-
     private void OnClearSearchClick(object sender, RoutedEventArgs e)
     {
         ViewModel.SearchText = string.Empty;
@@ -453,8 +544,9 @@ public partial class MainWindow : Window
 
     private void OnAboutClick(object sender, RoutedEventArgs e)
     {
+        var version = typeof(MainWindow).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "1.0.0";
         MessageBox.Show(
-            "WDM — Windows Download Manager\nVersion 1.0\n\nHigh-speed multi-connection segmented download manager.\nDynamic middle-split engine with zero-merge direct file writes.\nBuilt with .NET 10 and WPF.",
+            $"WDM — Windows Download Manager\nVersion {version}\n\nHigh-speed multi-connection segmented download manager.\nDynamic middle-split engine with zero-merge direct file writes.\nBuilt with .NET 10 and WPF.",
             "About WDM",
             MessageBoxButton.OK,
             MessageBoxImage.Information);

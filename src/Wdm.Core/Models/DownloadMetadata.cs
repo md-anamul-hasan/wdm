@@ -16,4 +16,5 @@ public class DownloadMetadata
     public List<DownloadSegment> Segments { get; set; } = new();
     public DownloadStatus Status { get; set; } = DownloadStatus.Queued;
     public string? ErrorMessage { get; set; }
+    public DownloadRequestOptions? Options { get; set; }
 }

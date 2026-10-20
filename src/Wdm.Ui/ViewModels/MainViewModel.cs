@@ -2,9 +2,12 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Threading;
 using Wdm.Core.Engine;
+using Wdm.Core.Ipc;
 using Wdm.Core.Models;
 
 namespace Wdm.Ui.ViewModels;
@@ -28,8 +31,19 @@ public class MainViewModel : INotifyPropertyChanged
     private string _newDownloadDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
     private int _newDownloadConnections = 8;
 
-    // Concurrency semaphore to enforce MaxConcurrentDownloads
+    // Concurrency semaphore to enforce MaxConcurrentDownloads. Replaced (never disposed) when the limit changes,
+    // because running and queued downloads still hold the instance they started with.
     private SemaphoreSlim? _concurrencySemaphore;
+    private int _concurrencyLimit;
+
+    // One client and one limiter serve every download, so "total speed" really is total
+    private readonly HttpClient _httpClient = HttpRequestHelper.CreateClient();
+    private readonly SpeedLimiter _speedLimiter = new();
+    private AppSettings? _settingsSnapshot;
+
+    private readonly DownloadStore _store = new();
+    private DispatcherTimer? _saveTimer;
+    private bool _shutdownPending;
 
     public ObservableCollection<DownloadItemViewModel> AllDownloads { get; } = new();
     public ObservableCollection<DownloadItemViewModel> FilteredDownloads { get; } = new();
@@ -61,8 +75,29 @@ public class MainViewModel : INotifyPropertyChanged
     public DownloadItemViewModel? SelectedDownload
     {
         get => _selectedDownload;
-        set => SetField(ref _selectedDownload, value);
+        set
+        {
+            if (SetField(ref _selectedDownload, value))
+            {
+                NotifySelectionState();
+            }
+        }
     }
+
+    public bool HasSelection => SelectedDownload != null;
+    public bool CanResumeSelected => SelectedDownload is { IsCompleted: false, IsRunning: false };
+    public bool CanPauseSelected => SelectedDownload is { IsCompleted: false } s && (s.IsRunning || s.IsQueued);
+
+    private void NotifySelectionState()
+    {
+        OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(CanResumeSelected));
+        OnPropertyChanged(nameof(CanPauseSelected));
+    }
+
+    public string WindowTitle => ActiveDownloadsCount > 0 ? $"{TotalSpeedFormatted} - WDM" : "WDM - Windows Download Manager";
+
+    public bool IsLibraryEmpty => AllDownloads.Count == 0;
 
     public string TotalSpeedFormatted
     {
@@ -89,7 +124,9 @@ public class MainViewModel : INotifyPropertyChanged
         {
             if (SetField(ref _isSpeedLimiterEnabled, value))
             {
+                Settings.IsSpeedLimiterEnabled = value;
                 UpdateSpeedLimits();
+                PersistOutsideSettingsDialog();
             }
         }
     }
@@ -99,9 +136,11 @@ public class MainViewModel : INotifyPropertyChanged
         get => _speedLimitKb;
         set
         {
-            if (SetField(ref _speedLimitKb, value))
+            if (SetField(ref _speedLimitKb, Math.Max(1, value)))
             {
+                Settings.DefaultSpeedLimitKb = _speedLimitKb;
                 UpdateSpeedLimits();
+                PersistOutsideSettingsDialog();
             }
         }
     }
@@ -121,11 +160,17 @@ public class MainViewModel : INotifyPropertyChanged
             if (SetField(ref _newDownloadUrl, value))
             {
                 OnPropertyChanged(nameof(IsYouTubeUrl));
+                OnPropertyChanged(nameof(IsNewDownloadUrlValid));
+                OnPropertyChanged(nameof(ShowUrlError));
             }
         }
     }
 
     public bool IsYouTubeUrl => MediaResolver.IsYouTubeUrl(NewDownloadUrl);
+
+    public bool ShowUrlError => !string.IsNullOrWhiteSpace(NewDownloadUrl) && !IsNewDownloadUrlValid;
+
+    public bool IsNewDownloadUrlValid => ExternalDownloadRequest.IsHttpUrl(NewDownloadUrl.Trim());
 
     public AppSettings Settings { get; } = AppSettings.Load();
     private bool _isSettingsModalOpen;
@@ -263,20 +308,26 @@ public class MainViewModel : INotifyPropertyChanged
             if (SetField(ref _batchUrlsText, value))
             {
                 OnPropertyChanged(nameof(BatchUrlCount));
+                OnPropertyChanged(nameof(HasBatchUrls));
             }
         }
     }
 
-    public int BatchUrlCount
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(_batchUrlsText)) return 0;
-            return _batchUrlsText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                .Count(l => l.Trim().StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                            l.Trim().StartsWith("https://", StringComparison.OrdinalIgnoreCase));
-        }
-    }
+    public bool HasBatchUrls => BatchUrlCount > 0;
+
+    public int BatchUrlCount => ParseUrlLines(_batchUrlsText).Count;
+
+    /// <summary>Referer/cookies that come with URLs handed over by the browser (null for pasted lists).</summary>
+    private DownloadRequestOptions? _batchOptions;
+
+    private static List<string> ParseUrlLines(string? text) =>
+        string.IsNullOrWhiteSpace(text)
+            ? new List<string>()
+            : text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.Trim())
+                .Where(ExternalDownloadRequest.IsHttpUrl)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
     // Clipboard Sniffer Notification Banner
     private bool _isClipboardBannerVisible;
@@ -356,7 +407,7 @@ public class MainViewModel : INotifyPropertyChanged
     public int DocumentsCount => AllDownloads.Count(d => MatchesCategory(d, "Documents"));
     public int MusicCount => AllDownloads.Count(d => MatchesCategory(d, "Music"));
     public int ProgramsCount => AllDownloads.Count(d => MatchesCategory(d, "Programs"));
-    public int VideoCount => AllDownloads.Count(d => MatchesCategory(d, "Videos"));
+    public int VideoCount => AllDownloads.Count(d => MatchesCategory(d, "Video"));
 
     public bool HasNoDownloads => FilteredDownloads.Count == 0;
 
@@ -373,23 +424,84 @@ public class MainViewModel : INotifyPropertyChanged
         _schedulerStopTime = Settings.SchedulerStopTime;
         _schedulerShutdownOnComplete = Settings.SchedulerShutdownOnComplete;
 
+        UpdateSpeedLimits();
+        UpdateSpeedLimits();
+        UpdateSpeedLimits();
         RebuildSemaphore();
+
+        foreach (var record in _store.Load())
+        {
+            AllDownloads.Add(DownloadItemViewModel.FromRecord(record));
+        }
         ApplyCategoryFilter();
+        UpdateCounts();
 
         // Start scheduler heartbeat timer
         StartSchedulerHeartbeat();
     }
 
-    private void RebuildSemaphore()
+    // --- Persistence ---
+    private void ScheduleSave()
     {
-        _concurrencySemaphore?.Dispose();
-        _concurrencySemaphore = new SemaphoreSlim(
-            Math.Max(1, Settings.MaxConcurrentDownloads),
-            Math.Max(1, Settings.MaxConcurrentDownloads));
+        Application.Current?.Dispatcher.Invoke(() =>
+        {
+            _saveTimer ??= new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(1) };
+            _saveTimer.Tick -= OnSaveTimerTick;
+            _saveTimer.Tick += OnSaveTimerTick;
+            _saveTimer.Stop();
+            _saveTimer.Start();
+        });
     }
 
-    public void OpenAddModal(string? initialUrl = null)
+    private void OnSaveTimerTick(object? sender, EventArgs e)
     {
+        _saveTimer?.Stop();
+        SaveNow();
+    }
+
+    public void SaveNow() => _store.Save(AllDownloads.Select(d => d.ToRecord()).ToList());
+
+    /// <summary>Pauses every running download and flushes the list to disk. Call on application exit.</summary>
+    public void Shutdown()
+    {
+        var running = AllDownloads.Where(d => d.IsRunning).ToList();
+        foreach (var item in running)
+        {
+            item.RunCts?.Cancel();
+        }
+
+        try { Task.WaitAll(running.Select(d => d.RunTask!).ToArray(), TimeSpan.FromSeconds(3)); }
+        catch (AggregateException) { }
+
+        foreach (var item in running.Where(d => !d.IsCompleted && !d.IsError))
+        {
+            item.Status = "Paused";
+        }
+
+        SaveNow();
+    }
+
+    private void RebuildSemaphore()
+    {
+        int limit = Math.Max(1, Settings.MaxConcurrentDownloads);
+        if (_concurrencySemaphore != null && limit == _concurrencyLimit) return;
+
+        _concurrencyLimit = limit;
+        _concurrencySemaphore = new SemaphoreSlim(limit, limit);
+    }
+
+    /// <summary>Quick toggles (toolbar, menu) save at once; inside the settings dialog Save/Cancel decides.</summary>
+    private void PersistOutsideSettingsDialog()
+    {
+        if (!IsSettingsModalOpen) Settings.Save();
+    }
+
+    /// <summary>Marshals an engine/worker-thread update onto the UI thread without blocking the caller.</summary>
+    private static void UiPost(Action action) => Application.Current?.Dispatcher.BeginInvoke(action);
+
+    public void OpenAddModal(string? initialUrl = null, bool keepPending = false)
+    {
+        if (!keepPending) PendingOptions = null;
         NewDownloadUrl = initialUrl ?? string.Empty;
         IsAddModalOpen = true;
     }
@@ -398,25 +510,59 @@ public class MainViewModel : INotifyPropertyChanged
     {
         IsAddModalOpen = false;
         NewDownloadUrl = string.Empty;
+        PendingOptions = null;
     }
 
     public void OpenSettingsModal()
     {
+        _settingsSnapshot = Settings.Clone();
         IsSettingsModalOpen = true;
     }
 
+    /// <summary>Cancel: discards every edit made since the dialog was opened.</summary>
     public void CloseSettingsModal()
     {
+        if (_settingsSnapshot != null)
+        {
+            Settings.CopyFrom(_settingsSnapshot);
+            _settingsSnapshot = null;
+            SyncFromSettings();
+        }
+
         IsSettingsModalOpen = false;
     }
 
     public void SaveSettings()
     {
+        Settings.Normalize();
         Settings.Save();
-        NewDownloadDir = Settings.DefaultDownloadDirectory;
-        NewDownloadConnections = Settings.DefaultConnections;
+        _settingsSnapshot = null;
+        SyncFromSettings();
         RebuildSemaphore();
         IsSettingsModalOpen = false;
+    }
+
+    public void SetDefaultDownloadDirectory(string folder)
+    {
+        Settings.DefaultDownloadDirectory = folder;
+        NewDownloadDir = folder;
+        OnPropertyChanged(nameof(Settings));
+    }
+
+    /// <summary>Refreshes everything that mirrors <see cref="Settings"/> after it changed behind the bindings' back.</summary>
+    private void SyncFromSettings()
+    {
+        NewDownloadDir = Settings.DefaultDownloadDirectory;
+        NewDownloadConnections = Settings.DefaultConnections;
+
+        _isSpeedLimiterEnabled = Settings.IsSpeedLimiterEnabled;
+        _speedLimitKb = Settings.DefaultSpeedLimitKb;
+        OnPropertyChanged(nameof(IsSpeedLimiterEnabled));
+        OnPropertyChanged(nameof(SpeedLimitKb));
+        UpdateSpeedLimits();
+
+        OnPropertyChanged(nameof(Settings));
+        OnPropertyChanged(nameof(FreeDiskSpaceFormatted));
     }
 
     public void SetConnectionsPreset(int streams)
@@ -432,22 +578,34 @@ public class MainViewModel : INotifyPropertyChanged
     public void ConfirmAddDownload()
     {
         string url = NewDownloadUrl.Trim();
-        if (string.IsNullOrWhiteSpace(url)) return;
+        if (!ExternalDownloadRequest.IsHttpUrl(url)) return;
 
         int connections = Math.Clamp(NewDownloadConnections, 1, 32);
         string? targetDir = string.IsNullOrWhiteSpace(NewDownloadDir) ? null : NewDownloadDir.Trim();
 
-        AddDownload(url, targetDir, connections);
+        var options = PendingOptions;
+        AddDownload(url, targetDir ?? Settings.DefaultDownloadDirectory, connections, options);
         CloseAddModal();
     }
 
-    public void AddDownload(string url, string? destinationDir = null, int connections = 8)
+    public void AddDownload(string url, string? destinationDir = null, int connections = 8,
+        DownloadRequestOptions? options = null, bool queueOnly = false)
     {
+        // Same URL already in the list: reuse it instead of creating a duplicate row
+        var existing = AllDownloads.FirstOrDefault(d => d.Url.Equals(url, StringComparison.OrdinalIgnoreCase) && !d.IsCompleted);
+        if (existing != null)
+        {
+            SelectedDownload = existing;
+            if (!queueOnly && !existing.IsRunning) ResumeItem(existing);
+            return;
+        }
+
         var item = new DownloadItemViewModel
         {
             Url = url,
-            FileName = GetInitialName(url),
-            Status = "Connecting...",
+            FileName = options?.FileName ?? GetInitialName(url),
+            Status = "Queued",
+            Options = options,
             ProgressPercentage = 0
         };
 
@@ -455,107 +613,221 @@ public class MainViewModel : INotifyPropertyChanged
         UpdateCounts();
         ApplyCategoryFilter();
         SelectedDownload = item;
+        ScheduleSave();
 
-        StartDownloadTask(item, url, destinationDir, connections);
+        if (!queueOnly)
+        {
+            StartDownloadTask(item, destinationDir, connections);
+        }
+        else if (!string.IsNullOrWhiteSpace(destinationDir))
+        {
+            item.TargetFilePath = Path.Combine(destinationDir, item.FileName);
+        }
     }
+
+    /// <summary>Entry point for downloads handed over by the browser extension, command line or another instance.</summary>
+    public void HandleExternalRequest(ExternalDownloadRequest request)
+    {
+        if (request.IsEmpty) return;
+
+        var options = request.ToOptions();
+        var dir = request.DestinationDirectory;
+
+        if (request.Urls.Count > 1)
+        {
+            if (!request.Silent && !request.QueueOnly && Settings.ShowStartDownloadDialog)
+            {
+                if (!string.IsNullOrWhiteSpace(dir)) NewDownloadDir = dir;
+                OpenBatchModal(string.Join(Environment.NewLine, request.Urls), options);
+                return;
+            }
+
+            foreach (var url in request.Urls)
+            {
+                AddDownload(url, dir ?? Settings.DefaultDownloadDirectory, Settings.DefaultConnections,
+                    CloneSharedOptions(options), request.QueueOnly);
+            }
+            return;
+        }
+
+        var single = request.Urls[0];
+        if (request.Silent || request.QueueOnly || !Settings.ShowStartDownloadDialog)
+        {
+            AddDownload(single, dir ?? Settings.DefaultDownloadDirectory, Settings.DefaultConnections, options, request.QueueOnly);
+            return;
+        }
+
+        PendingOptions = options;
+        if (!string.IsNullOrWhiteSpace(dir)) NewDownloadDir = dir;
+        OpenAddModal(single, keepPending: true);
+    }
+
+    /// <summary>Copy of the browser context that is safe to share by many URLs (no per-file name).</summary>
+    private static DownloadRequestOptions CloneSharedOptions(DownloadRequestOptions? source) => new()
+    {
+        Referer = source?.Referer,
+        Cookies = source?.Cookies,
+        CookieHost = source?.CookieHost,
+        UserAgent = source?.UserAgent
+    };
+
+    /// <summary>Referer/cookies captured for the URL currently shown in the "add download" dialog.</summary>
+    public DownloadRequestOptions? PendingOptions { get; private set; }
 
     /// <summary>
     /// Resumes a paused/errored download by reusing its existing slot in AllDownloads.
     /// </summary>
     public void ResumeItem(DownloadItemViewModel? item)
     {
-        if (item == null) return;
-        if (!item.IsPaused && !item.Status.StartsWith("Error")) return;
+        if (item == null || item.IsRunning) return;
+        if (item.IsCompleted) return;
 
-        string url = item.Url;
         string? dir = string.IsNullOrWhiteSpace(item.TargetFilePath)
-            ? null
+            ? Settings.DefaultDownloadDirectory
             : Path.GetDirectoryName(item.TargetFilePath);
 
-        // Reset UI state without inserting a new row
-        item.Status = "Connecting...";
+        item.Status = "Queued";
         item.SpeedRaw = 0;
         item.SpeedFormatted = "0 B/s";
         item.TimeLeftFormatted = "--:--";
-        item.Engine = null;
 
         UpdateCounts();
         ApplyCategoryFilter();
-
-        StartDownloadTask(item, url, dir, Settings.DefaultConnections);
+        StartDownloadTask(item, dir, Settings.DefaultConnections);
     }
 
-    private void StartDownloadTask(DownloadItemViewModel item, string url, string? destinationDir, int connections)
+    private void StartDownloadTask(DownloadItemViewModel item, string? destinationDir, int connections)
     {
         var semaphore = _concurrencySemaphore;
+        var cts = new CancellationTokenSource();
+        item.RunCts = cts;
+        string url = item.Url;
 
-        Task.Run(async () =>
+        item.RunTask = Task.Run(async () =>
         {
-            // Wait for a concurrency slot
-            if (semaphore != null)
-            {
-                await semaphore.WaitAsync();
-            }
-
-            var engine = new DownloadEngine(maxBytesPerSecond: IsSpeedLimiterEnabled ? (long)SpeedLimitKb * 1024 : 0);
-
-            Application.Current?.Dispatcher.Invoke(() => { item.Engine = engine; });
-
-            engine.ProgressUpdated += progress =>
-            {
-                Application.Current?.Dispatcher.Invoke(() =>
-                {
-                    item.ProgressPercentage = progress.Percentage;
-                    item.SpeedFormatted = progress.FormattedSpeed;
-                    item.SpeedRaw = progress.SpeedBytesPerSecond;
-                    item.TimeLeftFormatted = progress.EstimatedTimeRemaining.HasValue
-                        ? $"{progress.EstimatedTimeRemaining.Value:mm\\:ss}"
-                        : "--:--";
-                    item.SizeFormatted = progress.FormattedDownloaded;
-                    item.Status = progress.Status.ToString();
-                    item.Segments = progress.Segments.ToList();
-                    UpdateAggregateSpeed();
-                });
-            };
-
-            engine.StatusChanged += status =>
-            {
-                Application.Current?.Dispatcher.Invoke(() =>
-                {
-                    item.Status = status.ToString();
-                    if (engine.Metadata != null)
-                    {
-                        item.FileName = engine.Metadata.FileName;
-                        item.TargetFilePath = engine.Metadata.TargetFilePath;
-                        UpdateCounts();
-                    }
-                    UpdateAggregateSpeed();
-                });
-            };
+            bool slotHeld = false;
+            DownloadEngine? engine = null;
 
             try
             {
-                await engine.StartAsync(url, destinationDir, connectionCount: connections);
+                // Wait for a concurrency slot (still "Queued", and cancellable)
+                if (semaphore != null)
+                {
+                    await semaphore.WaitAsync(cts.Token);
+                    slotHeld = true;
+                }
+
+                engine = new DownloadEngine(_httpClient, speedLimiter: _speedLimiter)
+                {
+                    EnableDynamicSplit = Settings.EnableDynamicMiddleSplit,
+                    NetworkTimeoutSeconds = Settings.NetworkTimeoutSeconds
+                };
+
+                var options = item.Options ?? new DownloadRequestOptions();
+                options.UserAgent ??= Settings.UserAgent;
+                item.Options = options;
+
+                var startedEngine = engine;
+                UiPost(() =>
+                {
+                    item.Engine = startedEngine;
+                    item.LastTryDate = DateTime.Now.ToString("g");
+                });
+
+                engine.ProgressUpdated += progress =>
+                {
+                    UiPost(() =>
+                    {
+                        // A report queued just before Pause must not flip the row back to "Downloading"
+                        if (cts.IsCancellationRequested) return;
+
+                        item.ProgressPercentage = progress.Percentage;
+                        item.TotalBytes = progress.TotalBytes;
+                        item.SpeedFormatted = progress.FormattedSpeed;
+                        item.SpeedRaw = progress.SpeedBytesPerSecond;
+                        item.TimeLeftFormatted = progress.EstimatedTimeRemaining.HasValue
+                            ? $"{progress.EstimatedTimeRemaining.Value:hh\\:mm\\:ss}"
+                            : "--:--";
+                        item.SizeFormatted = progress.FormattedDownloaded;
+                        item.Status = progress.Status.ToString();
+                        item.Segments = progress.Segments.ToList();
+                        UpdateAggregateSpeed();
+                    });
+                };
+
+                engine.StatusChanged += status =>
+                {
+                    UiPost(() =>
+                    {
+                        item.Status = status.ToString();
+                        var meta = startedEngine.Metadata;
+                        if (meta != null)
+                        {
+                            if (!string.IsNullOrEmpty(meta.FileName)) item.FileName = meta.FileName;
+                            if (!string.IsNullOrEmpty(meta.TargetFilePath)) item.TargetFilePath = meta.TargetFilePath;
+                            if (meta.TotalBytes > 0) item.TotalBytes = meta.TotalBytes;
+                        }
+                        OnItemStatusChanged(item);
+                    });
+                };
+
+                await engine.StartAsync(url, destinationDir, connectionCount: connections, cts.Token, options);
             }
             catch (OperationCanceledException)
             {
-                // Pause is normal — status already set by engine
+                // Pause is normal; ensure the row reflects it even if cancelled before the engine started
+                UiPost(() =>
+                {
+                    if (!item.IsCompleted && !item.IsError) item.Status = "Paused";
+                    OnItemStatusChanged(item);
+                });
             }
             catch (Exception ex)
             {
-                Application.Current?.Dispatcher.Invoke(() =>
+                UiPost(() =>
                 {
                     item.Status = "Error: " + ex.Message;
-                    UpdateAggregateSpeed();
+                    item.LastFailureAt = DateTime.Now;
+                    item.RetryCount++;
+                    OnItemStatusChanged(item);
                 });
             }
             finally
             {
-                semaphore?.Release();
-                await engine.DisposeAsync();
+                if (slotHeld) semaphore?.Release();
+                if (engine != null) await engine.DisposeAsync();
+                UiPost(() =>
+                {
+                    item.Engine = null;
+                    item.SpeedRaw = 0;
+                    if (!item.IsCompleted) item.SpeedFormatted = "0 B/s";
+                    UpdateAggregateSpeed();
+                });
             }
         });
     }
+
+    private void OnItemStatusChanged(DownloadItemViewModel item)
+    {
+        if (item.IsCompleted)
+        {
+            item.ProgressPercentage = 100;
+            item.RetryCount = 0;
+            item.TimeLeftFormatted = "--:--";
+            if (Settings.AutoOpenFileOnComplete && _openedOnComplete.Add(item.Id))
+            {
+                OpenFile(item);
+            }
+        }
+
+        UpdateCounts();
+        ApplyCategoryFilter();
+        UpdateAggregateSpeed();
+        ScheduleSave();
+        CheckQueueFinished();
+    }
+
+    private readonly HashSet<string> _openedOnComplete = new();
 
     public void PauseSelected()
     {
@@ -574,7 +846,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     public void StopAll()
     {
-        foreach (var item in AllDownloads.Where(d => d.IsActive).ToList())
+        foreach (var item in AllDownloads.Where(d => d.IsRunning).ToList())
         {
             PauseItem(item);
         }
@@ -593,9 +865,8 @@ public class MainViewModel : INotifyPropertyChanged
     public void StartQueue()
     {
         IsQueueActive = true;
-        // Resume all queued or paused downloads
-        var queuedItems = AllDownloads.Where(d => d.IsPaused || d.Status == "Queued" || d.Status.StartsWith("Error")).ToList();
-        foreach (var item in queuedItems)
+        _shutdownPending = false;
+        foreach (var item in AllDownloads.Where(d => !d.IsCompleted && !d.IsRunning).Reverse().ToList())
         {
             ResumeItem(item);
         }
@@ -624,6 +895,10 @@ public class MainViewModel : INotifyPropertyChanged
 
     public void SaveSchedulerSettings()
     {
+        // Free-text times are normalised to HH:mm; anything that is not a time of day keeps the previous value
+        SchedulerStartTime = AppSettings.NormalizeTime(SchedulerStartTime, Settings.SchedulerStartTime);
+        SchedulerStopTime = AppSettings.NormalizeTime(SchedulerStopTime, Settings.SchedulerStopTime);
+
         Settings.SchedulerEnabled = SchedulerEnabled;
         Settings.SchedulerStartTime = SchedulerStartTime;
         Settings.SchedulerStopTime = SchedulerStopTime;
@@ -634,29 +909,67 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void StartSchedulerHeartbeat()
     {
-        Task.Run(async () =>
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
+        timer.Tick += (_, _) => OnSchedulerTick();
+        timer.Start();
+    }
+
+    private void OnSchedulerTick()
+    {
+        if (Settings.SchedulerEnabled)
         {
-            var timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
-            while (await timer.WaitForNextTickAsync())
+            var now = DateTime.Now.ToString("HH:mm");
+            if (now == Settings.SchedulerStartTime && !IsQueueActive)
             {
-                if (!Settings.SchedulerEnabled) continue;
-
-                var nowStr = DateTime.Now.ToString("HH:mm");
-                if (nowStr == Settings.SchedulerStartTime && !IsQueueActive)
-                {
-                    Application.Current?.Dispatcher.Invoke(StartQueue);
-                }
-                else if (nowStr == Settings.SchedulerStopTime && IsQueueActive && Settings.SchedulerStopQueueAtEndTime)
-                {
-                    Application.Current?.Dispatcher.Invoke(StopQueue);
-                }
-
-                if (Settings.SchedulerShutdownOnComplete && AllDownloads.Count > 0 && AllDownloads.All(d => d.IsCompleted))
-                {
-                    // All completed, trigger shutdown notice
-                }
+                StartQueue();
             }
-        });
+            else if (now == Settings.SchedulerStopTime && IsQueueActive && Settings.SchedulerStopQueueAtEndTime)
+            {
+                StopQueue();
+            }
+        }
+
+        // While the queue runs, failed downloads are retried every 30 s (up to 5 attempts), like IDM's scheduler
+        if (IsQueueActive)
+        {
+            foreach (var item in AllDownloads.Where(d => d.IsError && !d.IsRunning && d.RetryCount < 5 &&
+                                                         (DateTime.Now - d.LastFailureAt).TotalSeconds >= 30).ToList())
+            {
+                ResumeItem(item);
+            }
+        }
+    }
+
+    /// <summary>When the active queue has nothing left to do and shutdown-on-complete is set, offers to power off.</summary>
+    private void CheckQueueFinished()
+    {
+        if (!IsQueueActive) return;
+        if (AllDownloads.Any(d => !d.IsCompleted && !d.IsPaused && !(d.IsError && d.RetryCount >= 5))) return;
+        if (!AllDownloads.Any(d => d.IsCompleted)) return;
+
+        IsQueueActive = false;
+        if (!Settings.SchedulerShutdownOnComplete || _shutdownPending) return;
+
+        _shutdownPending = true;
+        SaveNow();
+        try
+        {
+            Process.Start(new ProcessStartInfo("shutdown", "/s /t 60 /c \"WDM: all downloads completed\"")
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false
+            });
+        }
+        catch { return; }
+
+        var answer = MessageBox.Show(
+            "All downloads are complete. Windows will shut down in 60 seconds.\n\nClick Cancel to abort the shutdown.",
+            "WDM — Shutdown", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+        if (answer == MessageBoxResult.Cancel)
+        {
+            try { Process.Start(new ProcessStartInfo("shutdown", "/a") { CreateNoWindow = true, UseShellExecute = false }); }
+            catch { }
+        }
     }
 
     // --- Site / Media Grabber Feature ---
@@ -683,29 +996,23 @@ public class MainViewModel : INotifyPropertyChanged
 
         try
         {
-            var items = await _grabberService.GrabLinksAsync(GrabberUrl.Trim());
-            Application.Current?.Dispatcher.Invoke(() =>
+            var items = await _grabberService.GrabLinksAsync(GrabberUrl.Trim(), Settings.UserAgent);
+            foreach (var it in items)
             {
-                foreach (var it in items)
-                {
-                    GrabberItems.Add(it);
-                }
+                GrabberItems.Add(it);
+            }
 
-                GrabberStatusText = items.Count > 0
-                    ? $"Found {items.Count} downloadable files/streams."
-                    : "No downloadable media or direct links found on this page.";
-            });
+            GrabberStatusText = items.Count > 0
+                ? $"Found {items.Count} downloadable files/streams."
+                : "No downloadable media or direct links found on this page.";
         }
         catch (Exception ex)
         {
-            Application.Current?.Dispatcher.Invoke(() =>
-            {
-                GrabberStatusText = "Error during analysis: " + ex.Message;
-            });
+            GrabberStatusText = "Error during analysis: " + ex.Message;
         }
         finally
         {
-            Application.Current?.Dispatcher.Invoke(() => { IsGrabberBusy = false; });
+            IsGrabberBusy = false;
         }
     }
 
@@ -716,7 +1023,8 @@ public class MainViewModel : INotifyPropertyChanged
 
         foreach (var item in selected)
         {
-            AddDownload(item.Url, null, Settings.DefaultConnections);
+            AddDownload(item.Url, Settings.DefaultDownloadDirectory, Settings.DefaultConnections,
+                new DownloadRequestOptions { Referer = GrabberUrl.Trim() });
         }
 
         CloseGrabberModal();
@@ -744,27 +1052,43 @@ public class MainViewModel : INotifyPropertyChanged
         item ??= SelectedDownload;
         if (item == null) return;
 
-        // Pause existing engine
+        var running = item.RunTask;
+        item.RunCts?.Cancel();
         item.Engine?.Pause();
 
-        // Delete partial file if exists
+        _ = Task.Run(async () =>
+        {
+            if (running != null) { try { await running; } catch { } }
+
+            // Discard the old file and checkpoint so the engine starts from byte zero
+            DiscardPartialFile(await ReadTargetPathAsync(item));
+            UiPost(() =>
+            {
+                item.ProgressPercentage = 0;
+                item.SizeFormatted = "0 B";
+                item.TotalBytes = -1;
+                item.Status = "Paused";
+                ResumeItem(item);
+            });
+        });
+    }
+
+    /// <summary>Reads the row's target path after every UI update already queued by the finished download has run.</summary>
+    private static Task<string> ReadTargetPathAsync(DownloadItemViewModel item) =>
+        Application.Current is { } app
+            ? app.Dispatcher.InvokeAsync(() => item.TargetFilePath).Task
+            : Task.FromResult(item.TargetFilePath);
+
+    private static void DiscardPartialFile(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return;
+
         try
         {
-            if (File.Exists(item.TargetFilePath))
-            {
-                File.Delete(item.TargetFilePath);
-            }
+            ResumeManager.DeleteCheckpoint(path);
+            if (File.Exists(path)) File.Delete(path);
         }
-        catch { }
-
-        // Reset state
-        item.ProgressPercentage = 0;
-        item.SizeFormatted = "0 B";
-        item.Status = "Connecting...";
-        item.SpeedFormatted = "0 B/s";
-        item.TimeLeftFormatted = "--:--";
-
-        ResumeItem(item);
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
     // --- Delete File From Disk ---
@@ -773,46 +1097,72 @@ public class MainViewModel : INotifyPropertyChanged
         item ??= SelectedDownload;
         if (item == null) return;
 
+        var path = item.TargetFilePath;
+        var running = item.RunTask;
+        item.RunCts?.Cancel();
         item.Engine?.Pause();
 
-        try
+        _ = Task.Run(async () =>
         {
-            if (File.Exists(item.TargetFilePath))
-            {
-                File.Delete(item.TargetFilePath);
-            }
-        }
-        catch { }
+            if (running != null) { try { await running; } catch { } }
+            DiscardPartialFile(string.IsNullOrEmpty(path) ? await ReadTargetPathAsync(item) : path);
+        });
 
+        item.Status = "Paused"; // prevents DeleteItem from scheduling a second cleanup
+        item.TargetFilePath = string.Empty;
         DeleteItem(item);
     }
 
     public void PauseItem(DownloadItemViewModel? item)
     {
-        if (item?.Engine != null)
+        if (item == null) return;
+
+        if (item.IsRunning)
         {
-            item.Engine.Pause();
+            item.RunCts?.Cancel();
+            item.Engine?.Pause();
+        }
+
+        if (!item.IsCompleted)
+        {
             item.Status = "Paused";
             item.SpeedRaw = 0;
             item.SpeedFormatted = "0 B/s";
-            UpdateAggregateSpeed();
-            UpdateCounts();
         }
+
+        UpdateAggregateSpeed();
+        UpdateCounts();
+        ApplyCategoryFilter();
+        ScheduleSave();
     }
 
+    /// <summary>Removes the row. Unfinished downloads also lose their partial file and checkpoint.</summary>
     public void DeleteItem(DownloadItemViewModel? item)
     {
-        if (item != null)
+        if (item == null) return;
+
+        item.RunCts?.Cancel();
+        item.Engine?.Pause();
+
+        if (!item.IsCompleted)
         {
-            item.Engine?.Pause();
-            AllDownloads.Remove(item);
-            UpdateCounts();
-            ApplyCategoryFilter();
-            UpdateAggregateSpeed();
-            if (SelectedDownload == item)
+            // The target path may only become known once the running engine has stopped
+            var running = item.RunTask;
+            _ = Task.Run(async () =>
             {
-                SelectedDownload = FilteredDownloads.FirstOrDefault();
-            }
+                if (running != null) { try { await running; } catch { } }
+                DiscardPartialFile(await ReadTargetPathAsync(item));
+            });
+        }
+
+        AllDownloads.Remove(item);
+        UpdateCounts();
+        ApplyCategoryFilter();
+        UpdateAggregateSpeed();
+        ScheduleSave();
+        if (SelectedDownload == item)
+        {
+            SelectedDownload = FilteredDownloads.FirstOrDefault();
         }
     }
 
@@ -824,16 +1174,22 @@ public class MainViewModel : INotifyPropertyChanged
         string path = item.TargetFilePath;
         if (File.Exists(path))
         {
-            Process.Start("explorer.exe", $"/select,\"{path}\"");
+            StartExplorer($"/select,\"{path}\"");
         }
         else
         {
             string? dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
             {
-                Process.Start("explorer.exe", $"\"{dir}\"");
+                StartExplorer($"\"{dir}\"");
             }
         }
+    }
+
+    private static void StartExplorer(string arguments)
+    {
+        try { Process.Start("explorer.exe", arguments); }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { }
     }
 
     public void OpenFile(DownloadItemViewModel? item)
@@ -854,14 +1210,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void UpdateSpeedLimits()
     {
-        long limit = IsSpeedLimiterEnabled ? (long)SpeedLimitKb * 1024 : 0;
-        foreach (var item in AllDownloads)
-        {
-            if (item.Engine != null)
-            {
-                item.Engine.SpeedLimiter.MaxBytesPerSecond = limit;
-            }
-        }
+        _speedLimiter.MaxBytesPerSecond = IsSpeedLimiterEnabled ? (long)SpeedLimitKb * 1024 : 0;
     }
 
     private void UpdateAggregateSpeed()
@@ -869,13 +1218,14 @@ public class MainViewModel : INotifyPropertyChanged
         double total = AllDownloads.Where(d => d.IsActive).Sum(d => d.SpeedRaw);
         TotalSpeedFormatted = DownloadProgress.FormatBytes((long)total) + "/s";
         ActiveDownloadsCount = AllDownloads.Count(d => d.IsActive);
-        OnPropertyChanged(nameof(TotalSpeedFormatted));
-        OnPropertyChanged(nameof(ActiveDownloadsCount));
+        OnPropertyChanged(nameof(WindowTitle));
+        NotifySelectionState();
     }
 
     // --- Batch Download Feature ---
-    public void OpenBatchModal(string? initialText = null)
+    public void OpenBatchModal(string? initialText = null, DownloadRequestOptions? options = null)
     {
+        _batchOptions = options;
         BatchUrlsText = initialText ?? string.Empty;
         IsBatchModalOpen = true;
     }
@@ -883,25 +1233,15 @@ public class MainViewModel : INotifyPropertyChanged
     public void CloseBatchModal()
     {
         IsBatchModalOpen = false;
+        _batchOptions = null;
     }
 
     public void ConfirmBatchDownload()
     {
-        if (string.IsNullOrWhiteSpace(BatchUrlsText))
+        var dir = string.IsNullOrWhiteSpace(NewDownloadDir) ? Settings.DefaultDownloadDirectory : NewDownloadDir.Trim();
+        foreach (var url in ParseUrlLines(BatchUrlsText))
         {
-            CloseBatchModal();
-            return;
-        }
-
-        var lines = BatchUrlsText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-        foreach (var line in lines)
-        {
-            var trimmed = line.Trim();
-            if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {
-                AddDownload(trimmed, NewDownloadDir, Settings.DefaultConnections);
-            }
+            AddDownload(url, dir, Settings.DefaultConnections, _batchOptions == null ? null : CloneSharedOptions(_batchOptions));
         }
 
         CloseBatchModal();
@@ -933,8 +1273,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             if (!Clipboard.ContainsText()) return;
             var txt = Clipboard.GetText().Trim();
-            if ((txt.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                 txt.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) &&
+            if (ExternalDownloadRequest.IsHttpUrl(txt) &&
                 !AllDownloads.Any(d => d.Url.Equals(txt, StringComparison.OrdinalIgnoreCase)))
             {
                 if (txt != ClipboardBannerUrl)
@@ -956,7 +1295,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         if (!string.IsNullOrWhiteSpace(ClipboardBannerUrl))
         {
-            AddDownload(ClipboardBannerUrl, null, Settings.DefaultConnections);
+            AddDownload(ClipboardBannerUrl, Settings.DefaultDownloadDirectory, Settings.DefaultConnections);
             DismissClipboardBanner();
         }
     }
@@ -970,6 +1309,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             AllDownloads.Move(idx, idx - 1);
             ApplyCategoryFilter();
+            ScheduleSave();
         }
     }
 
@@ -981,6 +1321,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             AllDownloads.Move(idx, idx + 1);
             ApplyCategoryFilter();
+            ScheduleSave();
         }
     }
 
@@ -989,32 +1330,50 @@ public class MainViewModel : INotifyPropertyChanged
         IsSpeedLimiterEnabled = !IsSpeedLimiterEnabled;
     }
 
+    /// <summary>
+    /// Re-evaluates the filters and reconciles <see cref="FilteredDownloads"/> in place, so rows are not
+    /// recreated (no flicker, selection and scroll position survive status updates).
+    /// </summary>
     public void ApplyCategoryFilter()
     {
-        FilteredDownloads.Clear();
-        foreach (var item in AllDownloads)
-        {
-            bool matchesCategory = MatchesCategory(item, SelectedCategory);
-            bool matchesFilter = ActiveFilterTag switch
-            {
-                "Active" => item.IsActive,
-                "Completed" => item.IsCompleted,
-                "Paused" => item.IsPaused,
-                _ => true
-            };
-            bool matchesSearch = string.IsNullOrWhiteSpace(SearchText) ||
-                                 item.FileName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                                 item.Url.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                                 item.CategoryName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                                 item.Status.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
+        var wanted = AllDownloads.Where(MatchesFilters).ToList();
 
-            if (matchesCategory && matchesFilter && matchesSearch)
-            {
-                FilteredDownloads.Add(item);
-            }
+        for (int i = FilteredDownloads.Count - 1; i >= 0; i--)
+        {
+            if (!wanted.Contains(FilteredDownloads[i])) FilteredDownloads.RemoveAt(i);
         }
+
+        for (int i = 0; i < wanted.Count; i++)
+        {
+            if (i < FilteredDownloads.Count && ReferenceEquals(FilteredDownloads[i], wanted[i])) continue;
+
+            int existing = FilteredDownloads.IndexOf(wanted[i]);
+            if (existing >= 0) FilteredDownloads.Move(existing, i);
+            else FilteredDownloads.Insert(i, wanted[i]);
+        }
+
         OnPropertyChanged(nameof(HasNoDownloads));
         OnPropertyChanged(nameof(FreeDiskSpaceFormatted));
+    }
+
+    private bool MatchesFilters(DownloadItemViewModel item)
+    {
+        if (!MatchesCategory(item, SelectedCategory)) return false;
+
+        bool matchesFilter = ActiveFilterTag switch
+        {
+            "Active" => item.IsActive || item.IsQueued,
+            "Completed" => item.IsCompleted,
+            "Paused" => item.IsPaused,
+            _ => true
+        };
+        if (!matchesFilter) return false;
+
+        return string.IsNullOrWhiteSpace(SearchText) ||
+               item.FileName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+               item.Url.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+               item.CategoryName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+               item.Status.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
     }
 
     private void UpdateCounts()
@@ -1031,6 +1390,8 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ProgramsCount));
         OnPropertyChanged(nameof(VideoCount));
         OnPropertyChanged(nameof(HasNoDownloads));
+        OnPropertyChanged(nameof(IsLibraryEmpty));
+        NotifySelectionState();
     }
 
     private static string GetInitialName(string url)
@@ -1039,8 +1400,8 @@ public class MainViewModel : INotifyPropertyChanged
         {
             if (MediaResolver.IsYouTubeUrl(url)) return "Resolving video stream...";
             var uri = new Uri(url);
-            var name = Path.GetFileName(uri.LocalPath);
-            return string.IsNullOrWhiteSpace(name) ? "download.dat" : name;
+            var name = Uri.UnescapeDataString(Path.GetFileName(uri.AbsolutePath));
+            return string.IsNullOrWhiteSpace(name) ? "download.dat" : NetworkProber.SanitizeFileName(name);
         }
         catch
         {
@@ -1055,16 +1416,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (category == "Completed" || category == "Finished") return item.IsCompleted;
         if (category == "Paused") return item.IsPaused;
 
-        var ext = Path.GetExtension(item.FileName).ToLowerInvariant();
-        return category switch
-        {
-            "Compressed" => ext is ".zip" or ".rar" or ".7z" or ".tar" or ".gz" or ".iso",
-            "Documents"  => ext is ".pdf" or ".doc" or ".docx" or ".txt" or ".xlsx" or ".pptx",
-            "Music"      => ext is ".mp3" or ".wav" or ".flac" or ".aac" or ".ogg" or ".m4a",
-            "Programs"   => ext is ".exe" or ".msi" or ".apk" or ".bat" or ".cmd",
-            "Videos" or "Video" => ext is ".mp4" or ".mkv" or ".avi" or ".webm" or ".mov" or ".ts",
-            _            => true
-        };
+        return string.Equals(item.CategoryName, category, StringComparison.Ordinal);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

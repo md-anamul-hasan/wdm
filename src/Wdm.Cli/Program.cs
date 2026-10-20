@@ -19,6 +19,12 @@ public class Program
         }
 
         string url = args[0];
+        if (!Wdm.Core.Ipc.ExternalDownloadRequest.IsHttpUrl(url) && !MediaResolver.IsYouTubeUrl(url))
+        {
+            Console.Error.WriteLine($"[WDM Error] '{url}' is not an http(s) URL.");
+            return 1;
+        }
+
         string? outDir = null;
         int connections = 8;
         long limitBytesPerSec = 0;
@@ -135,6 +141,13 @@ public class Program
         try
         {
             await engine.StartAsync(url, outDir, connections, cts.Token);
+
+            if (engine.Status != DownloadStatus.Completed)
+            {
+                Console.WriteLine("\n[WDM] Download paused. Checkpoint saved. Run again with the same URL to resume instantly.");
+                return 0;
+            }
+
             Console.WriteLine($"\n[WDM] Download 100% Complete! Saved to: {engine.Metadata?.TargetFilePath}");
             return 0;
         }

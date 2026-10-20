@@ -6,6 +6,9 @@ using Wdm.Core.Models;
 
 namespace Wdm.Core.Engine;
 
+/// <summary>Raised for failures that retrying the same request cannot fix.</summary>
+public sealed class NonRetryableDownloadException(string message) : Exception(message);
+
 /// <summary>
 /// Worker responsible for downloading an individual byte segment using HTTP range requests.
 /// Writes directly to the target file offset via StorageWriter.
@@ -16,14 +19,20 @@ public class HttpConnectionWorker
     private readonly StorageWriter _storageWriter;
     private readonly SpeedLimiter _speedLimiter;
     private readonly Action<long> _onBytesRead;
+    private readonly DownloadRequestOptions? _options;
+    private readonly TimeSpan _stallTimeout;
     private const int BufferSize = 64 * 1024; // 64 KB chunk buffer
 
     public HttpConnectionWorker(
         HttpClient httpClient,
         StorageWriter storageWriter,
         SpeedLimiter speedLimiter,
-        Action<long> onBytesRead)
+        Action<long> onBytesRead,
+        DownloadRequestOptions? options = null,
+        TimeSpan? stallTimeout = null)
     {
+        _options = options;
+        _stallTimeout = stallTimeout ?? TimeSpan.FromSeconds(30);
         _httpClient = httpClient;
         _storageWriter = storageWriter;
         _speedLimiter = speedLimiter;
@@ -46,26 +55,19 @@ public class HttpConnectionWorker
 
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) WDM/1.0");
-                request.Headers.Add("Accept", "*/*");
-                request.Headers.Add("Accept-Encoding", "identity");
-
                 // Range request if end offset is set and positive
-                if (segment.EndOffset >= segment.CurrentOffset)
+                RangeHeaderValue? range = null;
+                if (!segment.IsOpenEnded && segment.EndOffset >= segment.CurrentOffset)
                 {
-                    request.Headers.Range = new RangeHeaderValue(segment.CurrentOffset, segment.EndOffset);
+                    range = new RangeHeaderValue(segment.CurrentOffset, segment.EndOffset);
                 }
                 else if (segment.CurrentOffset > 0)
                 {
-                    request.Headers.Range = new RangeHeaderValue(segment.CurrentOffset, null);
+                    range = new RangeHeaderValue(segment.CurrentOffset, null);
                 }
 
-                using var response = await _httpClient.SendAsync(
-                    request,
-                    HttpCompletionOption.ResponseHeadersRead,
-                    cancellationToken
-                );
+                using var response = await HttpRequestHelper.SendAsync(
+                    _httpClient, HttpMethod.Get, url, _options, range, cancellationToken);
 
                 if (response.StatusCode != HttpStatusCode.PartialContent &&
                     response.StatusCode != HttpStatusCode.OK)
@@ -73,8 +75,14 @@ public class HttpConnectionWorker
                     throw new HttpRequestException($"Server returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
                 }
 
+                // A 200 to a request for a non-zero offset means the server ignored the Range header;
+                // writing that body at this offset would silently corrupt the file.
+                if (range != null && response.StatusCode == HttpStatusCode.OK && segment.CurrentOffset > 0)
+                {
+                    throw new NonRetryableDownloadException("The server does not support resuming (ignored Range request).");
+                }
+
                 segment.State = SegmentState.Downloading;
-                retryCount = 0;
 
                 await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
                 byte[] rentBuffer = ArrayPool<byte>.Shared.Rent(BufferSize);
@@ -89,13 +97,28 @@ public class HttpConnectionWorker
                         cancellationToken.ThrowIfCancellationRequested();
 
                         int maxToRead = (int)Math.Min(rentBuffer.Length, segment.RemainingBytes);
-                        int bytesRead = await stream.ReadAsync(rentBuffer.AsMemory(0, maxToRead), cancellationToken);
+                        int bytesRead;
+                        using (var readCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+                        {
+                            readCts.CancelAfter(_stallTimeout);
+                            try
+                            {
+                                bytesRead = await stream.ReadAsync(rentBuffer.AsMemory(0, maxToRead), readCts.Token);
+                            }
+                            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                            {
+                                throw new TimeoutException("Connection stalled.");
+                            }
+                        }
 
                         if (bytesRead == 0)
                         {
                             // Stream closed by server
+                            if (segment.IsOpenEnded) segment.CloseOpenEnd();
                             break;
                         }
+
+                        retryCount = 0;
 
                         // Apply speed limiting
                         await _speedLimiter.ThrottleAsync(bytesRead, cancellationToken);
@@ -129,10 +152,23 @@ public class HttpConnectionWorker
                     segment.SpeedBytesPerSecond = 0;
                     return;
                 }
+
+                // Server closed the stream early: back off and re-request the remainder
+                if (++retryCount > maxRetries)
+                {
+                    throw new IOException("Connection closed before the segment finished.");
+                }
+                await Task.Delay(TimeSpan.FromSeconds(Math.Min(Math.Pow(2, retryCount), 16)), cancellationToken);
             }
             catch (OperationCanceledException)
             {
                 segment.State = SegmentState.Idle;
+                segment.SpeedBytesPerSecond = 0;
+                throw;
+            }
+            catch (NonRetryableDownloadException)
+            {
+                segment.State = SegmentState.Error;
                 segment.SpeedBytesPerSecond = 0;
                 throw;
             }

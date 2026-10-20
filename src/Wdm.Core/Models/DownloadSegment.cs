@@ -9,16 +9,26 @@ public class DownloadSegment
     public long EndOffset { get; set; } // Inclusive end offset
     public long CurrentOffset { get; set; }
 
+    /// <summary>True while the total size is unknown: the segment streams until the server closes the response.</summary>
+    public bool IsOpenEnded { get; set; }
+
     [JsonIgnore]
     public SegmentState State { get; set; } = SegmentState.Idle;
 
     [JsonIgnore]
     public double SpeedBytesPerSecond { get; set; }
 
-    public long TotalBytes => EndOffset >= StartOffset ? (EndOffset - StartOffset + 1) : 0;
-    public long DownloadedBytes => Math.Clamp(CurrentOffset - StartOffset, 0, TotalBytes);
-    public long RemainingBytes => Math.Max(0, EndOffset - CurrentOffset + 1);
-    public bool IsCompleted => CurrentOffset > EndOffset;
+    public long TotalBytes => !IsOpenEnded && EndOffset >= StartOffset ? (EndOffset - StartOffset + 1) : 0;
+    public long DownloadedBytes => IsOpenEnded ? Math.Max(0, CurrentOffset - StartOffset) : Math.Clamp(CurrentOffset - StartOffset, 0, TotalBytes);
+    public long RemainingBytes => IsOpenEnded ? long.MaxValue : Math.Max(0, EndOffset - CurrentOffset + 1);
+    public bool IsCompleted => !IsOpenEnded && CurrentOffset > EndOffset;
+
+    /// <summary>Ends an open-ended segment at the bytes received so far (server closed the response).</summary>
+    public void CloseOpenEnd()
+    {
+        IsOpenEnded = false;
+        EndOffset = CurrentOffset - 1;
+    }
 
     /// <summary>UI alias for SegmentId (1-based display index).</summary>
     [JsonIgnore]

@@ -3,28 +3,53 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Win32;
+using Wdm.Core.Ipc;
+using Wdm.Core.Models;
 
 namespace Wdm.NativeHost;
 
 /// <summary>
-/// WDM Native Messaging Host for Chrome, Edge, and Firefox.
-/// Communicates with the WDM browser extension via standard I/O (4-byte length-prefix + JSON),
-/// mirroring the same protocol used by IDM's IDMMsgHost.exe.
+/// WDM Native Messaging Host for Chrome, Edge, Brave and Firefox.
+/// Talks to the WDM browser extension over stdio (4-byte length prefix + JSON) and forwards
+/// downloads to the running WDM window through its named pipe, starting WDM first if needed.
+/// This is the same architecture as IDM's IDMMsgHost.exe, which relays to IDMan.exe.
 /// </summary>
 public class Program
 {
     private const string HostName = "com.wdm.download";
 
-    public static async Task Main(string[] args)
+    // Fixed by the "key" field in extension/manifest.json
+    private const string ChromeExtensionId = "kdjgcdbahccolkkagbckkchfpcchcfne";
+    private const string FirefoxExtensionId = "wdm@windowsdownloadmanager.com";
+
+    private static readonly string Version = typeof(Program).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "1.0.0";
+    private const int MaxIncomingMessageBytes = 10 * 1024 * 1024;
+
+    private static readonly string[] ChromiumRegistryRoots =
     {
-        if (args.Length > 0 && (args[0] == "--register" || args[0] == "-r"))
+        @"Software\Google\Chrome\NativeMessagingHosts",
+        @"Software\Microsoft\Edge\NativeMessagingHosts",
+        @"Software\BraveSoftware\Brave-Browser\NativeMessagingHosts",
+        @"Software\Chromium\NativeMessagingHosts",
+    };
+
+    private const string FirefoxRegistryRoot = @"Software\Mozilla\NativeMessagingHosts";
+
+    public static async Task<int> Main(string[] args)
+    {
+        if (args.Length > 0)
         {
-            RegisterHost();
-            return;
+            switch (args[0].ToLowerInvariant())
+            {
+                case "--register" or "-r":
+                    return Register();
+                case "--unregister" or "-u":
+                    return Unregister();
+            }
         }
 
-        // Run stdio native messaging loop
         await RunHostLoopAsync();
+        return 0;
     }
 
     private static async Task RunHostLoopAsync()
@@ -36,31 +61,24 @@ public class Program
 
         while (true)
         {
-            // Read 4-byte length
-            int read = await ReadExactAsync(stdin, lengthBuffer, 0, 4);
-            if (read < 4) break; // Extension disconnected or stdin closed
+            if (await ReadExactAsync(stdin, lengthBuffer, 4) < 4) break; // browser closed the port
 
             int messageLength = BitConverter.ToInt32(lengthBuffer, 0);
-            if (messageLength <= 0 || messageLength > 10 * 1024 * 1024) break; // Sanity check
+            if (messageLength <= 0 || messageLength > MaxIncomingMessageBytes) break;
 
             byte[] messageBuffer = new byte[messageLength];
-            read = await ReadExactAsync(stdin, messageBuffer, 0, messageLength);
-            if (read < messageLength) break;
+            if (await ReadExactAsync(stdin, messageBuffer, messageLength) < messageLength) break;
 
-            string jsonString = Encoding.UTF8.GetString(messageBuffer);
-            var responseJson = HandleMessage(jsonString);
+            string responseJson = await HandleMessageAsync(Encoding.UTF8.GetString(messageBuffer));
 
-            // Write response
             byte[] responseBytes = Encoding.UTF8.GetBytes(responseJson);
-            byte[] responseLengthBytes = BitConverter.GetBytes(responseBytes.Length);
-
-            await stdout.WriteAsync(responseLengthBytes);
+            await stdout.WriteAsync(BitConverter.GetBytes(responseBytes.Length));
             await stdout.WriteAsync(responseBytes);
             await stdout.FlushAsync();
         }
     }
 
-    private static string HandleMessage(string jsonString)
+    private static async Task<string> HandleMessageAsync(string jsonString)
     {
         try
         {
@@ -70,150 +88,194 @@ public class Program
             switch (action.ToLowerInvariant())
             {
                 case "ping":
-                    return JsonSerializer.Serialize(new { status = "ok", message = "pong", version = "1.0.0" });
+                    return Reply(new { status = "ok", message = "pong", version = Version });
 
                 case "download":
-                    string url = node?["url"]?.ToString() ?? "";
-                    string? referer = node?["referer"]?.ToString();
-                    string? cookies = node?["cookies"]?.ToString();
-
-                    if (!string.IsNullOrWhiteSpace(url))
+                {
+                    var request = BuildRequest(node, node?["url"]?.ToString());
+                    if (request.IsEmpty)
                     {
-                        LaunchWdmDownload(url, referer, cookies);
-                        return JsonSerializer.Serialize(new { status = "ok", message = "Download queued in WDM", url });
+                        return Reply(new { status = "error", message = "Missing or invalid http(s) URL" });
                     }
-                    return JsonSerializer.Serialize(new { status = "error", message = "Missing URL" });
+                    return await DeliverAsync(request);
+                }
 
-                case "sniff":
-                    // Audio / Video stream sniffer callback
-                    string mediaUrl = node?["mediaUrl"]?.ToString() ?? "";
-                    string title = node?["title"]?.ToString() ?? "Media";
-                    return JsonSerializer.Serialize(new { status = "ok", message = "Media URL captured", mediaUrl, title });
+                case "batch":
+                {
+                    var urls = node?["urls"]?.AsArray().Select(u => u?.ToString()).ToList() ?? new();
+                    var request = BuildRequest(node, null);
+                    request.Urls = urls.Where(ExternalDownloadRequest.IsHttpUrl).Select(u => u!).Distinct().ToList();
+                    if (request.IsEmpty)
+                    {
+                        return Reply(new { status = "error", message = "No valid http(s) URLs" });
+                    }
+                    request.CookieHost = request.Cookies == null ? null : new Uri(request.Urls[0]).Host;
+                    return await DeliverAsync(request);
+                }
 
                 default:
-                    return JsonSerializer.Serialize(new { status = "unknown_action", action });
+                    return Reply(new { status = "unknown_action", action });
             }
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { status = "error", message = ex.Message });
+            return Reply(new { status = "error", message = ex.Message });
         }
     }
 
-    private static void LaunchWdmDownload(string url, string? referer, string? cookies)
+    private static ExternalDownloadRequest BuildRequest(JsonNode? node, string? url)
+    {
+        var request = new ExternalDownloadRequest
+        {
+            Referer = NullIfEmpty(node?["referer"]?.ToString()),
+            Cookies = NullIfEmpty(node?["cookies"]?.ToString()),
+            UserAgent = NullIfEmpty(node?["userAgent"]?.ToString()),
+            FileName = NullIfEmpty(node?["fileName"]?.ToString()),
+        };
+
+        if (ExternalDownloadRequest.IsHttpUrl(url))
+        {
+            request.Urls.Add(url!);
+            if (request.Cookies != null) request.CookieHost = new Uri(url!).Host;
+        }
+
+        return request;
+    }
+
+    private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+
+    private static async Task<string> DeliverAsync(ExternalDownloadRequest request)
+    {
+        if (await WdmPipe.TrySendAsync(request))
+        {
+            return Reply(new { status = "ok", message = "Download sent to WDM" });
+        }
+
+        // WDM isn't running: start it, then wait for its pipe to come up
+        if (!LaunchWdm())
+        {
+            return Reply(new { status = "error", message = "WDM application (Wdm.Ui.exe) was not found next to the native host" });
+        }
+
+        for (int attempt = 0; attempt < 40; attempt++)
+        {
+            await Task.Delay(250);
+            if (await WdmPipe.TrySendAsync(request, 500))
+            {
+                return Reply(new { status = "ok", message = "WDM started and download sent" });
+            }
+        }
+
+        return Reply(new { status = "error", message = "WDM did not respond after being started" });
+    }
+
+    private static bool LaunchWdm()
     {
         try
         {
-            string currentExeDir = AppContext.BaseDirectory;
-            string uiPath = Path.Combine(currentExeDir, "Wdm.Ui.exe");
-            string cliPath = Path.Combine(currentExeDir, "Wdm.Cli.exe");
+            string? uiPath = FindWdmUi();
+            if (uiPath == null) return false;
 
-            string? targetExe = null;
-            if (File.Exists(uiPath))
-            {
-                targetExe = uiPath;
-            }
-            else if (File.Exists(cliPath))
-            {
-                targetExe = cliPath;
-            }
-            else
-            {
-                // In local development layout, resolve sibling build directories
-                string devUi = Path.GetFullPath(Path.Combine(currentExeDir, @"..\..\..\..\Wdm.Ui\bin\Debug\net10.0-windows\Wdm.Ui.exe"));
-                string devCli = Path.GetFullPath(Path.Combine(currentExeDir, @"..\..\..\..\Wdm.Cli\bin\Debug\net10.0\Wdm.Cli.exe"));
-                if (File.Exists(devUi)) targetExe = devUi;
-                else if (File.Exists(devCli)) targetExe = devCli;
-            }
-
-            if (targetExe != null)
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = targetExe,
-                    Arguments = $"\"{url}\"",
-                    UseShellExecute = true
-                };
-                Process.Start(psi);
-            }
+            Process.Start(new ProcessStartInfo { FileName = uiPath, UseShellExecute = true });
+            return true;
         }
-        catch { }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            return false;
+        }
     }
 
-    private static void RegisterHost()
+    private static string? FindWdmUi()
     {
-        Console.WriteLine("[WDM] Registering Native Messaging Host for Chrome, Edge, and Firefox...");
+        string baseDir = AppContext.BaseDirectory;
+        string[] candidates =
+        {
+            Path.Combine(baseDir, "Wdm.Ui.exe"),
+            // Local development layout: src/Wdm.NativeHost/bin/<cfg>/<tfm>/ -> src/Wdm.Ui/bin/<cfg>/<tfm>/
+            Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\..\Wdm.Ui\bin\Debug\net10.0-windows\Wdm.Ui.exe")),
+            Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\..\Wdm.Ui\bin\Release\net10.0-windows\Wdm.Ui.exe")),
+        };
+        return candidates.FirstOrDefault(File.Exists);
+    }
 
-        string exePath = Process.GetCurrentProcess().MainModule?.FileName 
-            ?? Path.Combine(AppContext.BaseDirectory, "Wdm.NativeHost.exe");
-        string manifestDir = AppContext.BaseDirectory;
-        string chromeManifestPath = Path.Combine(manifestDir, $"{HostName}.json");
-        string firefoxManifestPath = Path.Combine(manifestDir, $"{HostName}.mozilla.json");
+    private static string ManifestDirectory => Path.Combine(AppSettings.DataDirectory, "NativeMessaging");
 
-        // Chrome & Edge Manifest
-        var chromeManifest = new
+    private static int Register()
+    {
+        Console.WriteLine("[WDM] Registering native messaging host for Chrome, Edge, Brave and Firefox...");
+
+        string exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "Wdm.NativeHost.exe");
+        Directory.CreateDirectory(ManifestDirectory);
+
+        string chromiumManifest = Path.Combine(ManifestDirectory, $"{HostName}.json");
+        string firefoxManifest = Path.Combine(ManifestDirectory, $"{HostName}.mozilla.json");
+        var indented = new JsonSerializerOptions { WriteIndented = true };
+
+        File.WriteAllText(chromiumManifest, JsonSerializer.Serialize(new
         {
             name = HostName,
-            description = "Windows Download Manager Extension Helper",
+            description = "Windows Download Manager browser integration",
             path = exePath,
             type = "stdio",
-            allowed_origins = new[]
-            {
-                "chrome-extension://*",
-                "chrome-extension://wdm-extension-id/"
-            }
-        };
+            allowed_origins = new[] { $"chrome-extension://{ChromeExtensionId}/" }
+        }, indented));
 
-        // Firefox Manifest
-        var firefoxManifest = new
+        File.WriteAllText(firefoxManifest, JsonSerializer.Serialize(new
         {
             name = HostName,
-            description = "Windows Download Manager Extension Helper",
+            description = "Windows Download Manager browser integration",
             path = exePath,
             type = "stdio",
-            allowed_extensions = new[]
-            {
-                "wdm@windowsdownloadmanager.com"
-            }
-        };
-
-        File.WriteAllText(chromeManifestPath, JsonSerializer.Serialize(chromeManifest, new JsonSerializerOptions { WriteIndented = true }));
-        File.WriteAllText(firefoxManifestPath, JsonSerializer.Serialize(firefoxManifest, new JsonSerializerOptions { WriteIndented = true }));
+            allowed_extensions = new[] { FirefoxExtensionId }
+        }, indented));
 
         try
         {
-            // Registry keys
-            using (var key = Registry.CurrentUser.CreateSubKey($@"Software\Google\Chrome\NativeMessagingHosts\{HostName}"))
+            foreach (var root in ChromiumRegistryRoots)
             {
-                key?.SetValue("", chromeManifestPath);
+                using var key = Registry.CurrentUser.CreateSubKey($@"{root}\{HostName}");
+                key.SetValue("", chromiumManifest);
             }
 
-            using (var key = Registry.CurrentUser.CreateSubKey($@"Software\Microsoft\Edge\NativeMessagingHosts\{HostName}"))
+            using (var key = Registry.CurrentUser.CreateSubKey($@"{FirefoxRegistryRoot}\{HostName}"))
             {
-                key?.SetValue("", chromeManifestPath);
+                key.SetValue("", firefoxManifest);
             }
-
-            using (var key = Registry.CurrentUser.CreateSubKey($@"Software\Mozilla\NativeMessagingHosts\{HostName}"))
-            {
-                key?.SetValue("", firefoxManifestPath);
-            }
-
-            Console.WriteLine($"[WDM] Successfully registered {HostName} in Windows Registry!");
-            Console.WriteLine($"Chrome/Edge manifest: {chromeManifestPath}");
-            Console.WriteLine($"Firefox manifest: {firefoxManifestPath}");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
         {
-            Console.WriteLine($"[WDM Warning] Registry write error: {ex.Message}");
+            Console.Error.WriteLine($"[WDM] Registry write failed: {ex.Message}");
+            return 1;
         }
+
+        Console.WriteLine($"[WDM] Registered '{HostName}'.");
+        Console.WriteLine($"      Host:    {exePath}");
+        Console.WriteLine($"      Chrome:  {chromiumManifest}");
+        Console.WriteLine($"      Firefox: {firefoxManifest}");
+        return 0;
     }
 
-    private static async Task<int> ReadExactAsync(Stream stream, byte[] buffer, int offset, int count)
+    private static int Unregister()
+    {
+        foreach (var root in ChromiumRegistryRoots.Append(FirefoxRegistryRoot))
+        {
+            try { Registry.CurrentUser.DeleteSubKeyTree($@"{root}\{HostName}", throwOnMissingSubKey: false); }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException) { }
+        }
+
+        try { Directory.Delete(ManifestDirectory, recursive: true); } catch (DirectoryNotFoundException) { }
+        Console.WriteLine($"[WDM] Unregistered '{HostName}'.");
+        return 0;
+    }
+
+    private static string Reply(object payload) => JsonSerializer.Serialize(payload);
+
+    private static async Task<int> ReadExactAsync(Stream stream, byte[] buffer, int count)
     {
         int totalRead = 0;
         while (totalRead < count)
         {
-            int read = await stream.ReadAsync(buffer.AsMemory(offset + totalRead, count - totalRead));
+            int read = await stream.ReadAsync(buffer.AsMemory(totalRead, count - totalRead));
             if (read == 0) break;
             totalRead += read;
         }

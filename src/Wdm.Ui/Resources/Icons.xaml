@@ -38,4 +38,20 @@
     <Geometry x:Key="GeoStorage">M22 12H2M2 6h20M2 18h20M6 9h.01M6 15h.01M6 3h.01M6 21h.01</Geometry>
     <Geometry x:Key="GeoStream">M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm4 4v8m4-8v8m4-8v8</Geometry>
 
+
+    <!-- Additional UI geometries (stroke-based, 24x24) -->
+    <Geometry x:Key="GeoMore">M5 12h.01M12 12h.01M19 12h.01</Geometry>
+    <Geometry x:Key="GeoSun">M12 8a4 4 0 100 8 4 4 0 000-8z M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2 M4.93 19.07l1.41-1.41 M17.66 6.34l1.41-1.41</Geometry>
+    <Geometry x:Key="GeoMoon">M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z</Geometry>
+    <Geometry x:Key="GeoGlobe">M12 2a10 10 0 100 20 10 10 0 000-20z M2 12h20 M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z</Geometry>
+    <Geometry x:Key="GeoList">M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01</Geometry>
+    <Geometry x:Key="GeoLayers">M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5</Geometry>
+    <Geometry x:Key="GeoStop">M6 6h12v12H6z</Geometry>
+    <Geometry x:Key="GeoX">M18 6L6 18 M6 6l12 12</Geometry>
+    <Geometry x:Key="GeoInfo">M12 22a10 10 0 100-20 10 10 0 000 20z M12 16v-4 M12 8h.01</Geometry>
+    <Geometry x:Key="GeoRefresh">M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0114.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0020.49 15</Geometry>
+    <Geometry x:Key="GeoQueuePlay">M4 6h10 M4 12h6 M4 18h6 M15 12l6 4-6 4z</Geometry>
+    <Geometry x:Key="GeoQueueStop">M4 6h10 M4 12h6 M4 18h6 M15 13h6v6h-6z</Geometry>
+    <Geometry x:Key="GeoUnfinished">M12 22a10 10 0 100-20 10 10 0 000 20z M12 6v6l4 2</Geometry>
+
 </ResourceDictionary>

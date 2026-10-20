@@ -22,3 +22,6 @@ scratch/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+## Release output & local reverse-engineering workspace (never commit third-party binaries)
+dist/

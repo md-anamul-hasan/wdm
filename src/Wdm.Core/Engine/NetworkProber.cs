@@ -11,47 +11,37 @@ public class NetworkProber
 
     public NetworkProber(HttpClient? httpClient = null)
     {
-        _httpClient = httpClient ?? new HttpClient(new SocketsHttpHandler
-        {
-            AllowAutoRedirect = true,
-            AutomaticDecompression = DecompressionMethods.None, // We want raw byte stream for ranges
-            MaxAutomaticRedirections = 10,
-            PooledConnectionLifetime = TimeSpan.FromMinutes(10),
-            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2)
-        });
+        _httpClient = httpClient ?? HttpRequestHelper.CreateClient();
     }
 
-    public async Task<DownloadMetadata> ProbeAsync(string url, string? destinationDirectory = null, CancellationToken cancellationToken = default)
+    public async Task<DownloadMetadata> ProbeAsync(
+        string url,
+        string? destinationDirectory = null,
+        CancellationToken cancellationToken = default,
+        DownloadRequestOptions? options = null)
     {
         var metadata = new DownloadMetadata
         {
-            Url = url
+            Url = url,
+            Options = options
         };
-
 
         HttpResponseMessage? response = null;
         try
         {
-            // 1. Try HEAD request first
-            using var headRequest = new HttpRequestMessage(HttpMethod.Head, url);
-            headRequest.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) WDM/1.0");
-            headRequest.Headers.Add("Accept", "*/*");
-            
-            response = await _httpClient.SendAsync(headRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            // 1. Try HEAD first; servers that reject it (403/405/...) get a 1-byte ranged GET instead
+            response = await HttpRequestHelper.SendAsync(_httpClient, HttpMethod.Head, url, options, null, cancellationToken);
 
-            // Some servers return 405 Method Not Allowed or 403 on HEAD. In that case, fall back to Range GET
-            if (!response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.MethodNotAllowed)
+            if (!response.IsSuccessStatusCode)
             {
                 response.Dispose();
-                using var getRangeRequest = new HttpRequestMessage(HttpMethod.Get, url);
-                getRangeRequest.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) WDM/1.0");
-                getRangeRequest.Headers.Range = new RangeHeaderValue(0, 0);
-                response = await _httpClient.SendAsync(getRangeRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                response = await HttpRequestHelper.SendAsync(_httpClient, HttpMethod.Get, url, options, new RangeHeaderValue(0, 0), cancellationToken);
+                response.EnsureSuccessStatusCode();
             }
 
             // Read headers
-            metadata.SupportsRanges = response.Headers.AcceptRanges.Contains("bytes") || 
-                                     response.Content.Headers.ContentRange != null;
+            metadata.SupportsRanges = response.Headers.AcceptRanges.Contains("bytes") ||
+                                     response.StatusCode == HttpStatusCode.PartialContent;
 
             if (response.Content.Headers.ContentRange?.Length.HasValue == true)
             {
@@ -76,7 +66,9 @@ public class NetworkProber
             metadata.ContentType = response.Content.Headers.ContentType?.MediaType;
 
             // Extract filename from Content-Disposition or URL
-            metadata.FileName = ExtractFileName(response, url);
+            metadata.FileName = !string.IsNullOrWhiteSpace(options?.FileName)
+                ? SanitizeFileName(options.FileName)
+                : ExtractFileName(response, url);
 
             // Compute target file path
             var destDir = destinationDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Downloads";
@@ -85,8 +77,7 @@ public class NetworkProber
                 Directory.CreateDirectory(destDir);
             }
 
-            metadata.TargetFilePath = Path.Combine(destDir, metadata.FileName);
-            metadata.TargetFilePath = GetUniqueFilePath(metadata.TargetFilePath);
+            metadata.TargetFilePath = ReserveFilePath(Path.Combine(destDir, metadata.FileName), url);
 
             return metadata;
         }
@@ -156,31 +147,65 @@ public class NetworkProber
         return parts.Length == 2 ? Uri.UnescapeDataString(parts[1]) : Uri.UnescapeDataString(fileNameStar);
     }
 
+    private static readonly HashSet<string> ReservedDeviceNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    };
+
+    /// <summary>Strips path separators and invalid characters, Windows device names and trailing dots/spaces.</summary>
     public static string SanitizeFileName(string name)
     {
         var invalid = Path.GetInvalidFileNameChars();
-        var clean = string.Concat(name.Split(invalid, StringSplitOptions.RemoveEmptyEntries));
-        return string.IsNullOrWhiteSpace(clean) ? "download.dat" : clean;
+        var clean = string.Concat(name.Split(invalid, StringSplitOptions.RemoveEmptyEntries)).Trim().TrimEnd('.', ' ');
+        if (clean.Length > 200) clean = clean[..200].TrimEnd('.', ' ');
+        if (clean.Length == 0) return "download.dat";
+
+        var stem = clean.Contains('.') ? clean[..clean.IndexOf('.')] : clean;
+        return ReservedDeviceNames.Contains(stem) ? "_" + clean : clean;
     }
 
-    private static string GetUniqueFilePath(string fullPath)
+    /// <summary>
+    /// Picks the file this download will write to and claims it so a concurrent download of the same
+    /// name cannot take it. A path that holds a resumable checkpoint for the same URL is returned as-is.
+    /// </summary>
+    private static string ReserveFilePath(string fullPath, string url)
     {
-        // If the file has an active checkpoint, it's an existing resumable download
-        if (File.Exists(fullPath + ".wdm-state")) return fullPath;
-        if (!File.Exists(fullPath)) return fullPath;
+        if (File.Exists(ResumeManager.GetCheckpointPath(fullPath)) && CheckpointUrl(fullPath) == url)
+        {
+            return fullPath;
+        }
 
         var dir = Path.GetDirectoryName(fullPath) ?? "";
         var nameWithoutExt = Path.GetFileNameWithoutExtension(fullPath);
         var ext = Path.GetExtension(fullPath);
 
-        int counter = 1;
-        string candidate;
-        do
+        for (int counter = 0; ; counter++)
         {
-            candidate = Path.Combine(dir, $"{nameWithoutExt} ({counter}){ext}");
-            counter++;
-        } while (File.Exists(candidate));
+            string candidate = counter == 0 ? fullPath : Path.Combine(dir, $"{nameWithoutExt} ({counter}){ext}");
 
-        return candidate;
+            if (File.Exists(candidate) || File.Exists(ResumeManager.GetCheckpointPath(candidate)))
+            {
+                if (counter > 0 && File.Exists(ResumeManager.GetCheckpointPath(candidate)) && CheckpointUrl(candidate) == url)
+                {
+                    return candidate;
+                }
+                continue;
+            }
+
+            try
+            {
+                using (new FileStream(candidate, FileMode.CreateNew, FileAccess.Write, FileShare.None)) { }
+                return candidate;
+            }
+            catch (IOException) when (File.Exists(candidate))
+            {
+                // Lost the race to another download: try the next name
+            }
+        }
     }
+
+    private static string? CheckpointUrl(string targetFilePath) =>
+        ResumeManager.LoadCheckpointAsync(targetFilePath).GetAwaiter().GetResult()?.Url;
 }

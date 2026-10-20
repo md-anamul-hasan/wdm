@@ -33,15 +33,13 @@ public class StorageWriter : IAsyncDisposable
             filePath,
             FileMode.OpenOrCreate,
             FileAccess.ReadWrite,
-            FileShare.ReadWrite,
+            FileShare.Read,
             FileOptions.Asynchronous | FileOptions.RandomAccess
         );
 
         // Pre-allocate file size if known to prevent NTFS fragmentation and reserve space upfront
-        if (totalBytes > 0)
-        {
-            RandomAccess.SetLength(_fileHandle, totalBytes);
-        }
+        // Unknown size: start from an empty file (unknown-length downloads cannot resume)
+        RandomAccess.SetLength(_fileHandle, Math.Max(0, totalBytes));
     }
 
     /// <summary>
@@ -52,6 +50,13 @@ public class StorageWriter : IAsyncDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return RandomAccess.WriteAsync(_fileHandle, buffer, fileOffset, cancellationToken);
+    }
+
+    /// <summary>Sets the final file length (used when the size was only learned at EOF).</summary>
+    public void SetLength(long length)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        RandomAccess.SetLength(_fileHandle, length);
     }
 
     /// <summary>

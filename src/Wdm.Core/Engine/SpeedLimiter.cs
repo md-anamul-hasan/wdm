@@ -3,7 +3,9 @@ using System.Diagnostics;
 namespace Wdm.Core.Engine;
 
 /// <summary>
-/// Thread-safe Token Bucket rate limiter for bandwidth throttling.
+/// Thread-safe token-bucket rate limiter for bandwidth throttling. A single instance can be shared by
+/// several engines to enforce a global limit. Callers may overdraw the bucket (token debt), so a read
+/// larger than one second of budget is delayed instead of waiting forever.
 /// </summary>
 public class SpeedLimiter
 {
@@ -19,8 +21,10 @@ public class SpeedLimiter
         {
             lock (_lock)
             {
-                Interlocked.Exchange(ref _bytesPerSecond, Math.Max(0, value));
-                _availableTokens = Math.Min(_availableTokens, _bytesPerSecond);
+                long limit = Math.Max(0, value);
+                Interlocked.Exchange(ref _bytesPerSecond, limit);
+                _availableTokens = Math.Min(_availableTokens, limit);
+                _lastRefillTicks = Stopwatch.GetTimestamp();
             }
         }
     }
@@ -30,53 +34,46 @@ public class SpeedLimiter
     /// <param name="maxBytesPerSecond">Max allowed bytes per second. 0 disables limiting.</param>
     public SpeedLimiter(long maxBytesPerSecond = 0)
     {
-        _bytesPerSecond = maxBytesPerSecond;
-        _availableTokens = maxBytesPerSecond;
+        _bytesPerSecond = Math.Max(0, maxBytesPerSecond);
+        _availableTokens = _bytesPerSecond;
         _lastRefillTicks = Stopwatch.GetTimestamp();
     }
 
-    /// <summary>
-    /// Requests to consume the given number of bytes, throttling if tokens are insufficient.
-    /// </summary>
+    /// <summary>Consumes <paramref name="bytes"/> of budget, waiting while the bucket is in debt.</summary>
     public async ValueTask ThrottleAsync(int bytes, CancellationToken cancellationToken = default)
     {
-        if (MaxBytesPerSecond <= 0) return;
-
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            TimeSpan delay = TimeSpan.Zero;
+            TimeSpan delay;
             lock (_lock)
             {
-                Refill();
+                long rate = _bytesPerSecond;
+                if (rate <= 0) return; // disabled, possibly while this call was waiting
 
-                if (_availableTokens >= bytes)
+                Refill(rate);
+
+                if (_availableTokens > 0)
                 {
                     _availableTokens -= bytes;
                     return;
                 }
 
-                // Compute wait time for enough tokens
-                double needed = bytes - _availableTokens;
-                double secondsToWait = needed / _bytesPerSecond;
-                delay = TimeSpan.FromSeconds(Math.Min(secondsToWait, 1.0));
+                delay = TimeSpan.FromSeconds(Math.Clamp(-_availableTokens / rate, 0.001, 1.0));
             }
 
-            if (delay > TimeSpan.Zero)
-            {
-                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
-            }
+            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    private void Refill()
+    private void Refill(long rate)
     {
         long now = Stopwatch.GetTimestamp();
         double elapsedSeconds = Stopwatch.GetElapsedTime(_lastRefillTicks, now).TotalSeconds;
         if (elapsedSeconds <= 0) return;
 
         _lastRefillTicks = now;
-        _availableTokens = Math.Min(_bytesPerSecond, _availableTokens + elapsedSeconds * _bytesPerSecond);
+        _availableTokens = Math.Min(rate, _availableTokens + elapsedSeconds * rate);
     }
 }

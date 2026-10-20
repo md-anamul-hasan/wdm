@@ -10,6 +10,53 @@ namespace Wdm.Ui.ViewModels;
 
 public class DownloadItemViewModel : INotifyPropertyChanged
 {
+    public static DownloadItemViewModel FromRecord(DownloadRecord r)
+    {
+        // Anything that was in flight when the app closed comes back paused and resumable
+        var status = r.Status is "Completed" ? "Completed" : r.Status.StartsWith("Error", StringComparison.Ordinal) ? r.Status : "Paused";
+        var item = new DownloadItemViewModel
+        {
+            Id = r.Id,
+            Url = r.Url,
+            FileName = r.FileName,
+            TargetFilePath = r.TargetFilePath,
+            TotalBytes = r.TotalBytes,
+            AddedAt = r.AddedAt,
+            CompletedAt = r.CompletedAt,
+            Options = r.Options,
+            Status = status,
+            LastTryDate = r.AddedAt.ToString("g")
+        };
+
+        if (status == "Completed")
+        {
+            item.ProgressPercentage = 100;
+            item.SizeFormatted = DownloadProgress.FormatBytes(r.TotalBytes > 0 ? r.TotalBytes : r.DownloadedBytes);
+        }
+        else
+        {
+            item.ProgressPercentage = r.TotalBytes > 0 ? Math.Clamp((double)r.DownloadedBytes / r.TotalBytes * 100, 0, 100) : 0;
+            item.SizeFormatted = DownloadProgress.FormatBytes(r.DownloadedBytes);
+        }
+
+        return item;
+    }
+
+    public DownloadRecord ToRecord() => new()
+    {
+        Id = Id,
+        Url = Url,
+        FileName = FileName,
+        TargetFilePath = TargetFilePath,
+        Status = Status,
+        TotalBytes = TotalBytes,
+        DownloadedBytes = TotalBytes > 0 ? (long)(TotalBytes * ProgressPercentage / 100.0) : 0,
+        AddedAt = AddedAt,
+        CompletedAt = IsCompleted ? CompletedAt ??= DateTime.Now : null,
+        // Session cookies / credentials are only needed to resume, so drop them once finished
+        Options = IsCompleted ? null : Options
+    };
+
     private string _fileName = string.Empty;
     private string _sizeFormatted = "0 B";
     private string _status = "Queued";
@@ -21,18 +68,12 @@ public class DownloadItemViewModel : INotifyPropertyChanged
     private double _speedRaw;
     private string _domain = string.Empty;
     private string _lastTryDate = DateTime.Now.ToString("g");
-    private string _description = string.Empty;
 
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string LastTryDate
     {
         get => _lastTryDate;
         set => SetField(ref _lastTryDate, value);
-    }
-    public string Description
-    {
-        get => _description;
-        set => SetField(ref _description, value);
     }
     public string Url
     {
@@ -57,6 +98,17 @@ public class DownloadItemViewModel : INotifyPropertyChanged
     public DateTime AddedAt { get; set; } = DateTime.Now;
     public DownloadEngine? Engine { get; set; }
 
+    // Run-time bookkeeping (not persisted)
+    public CancellationTokenSource? RunCts { get; set; }
+    public Task? RunTask { get; set; }
+    public int RetryCount { get; set; }
+    public DateTime LastFailureAt { get; set; } = DateTime.MinValue;
+    public bool IsRunning => RunTask is { IsCompleted: false };
+
+    public long TotalBytes { get; set; } = -1;
+    public DateTime? CompletedAt { get; set; }
+    public DownloadRequestOptions? Options { get; set; }
+
     public string FileName
     {
         get => _fileName;
@@ -64,41 +116,25 @@ public class DownloadItemViewModel : INotifyPropertyChanged
         {
             if (SetField(ref _fileName, value))
             {
-                OnPropertyChanged(nameof(FileExtension));
-                OnPropertyChanged(nameof(CategoryIconKind));
-                OnPropertyChanged(nameof(FileIconResourceKey));
+                OnPropertyChanged(nameof(Category));
+                OnPropertyChanged(nameof(CategoryName));
                 OnPropertyChanged(nameof(FileIconGeometry));
                 OnPropertyChanged(nameof(FileIconBrush));
-                OnPropertyChanged(nameof(CategoryColor));
-                OnPropertyChanged(nameof(CategoryBadgeBackground));
+                OnPropertyChanged(nameof(FileTileBrush));
             }
         }
     }
 
-    public string FileExtension => Path.GetExtension(FileName).ToLowerInvariant();
+    public FileCategory Category => FileCategories.FromFileName(FileName);
 
-    public string CategoryIconKind
+    private string FileIconResourceKey => Category switch
     {
-        get
-        {
-            var ext = FileExtension;
-            if (ext is ".mp4" or ".mkv" or ".avi" or ".webm" or ".mov" or ".ts" or ".flv") return "Video";
-            if (ext is ".mp3" or ".wav" or ".flac" or ".aac" or ".ogg" or ".m4a") return "Music";
-            if (ext is ".zip" or ".rar" or ".7z" or ".tar" or ".gz" or ".iso") return "Archive";
-            if (ext is ".exe" or ".msi" or ".apk" or ".bat" or ".cmd") return "App";
-            if (ext is ".pdf" or ".doc" or ".docx" or ".txt" or ".xlsx" or ".pptx") return "Document";
-            return "File";
-        }
-    }
-
-    public string FileIconResourceKey => CategoryIconKind switch
-    {
-        "Video" => "IconCategoryVideo",
-        "Music" => "IconCategoryMusic",
-        "Archive" => "IconCategoryCompressed",
-        "App" => "IconCategoryPrograms",
-        "Document" => "IconCategoryDocuments",
-        _ => "IconFile"
+        FileCategory.Video => "GeoVideo",
+        FileCategory.Music => "GeoMusic",
+        FileCategory.Compressed => "GeoArchive",
+        FileCategory.Programs => "GeoProgram",
+        FileCategory.Documents => "GeoDocument",
+        _ => "GeoFile"
     };
 
     public Geometry? FileIconGeometry
@@ -116,22 +152,41 @@ public class DownloadItemViewModel : INotifyPropertyChanged
         }
     }
 
-    public Brush FileIconBrush => CategoryIconKind switch
+    private static SolidColorBrush Frozen(string hex, byte? alpha = null)
     {
-        "Video" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#DC2626")),
-        "Music" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#DB2777")),
-        "Archive" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EA580C")),
-        "App" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#7C3AED")),
-        "Document" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2563EB")),
-        _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B"))
+        var c = (Color)ColorConverter.ConvertFromString(hex);
+        if (alpha.HasValue) c.A = alpha.Value;
+        var b = new SolidColorBrush(c);
+        b.Freeze();
+        return b;
+    }
+
+    private static readonly SolidColorBrush VideoBrush = Frozen("#E11D48"), MusicBrush = Frozen("#DB2777"),
+        ArchiveBrush = Frozen("#EA580C"), AppBrush = Frozen("#7C3AED"), DocBrush = Frozen("#2563EB"), FileBrush = Frozen("#64748B");
+
+    public Brush FileIconBrush => Category switch
+    {
+        FileCategory.Video => VideoBrush,
+        FileCategory.Music => MusicBrush,
+        FileCategory.Compressed => ArchiveBrush,
+        FileCategory.Programs => AppBrush,
+        FileCategory.Documents => DocBrush,
+        _ => FileBrush
     };
 
-    public Brush CategoryColor => FileIconBrush;
+    /// <summary>Soft tinted tile behind the file icon (translucent so it works on light and dark surfaces).</summary>
+    public Brush FileTileBrush => Category switch
+    {
+        FileCategory.Video => TileVideo,
+        FileCategory.Music => TileMusic,
+        FileCategory.Compressed => TileArchive,
+        FileCategory.Programs => TileApp,
+        FileCategory.Documents => TileDoc,
+        _ => TileFile
+    };
 
-    public Brush CategoryBadgeBackground => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#172236"));
-
-    public string Referer { get; set; } = string.Empty;
-    public bool SupportsResume { get; set; } = true;
+    private static readonly SolidColorBrush TileVideo = Frozen("#E11D48", 0x24), TileMusic = Frozen("#DB2777", 0x24),
+        TileArchive = Frozen("#EA580C", 0x24), TileApp = Frozen("#7C3AED", 0x24), TileDoc = Frozen("#2563EB", 0x24), TileFile = Frozen("#64748B", 0x24);
 
     private void UpdateDomain()
     {
@@ -173,6 +228,10 @@ public class DownloadItemViewModel : INotifyPropertyChanged
             {
                 OnPropertyChanged(nameof(StatusColor));
                 OnPropertyChanged(nameof(StatusBadgeBackground));
+                OnPropertyChanged(nameof(StatusLabel));
+                OnPropertyChanged(nameof(StatusToolTip));
+                OnPropertyChanged(nameof(IsError));
+                OnPropertyChanged(nameof(IsQueued));
                 OnPropertyChanged(nameof(IsActive));
                 OnPropertyChanged(nameof(IsCompleted));
                 OnPropertyChanged(nameof(IsPaused));
@@ -180,53 +239,55 @@ public class DownloadItemViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool IsActive => Status is "Downloading" or "Connecting" or "Starting...";
+    public bool IsActive => Status is "Downloading" or "Connecting";
     public bool IsCompleted => Status is "Completed";
     public bool IsPaused => Status is "Paused";
+    public bool IsQueued => Status is "Queued";
+    public bool IsError => Status.StartsWith("Error", StringComparison.Ordinal);
 
-    public string CategoryName => CategoryIconKind switch
-    {
-        "Video" => "Video",
-        "Music" => "Music",
-        "Archive" => "Compressed",
-        "App" => "Programs",
-        "Document" => "Documents",
-        _ => "General"
-    };
+    public string CategoryName => FileCategories.DisplayName(Category);
 
     public string FormattedPercentage => $"{ProgressPercentage:F1}%";
 
+    private static readonly SolidColorBrush StDownloading = Frozen("#2563EB"), StCompleted = Frozen("#16A34A"),
+        StPaused = Frozen("#D97706"), StError = Frozen("#DC2626"), StIdle = Frozen("#64748B");
+
+    private static readonly SolidColorBrush BgDownloading = Frozen("#2563EB", 0x22), BgCompleted = Frozen("#16A34A", 0x22),
+        BgPaused = Frozen("#D97706", 0x22), BgError = Frozen("#DC2626", 0x22), BgIdle = Frozen("#64748B", 0x22);
+
     public Brush StatusColor => Status switch
     {
-        "Downloading" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#059669")),
-        "Completed" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2563EB")),
-        "Paused" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#D97706")),
-        string s when s.StartsWith("Error") => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#DC2626")),
-        _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#475569"))
+        "Downloading" => StDownloading,
+        "Completed" => StCompleted,
+        "Paused" => StPaused,
+        _ when IsError => StError,
+        _ => StIdle
     };
 
     public Brush StatusBadgeBackground => Status switch
     {
-        "Downloading" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ECFDF5")),
-        "Completed" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EFF6FF")),
-        "Paused" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFFBEB")),
-        string s when s.StartsWith("Error") => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FEF2F2")),
-        _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F1F5F9"))
+        "Downloading" => BgDownloading,
+        "Completed" => BgCompleted,
+        "Paused" => BgPaused,
+        _ when IsError => BgError,
+        _ => BgIdle
     };
 
-    public Brush StatusBadgeBorder => Status switch
-    {
-        "Downloading" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A7F3D0")),
-        "Completed" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#BFDBFE")),
-        "Paused" => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FDE68A")),
-        string s when s.StartsWith("Error") => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FECACA")),
-        _ => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0"))
-    };
+    /// <summary>Short label for the status badge; the full error text is exposed through <see cref="StatusToolTip"/>.</summary>
+    public string StatusLabel => IsError ? "Error" : Status;
+
+    public string StatusToolTip => IsError ? Status : string.Empty;
 
     public double ProgressPercentage
     {
         get => _progressPercentage;
-        set => SetField(ref _progressPercentage, value);
+        set
+        {
+            if (SetField(ref _progressPercentage, value))
+            {
+                OnPropertyChanged(nameof(FormattedPercentage));
+            }
+        }
     }
 
     public string SpeedFormatted

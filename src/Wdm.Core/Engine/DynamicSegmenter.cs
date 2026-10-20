@@ -39,7 +39,10 @@ public class DynamicSegmenter
 
             if (!supportsRanges || totalBytes <= 0 || connectionCount <= 1)
             {
-                var single = new DownloadSegment(_nextSegmentId++, 0, Math.Max(-1, totalBytes - 1));
+                var single = new DownloadSegment(_nextSegmentId++, 0, totalBytes > 0 ? totalBytes - 1 : -1)
+                {
+                    IsOpenEnded = totalBytes <= 0
+                };
                 _segments.Add(single);
                 return _segments.ToList();
             }
@@ -92,7 +95,7 @@ public class DynamicSegmenter
 
             foreach (var seg in _segments)
             {
-                if (seg.State == SegmentState.Downloading && !seg.IsCompleted)
+                if (seg.State == SegmentState.Downloading && !seg.IsCompleted && !seg.IsOpenEnded)
                 {
                     long remaining = seg.RemainingBytes;
                     if (remaining > maxRemaining)

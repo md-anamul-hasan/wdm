@@ -7,6 +7,13 @@
     if (msg.type === "WDM_MEDIA_FOUND" && msg.url) {
       activeMediaUrls.add(msg.url);
       ensureFloatingButton();
+    } else if (msg.type === "WDM_COLLECT_LINKS") {
+      // Every distinct http(s) link on the page ("Download all links with WDM")
+      const links = new Set();
+      document.querySelectorAll("a[href]").forEach((a) => {
+        if (/^https?:/i.test(a.href)) links.add(a.href);
+      });
+      sendResponse(Array.from(links));
     }
   });
 
