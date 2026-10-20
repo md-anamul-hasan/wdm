@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WDM's own executables and libraries; yt-dlp, ffmpeg and the .NET runtime are third-party and are not signed by us. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file-set>
+      <include path="Wdm*.exe" />
+      <include path="Wdm*.dll" />
+      <authenticode-sign />
+    </pe-file-set>
+  </zip-file>
+</artifact-configuration>

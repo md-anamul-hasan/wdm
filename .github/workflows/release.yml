@@ -1,0 +1,112 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      # Set the SIGNPATH_ORGANIZATION_ID repository variable and SIGNPATH_API_TOKEN secret once SignPath approves the project.
+      SIGN: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test Wdm.slnx -c Release --nologo
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Publish binaries
+        run: ./scripts/build-installer.ps1 -PublishOnly
+        shell: pwsh
+
+      # ---- sign WDM's own binaries before packaging
+      - name: Collect binaries to sign
+        if: env.SIGN == 'true'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/unsigned | Out-Null
+          Get-ChildItem dist/stage -File | Where-Object { $_.Name -like 'Wdm*.exe' -or $_.Name -like 'Wdm*.dll' } | Copy-Item -Destination dist/unsigned
+      - name: Upload binaries
+        if: env.SIGN == 'true'
+        id: upload-binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-unsigned
+          path: dist/unsigned/*
+      - name: Sign binaries
+        if: env.SIGN == 'true'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: wdm
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: binaries
+          github-artifact-id: ${{ steps.upload-binaries.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: dist/signed
+      - name: Replace with signed binaries
+        if: env.SIGN == 'true'
+        shell: pwsh
+        run: Copy-Item dist/signed/* dist/stage -Force
+
+      - name: Build installer
+        run: ./scripts/build-installer.ps1 -SkipPublish
+        shell: pwsh
+
+      # ---- sign the installer
+      - name: Upload installer
+        if: env.SIGN == 'true'
+        id: upload-installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-unsigned
+          path: dist/installer/WDM-Setup-*.exe
+      - name: Sign installer
+        if: env.SIGN == 'true'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: wdm
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: installer
+          github-artifact-id: ${{ steps.upload-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: dist/signed-installer
+      - name: Replace with signed installer
+        if: env.SIGN == 'true'
+        shell: pwsh
+        run: Copy-Item dist/signed-installer/WDM-Setup-*.exe dist/installer -Force
+
+      - name: Package release files
+        shell: pwsh
+        run: |
+          $v = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version
+          New-Item -ItemType Directory -Force dist/release | Out-Null
+          Copy-Item "dist/installer/WDM-Setup-$v.exe" dist/release
+          Compress-Archive -Path extension/* -DestinationPath "dist/release/WDM-Extension-$v.zip"
+          Get-ChildItem dist/release -File | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content dist/release/SHA256SUMS.txt -Encoding ascii
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: dist/release/*
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" dist/release/* --title "WDM ${{ github.ref_name }}" --generate-notes

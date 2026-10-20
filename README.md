@@ -69,3 +69,19 @@ Directory.Build.props  single source of the product version
 - No tray icon, proxy settings or per-site logins UI yet (credentials are supported by the engine via `DownloadRequestOptions`).
 - The browser takeover list is a fixed default file-type list in `extension/background.js` (not yet editable from the app).
 - Firefox support is declared in the manifest but not verified in this repository.
+
+## License
+
+[MIT](LICENSE). Bundled third-party tools keep their own licenses: `yt-dlp` (Unlicense) and `ffmpeg` (LGPL build from [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds); source is available from [ffmpeg.org](https://ffmpeg.org/download.html)).
+
+## Code signing policy
+
+Free code signing for release builds is provided by [SignPath.io](https://about.signpath.io/), with a certificate from the [SignPath Foundation](https://signpath.org/).
+
+- Releases are built and signed only by the GitHub Actions workflow `.github/workflows/release.yml` from tagged commits of this repository.
+- Only WDM's own binaries and its installer are signed; bundled third-party tools are not.
+- Maintainer and approver: Md Anamul Hasan ([@md-anamul-hasan](https://github.com/md-anamul-hasan)).
+
+## Privacy
+
+WDM sends no telemetry and has no update check. It connects only to the servers you download from (and, for video-site pages, to whatever `yt-dlp` contacts for that site). Settings and the download list stay in `%APPDATA%\WDM` on your machine.
