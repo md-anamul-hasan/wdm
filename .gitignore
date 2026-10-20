@@ -4,6 +4,7 @@
 [Oo]ut/
 publish/
 scratch/
+*.wdm-state
 
 ## Visual Studio & JetBrains
 .vs/
@@ -23,5 +24,5 @@ scratch/
 Thumbs.db
 desktop.ini
 
-## Release output & local reverse-engineering workspace (never commit third-party binaries)
+## Release output (publish.ps1 / build-installer.ps1) and downloaded third-party tools - never commit
 dist/

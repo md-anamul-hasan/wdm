@@ -37,7 +37,7 @@ dotnet test  Wdm.slnx
 .\scripts\publish.ps1
 ```
 
-Installer: `.\scripts\build-installer.ps1` builds a self-contained `dist\installer\WDM-Setup-<version>.exe` (needs Inno Setup 6: `winget install JRSoftware.InnoSetup`).
+Installer: `.\scripts\build-installer.ps1` builds a self-contained `dist\installer\WDM-Setup-<version>.exe` (needs Inno Setup 6: `winget install JRSoftware.InnoSetup`). Both scripts download `yt-dlp.exe` and the LGPL build of `ffmpeg.exe` (BtbN) on first run; neither is stored in the repository. The version comes from `Directory.Build.props`.
 
 Load the extension: `chrome://extensions` → Developer mode → **Load unpacked** → select `extension\`.
 The manifest pins the extension ID (`kdjgcdbahccolkkagbckkchfpcchcfne`) that `Wdm.NativeHost --register` authorizes.
@@ -53,8 +53,10 @@ src/Wdm.Ui          WPF app (MVVM): MainWindow, MainViewModel, DownloadItemViewM
 src/Wdm.Cli         terminal downloader
 src/Wdm.NativeHost  browser <-> WDM bridge + registration
 extension/          MV3 browser extension (Chrome/Edge/Brave; Firefox id included)
-tests/Wdm.Tests     xUnit: segmentation, storage/resume, end-to-end download, IPC, redirect credential scoping
-scripts/            publish.ps1 (publish + register), build-installer.ps1 (Inno Setup installer)
+tests/Wdm.Tests     xUnit (45 tests): segmentation, storage/resume, end-to-end and unknown-length downloads, speed limiter,
+                    file-name handling, cookie/credential scoping, IPC, settings
+scripts/            publish.ps1 (publish + register), build-installer.ps1 (Inno Setup installer),
+                    fetch-tools.ps1 (downloads yt-dlp + ffmpeg for both)
 installer/          Inno Setup script
 Directory.Build.props  single source of the product version
 ```
