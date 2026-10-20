@@ -122,6 +122,7 @@ public static class MediaResolver
         using var killOnCancel = ct.Register(() => TryKill(proc));
 
         long totalBytes = 0;
+        long finishedStreamsBytes = 0; // video and audio arrive as separate streams, each reporting 0-100%
         double speedBps = 0;
         TimeSpan? eta = null;
         string? finalPath = null;
@@ -146,6 +147,13 @@ public static class MediaResolver
                     continue;
                 }
 
+                if (line.StartsWith("[download] Destination:", StringComparison.Ordinal))
+                {
+                    finishedStreamsBytes += totalBytes;
+                    totalBytes = 0;
+                    continue;
+                }
+
                 var match = ProgressRegex.Match(line);
                 if (!match.Success) continue;
 
@@ -162,10 +170,10 @@ public static class MediaResolver
                 if (match.Groups[3].Success) speedBps = ParseBytes(match.Groups[3].Value.Replace("/s", "", StringComparison.OrdinalIgnoreCase));
                 eta = match.Groups[4].Success ? ParseEta(match.Groups[4].Value) : null;
 
-                meta.TotalBytes = totalBytes;
+                meta.TotalBytes = finishedStreamsBytes + totalBytes;
                 onProgress(new DownloadProgress(
-                    TotalBytes: totalBytes,
-                    DownloadedBytes: (long)(totalBytes * pct / 100.0),
+                    TotalBytes: finishedStreamsBytes + totalBytes,
+                    DownloadedBytes: finishedStreamsBytes + (long)(totalBytes * pct / 100.0),
                     SpeedBytesPerSecond: speedBps,
                     EstimatedTimeRemaining: eta,
                     Segments: Array.Empty<DownloadSegment>(),

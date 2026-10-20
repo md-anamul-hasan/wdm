@@ -19,11 +19,8 @@ foreach ($project in 'Wdm.Ui', 'Wdm.Cli', 'Wdm.NativeHost') {
     if ($LASTEXITCODE -ne 0) { throw "Publish failed for $project" }
 }
 
-# yt-dlp powers video-platform downloads (YouTube etc.); fetched once from the official release
-$ytdlp = Join-Path $out 'yt-dlp.exe'
-if (-not (Test-Path $ytdlp)) {
-    Invoke-WebRequest 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe' -OutFile $ytdlp
-}
+# yt-dlp + ffmpeg power video-platform downloads (YouTube etc.)
+& (Join-Path $PSScriptRoot 'fetch-tools.ps1') -Directory $out
 
 if (-not $NoRegister) {
     & (Join-Path $out 'Wdm.NativeHost.exe') --register

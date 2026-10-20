@@ -20,10 +20,8 @@ foreach ($project in 'Wdm.Ui', 'Wdm.Cli', 'Wdm.NativeHost') {
     if ($LASTEXITCODE -ne 0) { throw "Publish failed for $project" }
 }
 
-$ytdlp = Join-Path $stage 'yt-dlp.exe'
-if (-not (Test-Path $ytdlp)) {
-    Invoke-WebRequest 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe' -OutFile $ytdlp
-}
+# yt-dlp + ffmpeg power video-platform downloads (YouTube etc.)
+& (Join-Path $PSScriptRoot 'fetch-tools.ps1') -Directory $stage
 
 & $iscc "/DAppVersion=$Version" (Join-Path $root 'installer\wdm.iss')
 if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compilation failed' }

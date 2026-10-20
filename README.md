@@ -61,7 +61,7 @@ Directory.Build.props  single source of the product version
 
 ## Known limitations
 
-- YouTube-style pages are fetched with `yt-dlp`; most videos need `ffmpeg.exe` next to it (or on `PATH`) to join separate video and audio streams; it is not bundled.
+- YouTube-style pages are fetched with `yt-dlp`; `scripts/publish.ps1` and the installer bundle `ffmpeg.exe` beside it, which joins the separate video and audio streams (a copy on `PATH` also works; without ffmpeg the download fails with a hint).
 - No tray icon, proxy settings or per-site logins UI yet (credentials are supported by the engine via `DownloadRequestOptions`).
 - The browser takeover list is a fixed default file-type list in `extension/background.js` (not yet editable from the app).
 - Firefox support is declared in the manifest but not verified in this repository.
