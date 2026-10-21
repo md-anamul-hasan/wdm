@@ -22,11 +22,10 @@ WDM splits a file across up to 32 connections, resumes interrupted downloads, an
 REQUIRES THE WDM DESKTOP APP (Windows 10/11). Install it first from https://github.com/md-anamul-hasan/wdm/releases/latest - the extension does nothing on its own.
 
 WHAT IT DOES
-• Takes over large or archive-type downloads and hands them to WDM. If WDM is not running or does not confirm, the browser download continues untouched - nothing is ever lost.
 • Right-click any link, video or audio and choose "Download with WDM".
 • Right-click a page and choose "Download all links with WDM" to queue every link on it.
-• Shows a "download this media" button on pages that stream video or audio.
-• Toolbar popup: paste a URL and send it to WDM, or switch download takeover on and off.
+• Toolbar popup: paste a URL and send it to WDM.
+• Optional "all sites" access (you turn it on in the popup, and off again any time): WDM then takes over large or archive-type downloads using your logged-in session, and shows a "download this media" button on pages that stream video or audio. If WDM is not running or does not confirm, the browser download continues untouched - nothing is ever lost.
 
 PRIVACY
 • No analytics, no tracking, no accounts, no remote code.
@@ -60,13 +59,14 @@ Privacy policy: https://github.com/md-anamul-hasan/wdm/blob/master/docs/PRIVACY.
 | Permission | Justification |
 |---|---|
 | `nativeMessaging` | The extension's only output channel. It sends the download URL to the locally installed WDM app (host `com.wdm.download`). Without it the extension cannot do its single purpose. |
-| `downloads` | To detect a download the browser has just started, pause it, offer it to WDM, and cancel the browser's copy only after WDM confirms (or resume it if WDM is unreachable). |
+| `downloads` | To detect a download the browser has just started, pause it, offer it to WDM, and cancel the browser's copy only after WDM confirms (or resume it if WDM is unreachable). Only acts when the user has turned on all-sites access. |
 | `contextMenus` | Adds the "Download with WDM" and "Download all links with WDM" right-click entries. |
-| `cookies` | To read the cookies of the download URL's site and pass them to WDM, so downloads that need the user's logged-in session work. Used only for the URL being sent, and only sent to the WDM app on the same computer. |
-| `webRequest` | Read-only observation of response headers to notice media streams on a page and offer the "download this media" button. No request is blocked or modified. |
+| `cookies` | To read the cookies of the download URL's site and pass them to WDM, so downloads that need the user's logged-in session work. Used only for the URL being sent, and only sent to the WDM app on the same computer. Limited to the sites the extension has access to. |
+| `webRequest` | Read-only observation of response headers to notice media streams on a page and offer the "download this media" button. No request is blocked or modified. Receives events only for sites the user granted. |
 | `storage` | Remembers one setting: whether download takeover is on. |
-| Host permission `<all_urls>` | Downloads and media can come from any website, so the extension must be able to read cookies for, observe media requests of, and offer the download button on any site the user visits. It contacts none of them itself. |
-| Content script on all pages | Adds the floating "download this media" button and collects page links for "Download all links". It does not read or send page content anywhere else. |
+| `activeTab` | Lets the right-click and toolbar actions work on the current page after the user's click (reading that page's links for "Download all links"), without any standing site access. |
+| `scripting` | Reads the links of the current page when the user picks "Download all links with WDM", and registers the media button's script only if the user has granted all-sites access. |
+| Optional host permission `<all_urls>` | NOT requested at install. The user can grant it from the popup. It is needed only for the opt-in features: taking over browser downloads (the extension must read the cookies for whichever site a download comes from, and see the download's site), and the "download this media" button on any site. It contacts none of those sites itself, and the user can turn it off again in the popup. |
 
 **Remote code**: No. All JavaScript is in the package.
 
@@ -88,7 +88,8 @@ The extension is the browser half of the free Windows app WDM; it needs the app 
 1. Install WDM from https://github.com/md-anamul-hasan/wdm/releases/latest (WDM-Setup-1.0.0.exe, Windows 10/11). Keep "Enable browser integration" ticked.
 2. Open Chrome, install this extension, open any page with a file link (for example https://github.com/md-anamul-hasan/wdm/releases/latest) and right-click the installer link > "Download with WDM". The WDM window opens and downloads the file.
 3. Or click the toolbar icon, paste a URL and press "Send to WDM".
-4. Without WDM installed the popup shows it cannot reach the app and browser downloads proceed normally.
+4. Optional features: in the popup press "Allow access" (all-sites access, a standard permission prompt). Then downloads of large or archive files started in the browser are taken over by WDM, and pages that play video show a "Download with WDM" button. "Turn off" in the popup removes the access again.
+5. Without WDM installed the popup shows it cannot reach the app and browser downloads proceed normally.
 
 No account or login is needed.
 ```

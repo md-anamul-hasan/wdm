@@ -2,13 +2,17 @@
 
 _Last updated: 2026-10-21_
 
-WDM (Windows Download Manager) and its browser extension, "WDM Integration Module", are free, open-source software maintained by Md Anamul Hasan. This policy covers both.
+WDM (Windows Download Manager) and its browser extension, "WDM Download Manager Integration", are free, open-source software maintained by Md Anamul Hasan. This policy covers both.
 
 ## Summary
 
 - WDM collects **no personal data** and sends **no telemetry**. There are no analytics, no accounts, no advertising and no update check.
 - Nothing the extension reads leaves your computer, except to the websites you are downloading from, and only as described below.
 - There is no server operated by the WDM project that receives your data.
+
+## Site access is optional
+
+When installed, the extension has no standing access to websites. The toolbar popup and the right-click menus work on the page you click on. A separate, optional "all sites" permission can be granted from the popup and removed again at any time. Only with it does the extension take over browser downloads, read the cookies of a download's site, and watch for media on pages. Everything below describes what happens with that data.
 
 ## What the extension does with browser data
 

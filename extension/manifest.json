@@ -10,9 +10,11 @@
     "downloads",
     "webRequest",
     "cookies",
-    "storage"
+    "storage",
+    "activeTab",
+    "scripting"
   ],
-  "host_permissions": [
+  "optional_host_permissions": [
     "<all_urls>"
   ],
   "background": {
@@ -25,13 +27,6 @@
       "strict_min_version": "128.0"
     }
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_end"
-    }
-  ],
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",

@@ -19,6 +19,13 @@
     </span>
   </header>
 
+  <section id="access" class="access" hidden>
+    <strong id="accessTitle">Allow access to all sites</strong>
+    <p id="accessText">Optional. Lets WDM take over downloads, use your login for them and spot videos on pages.
+      Nothing is read except links you send to WDM. Without it, the popup and right-click menus still work.</p>
+    <button id="accessBtn" class="btn ghost" type="button">Allow access</button>
+  </section>
+
   <form id="sendForm" class="send" novalidate>
     <input id="urlInput" class="field" type="text" inputmode="url" autocomplete="off" spellcheck="false"
            placeholder="Paste a link to download" aria-label="Link to download">
@@ -31,7 +38,7 @@
   </form>
 
   <label class="switch">
-    <span class="label">Take over downloads<small>Large files and archives open in WDM</small></span>
+    <span class="label">Take over downloads<small id="takeoverHint">Large files and archives open in WDM</small></span>
     <input type="checkbox" id="takeoverToggle" checked>
     <span class="track" aria-hidden="true"></span>
   </label>

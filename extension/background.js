@@ -9,6 +9,14 @@ const DEFAULT_EXTENSIONS = new Set((
 const MIN_UNKNOWN_TYPE_BYTES = 1024 * 1024;
 const MEDIA_REGEX = /\.(mp4|webm|mkv|flv|mp3|aac)(\?.*)?$/i;
 
+// Site access is optional. Without it the extension works from explicit clicks only (activeTab): the toolbar
+// popup, the right-click menus. With it WDM can also take over downloads, use the visitor's login cookies for
+// them and spot media on pages. The user grants it from the popup.
+const ALL_SITES = { origins: ["<all_urls>"] };
+const MEDIA_SCRIPT_ID = "wdm-media";
+
+const hasAllSites = () => chrome.permissions.contains(ALL_SITES);
+
 // ---- settings ---------------------------------------------------------------------------------
 
 async function isTakeoverEnabled() {
@@ -36,6 +44,7 @@ function sendToHost(message) {
   });
 }
 
+/** Cookies are only readable for sites the extension has access to; anything else is sent without. */
 async function cookieHeaderFor(url) {
   try {
     const cookies = await chrome.cookies.getAll({ url });
@@ -71,19 +80,34 @@ async function sendBatchToWdm(urls, referer) {
 
 // ---- context menus ----------------------------------------------------------------------------
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(({ reason }) => {
   chrome.contextMenus.create({
     id: "wdm_download_link",
     title: "Download with WDM",
     contexts: ["link", "video", "audio"]
   });
-
   chrome.contextMenus.create({
     id: "wdm_download_page",
     title: "Download all links with WDM",
     contexts: ["page"]
   });
+
+  syncSiteAccess();
+
+  // First run: show the popup in a tab so the user can decide about site access
+  if (reason === "install") chrome.tabs.create({ url: chrome.runtime.getURL("popup.html?welcome=1") });
 });
+
+chrome.runtime.onStartup.addListener(syncSiteAccess);
+
+/** Runs inside the page (activeTab grants access after the click); returns every distinct http(s) link. */
+function collectPageLinks() {
+  const links = new Set();
+  document.querySelectorAll("a[href]").forEach((a) => {
+    if (/^https?:/i.test(a.href)) links.add(a.href);
+  });
+  return Array.from(links);
+}
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "wdm_download_link") {
@@ -91,7 +115,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (targetUrl) await sendDownloadToWdm(targetUrl, tab?.url);
   } else if (info.menuItemId === "wdm_download_page" && tab?.id != null) {
     try {
-      const links = await chrome.tabs.sendMessage(tab.id, { type: "WDM_COLLECT_LINKS" });
+      const [{ result: links }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: collectPageLinks });
       await sendBatchToWdm(links || [], tab.url);
     } catch (err) {
       console.warn("[WDM] Could not collect page links:", err);
@@ -136,7 +160,9 @@ function shouldTakeOver(item) {
 }
 
 chrome.downloads.onCreated.addListener(async (item) => {
-  if (!(await isTakeoverEnabled()) || !shouldTakeOver(item)) return;
+  // Taking over needs the visitor's cookies for the download's site, otherwise logged-in downloads would fail in WDM.
+  // Without site access the browser simply keeps its download.
+  if (!(await isTakeoverEnabled()) || !shouldTakeOver(item) || !(await hasAllSites())) return;
 
   try { await chrome.downloads.pause(item.id); } catch { /* already finished or not pausable */ }
 
@@ -153,15 +179,39 @@ chrome.downloads.onCreated.addListener(async (item) => {
   } catch { /* download vanished while we were deciding */ }
 });
 
-// ---- media sniffing ---------------------------------------------------------------------------
+// ---- media sniffing (needs site access) -------------------------------------------------------
 
-chrome.webRequest.onHeadersReceived.addListener(
-  (details) => {
-    if (details.tabId < 0) return;
-    if (details.type === "media" || MEDIA_REGEX.test(details.url)) {
-      chrome.tabs.sendMessage(details.tabId, { type: "WDM_MEDIA_FOUND", url: details.url }).catch(() => {});
-    }
-  },
-  { urls: ["<all_urls>"] },
-  ["responseHeaders"]
-);
+function onMediaHeaders(details) {
+  if (details.tabId < 0) return;
+  if (details.type === "media" || MEDIA_REGEX.test(details.url)) {
+    chrome.tabs.sendMessage(details.tabId, { type: "WDM_MEDIA_FOUND", url: details.url }).catch(() => {});
+  }
+}
+
+// Registered at start-up so the worker is woken for it; Chrome delivers events only for sites the user granted.
+try {
+  chrome.webRequest.onHeadersReceived.addListener(onMediaHeaders, { urls: ["<all_urls>"] }, ["responseHeaders"]);
+} catch (err) {
+  console.warn("[WDM] Media detection unavailable until site access is granted:", err.message);
+}
+
+/** The page button is a content script, only registered while the user has granted site access. */
+async function syncSiteAccess() {
+  const granted = await hasAllSites();
+  const registered = (await chrome.scripting.getRegisteredContentScripts({ ids: [MEDIA_SCRIPT_ID] })).length > 0;
+
+  if (granted && !registered) {
+    await chrome.scripting.registerContentScripts([{
+      id: MEDIA_SCRIPT_ID,
+      matches: ["<all_urls>"],
+      js: ["content.js"],
+      runAt: "document_end",
+      persistAcrossSessions: true
+    }]);
+  } else if (!granted && registered) {
+    await chrome.scripting.unregisterContentScripts({ ids: [MEDIA_SCRIPT_ID] });
+  }
+}
+
+chrome.permissions.onAdded.addListener(syncSiteAccess);
+chrome.permissions.onRemoved.addListener(syncSiteAccess);

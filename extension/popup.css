@@ -100,6 +100,31 @@ body {
 .pill[data-state="error"] { background: var(--danger-soft); color: var(--danger); }
 .pill[data-state="warn"] { background: var(--warning-soft); color: var(--warning); }
 
+/* ---- site access card --------------------------------------------------------------------- */
+.access {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--accent-soft);
+}
+
+.access[hidden] { display: none; }
+.access strong { display: block; font-size: 13px; }
+.access p { margin: 4px 0 0; font-size: 11.5px; color: var(--text-muted); }
+body.welcome .access { border-color: var(--accent); }
+
+.btn.ghost {
+  height: 32px;
+  margin-top: 10px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.btn.ghost:hover { background: var(--surface-alt); }
+.switch.disabled { opacity: 0.55; cursor: not-allowed; }
+
 /* ---- send form ---------------------------------------------------------------------------- */
 .send { margin-top: 16px; }
 

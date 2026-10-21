@@ -1,5 +1,5 @@
-// WDM content script: collects page links on request and offers a "Download with WDM" button
-// on pages that play media. The button lives in a shadow root so page CSS cannot restyle it.
+// WDM content script (registered only while the user has granted site access): offers a "Download with WDM"
+// button on pages that play media. The button lives in a shadow root so page CSS cannot restyle it.
 (() => {
   const SCAN_INTERVAL_MS = 3000;
   const SENT_VISIBLE_MS = 2000;
@@ -45,17 +45,8 @@
 
   // ---- messages from the background worker ------------------------------------------------------
 
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg.type === "WDM_MEDIA_FOUND" && msg.url) {
-      addMedia(msg.url);
-    } else if (msg.type === "WDM_COLLECT_LINKS") {
-      // Every distinct http(s) link on the page ("Download all links with WDM")
-      const links = new Set();
-      document.querySelectorAll("a[href]").forEach((a) => {
-        if (/^https?:/i.test(a.href)) links.add(a.href);
-      });
-      sendResponse(Array.from(links));
-    }
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === "WDM_MEDIA_FOUND" && msg.url) addMedia(msg.url);
   });
 
   // ---- media discovery --------------------------------------------------------------------------
