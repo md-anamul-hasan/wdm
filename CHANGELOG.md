@@ -12,6 +12,9 @@ All notable changes to WDM. Versioning follows [Semantic Versioning](https://sem
 - Extension popup and the on-page download button now use the desktop app's palette, light and dark (system theme); the page button runs in a shadow root and can be dismissed.
 - A failed download now shows its reason in the details panel instead of only in a status tooltip.
 
+### Fixed
+- Video-site downloads whose title contains non-ASCII characters (for example Bengali) finished but were reported as "output file was not found"; yt-dlp is now run with `--encoding utf-8`.
+
 ## [1.0.0] - 2026-10-21
 
 First public release.

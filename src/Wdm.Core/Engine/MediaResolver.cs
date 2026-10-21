@@ -93,6 +93,7 @@ public static class MediaResolver
 
         foreach (var arg in formatArgs.Concat(new[]
         {
+            "--encoding", "utf-8", // redirected output otherwise degrades non-ASCII titles to "?", and the printed file path stops matching the file
             "--no-warnings", "--no-playlist", "--newline", "--progress", "--no-simulate",
             "--print", "before_dl:" + TitlePrefix + "%(title)s",
             "--print", "after_move:" + FilePrefix + "%(filepath)s",
