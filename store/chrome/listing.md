@@ -85,7 +85,7 @@ Certify all three: no sale to third parties, no use unrelated to the single purp
 ```
 The extension is the browser half of the free Windows app WDM; it needs the app (and its native messaging host) installed to function.
 
-1. Install WDM from https://github.com/md-anamul-hasan/wdm/releases/latest (WDM-Setup-1.0.0.exe, Windows 10/11). Keep "Enable browser integration" ticked.
+1. Install WDM from https://github.com/md-anamul-hasan/wdm/releases/latest (the WDM-Setup installer, Windows 10/11). Keep "Enable browser integration" ticked.
 2. Open Chrome, install this extension, open any page with a file link (for example https://github.com/md-anamul-hasan/wdm/releases/latest) and right-click the installer link > "Download with WDM". The WDM window opens and downloads the file.
 3. Or click the toolbar icon, paste a URL and press "Send to WDM".
 4. Optional features: in the popup press "Allow access" (all-sites access, a standard permission prompt). Then downloads of large or archive files started in the browser are taken over by WDM, and pages that play video show a "Download with WDM" button. "Turn off" in the popup removes the access again.

@@ -2,12 +2,13 @@
 
 All notable changes to WDM. Versioning follows [Semantic Versioning](https://semver.org/); the version lives in `Directory.Build.props`.
 
-## [Unreleased]
+## [1.0.1] - 2026-10-21
 
 ### Added
 - Chrome Web Store packaging (`scripts/package-extension.ps1`), listing assets and privacy policy; `Wdm.NativeHost --register --extension-id <id>` authorizes the store-assigned extension ID.
 
 ### Changed
+- Internal: `MainViewModel` split into partial classes by concern (downloads, queue/scheduler, dialogs, filtering); no behaviour change.
 - Extension: no standing host access. Site access (`<all_urls>`) is now optional and granted from the popup; the popup and right-click menus work from `activeTab` alone. Download takeover, login cookies for it and the page media button need the optional access. This avoids the Chrome Web Store broad-host-permissions review.
 - Extension popup and the on-page download button now use the desktop app's palette, light and dark (system theme); the page button runs in a shadow root and can be dismissed.
 - A failed download now shows its reason in the details panel instead of only in a status tooltip.
