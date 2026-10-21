@@ -18,8 +18,12 @@ public class Program
 {
     private const string HostName = "com.wdm.download";
 
-    // Fixed by the "key" field in extension/manifest.json
+    // Unpacked/sideloaded copy: fixed by the "key" field in extension/manifest.json.
     private const string ChromeExtensionId = "kdjgcdbahccolkkagbckkchfpcchcfne";
+
+    // The Chrome Web Store assigns its own ID on first upload. Pass it with `--register --extension-id <id>`
+    // (repeatable), or add it here once the listing is published so the installer authorizes it by default.
+    private static readonly string[] PublishedChromeExtensionIds = Array.Empty<string>();
     private const string FirefoxExtensionId = "wdm@windowsdownloadmanager.com";
 
     private static readonly string Version = typeof(Program).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "1.0.0";
@@ -42,7 +46,7 @@ public class Program
             switch (args[0].ToLowerInvariant())
             {
                 case "--register" or "-r":
-                    return Register();
+                    return Register(args.Skip(1));
                 case "--unregister" or "-u":
                     return Unregister();
             }
@@ -200,8 +204,29 @@ public class Program
 
     private static string ManifestDirectory => Path.Combine(AppSettings.DataDirectory, "NativeMessaging");
 
-    private static int Register()
+    /// <summary>Chromium extension IDs are 32 characters from a-p.</summary>
+    internal static bool IsChromeExtensionId(string? id) =>
+        id is { Length: 32 } && id.All(c => c is >= 'a' and <= 'p');
+
+    private static int Register(IEnumerable<string> options)
     {
+        var extensionIds = new List<string> { ChromeExtensionId };
+        extensionIds.AddRange(PublishedChromeExtensionIds);
+
+        var optionList = options.ToList();
+        for (int i = 0; i < optionList.Count; i++)
+        {
+            if (optionList[i] != "--extension-id") continue;
+
+            string? id = i + 1 < optionList.Count ? optionList[++i].Trim().ToLowerInvariant() : null;
+            if (!IsChromeExtensionId(id))
+            {
+                Console.Error.WriteLine("[WDM] --extension-id needs a 32-character Chrome extension ID (letters a-p).");
+                return 2;
+            }
+            extensionIds.Add(id!);
+        }
+
         Console.WriteLine("[WDM] Registering native messaging host for Chrome, Edge, Brave and Firefox...");
 
         string exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "Wdm.NativeHost.exe");
@@ -217,7 +242,7 @@ public class Program
             description = "Windows Download Manager browser integration",
             path = exePath,
             type = "stdio",
-            allowed_origins = new[] { $"chrome-extension://{ChromeExtensionId}/" }
+            allowed_origins = extensionIds.Distinct().Select(id => $"chrome-extension://{id}/").ToArray()
         }, indented));
 
         File.WriteAllText(firefoxManifest, JsonSerializer.Serialize(new

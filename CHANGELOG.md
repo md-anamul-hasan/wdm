@@ -4,6 +4,9 @@ All notable changes to WDM. Versioning follows [Semantic Versioning](https://sem
 
 ## [Unreleased]
 
+### Added
+- Chrome Web Store packaging (`scripts/package-extension.ps1`), listing assets and privacy policy; `Wdm.NativeHost --register --extension-id <id>` authorizes the store-assigned extension ID.
+
 ### Changed
 - A failed download now shows its reason in the details panel instead of only in a status tooltip.
 

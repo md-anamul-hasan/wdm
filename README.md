@@ -53,6 +53,8 @@ Installer: `.\scripts\build-installer.ps1` builds a self-contained `dist\install
 
 Release for a website: `.\scripts\package-release.ps1` writes `dist\release\` with the installer, a zip of the extension and `SHA256SUMS.txt`.
 
+Chrome Web Store submission: `.\scripts\package-extension.ps1` builds the store zip, and `store/chrome/listing.md` has the listing text, permission justifications and reviewer instructions.
+
 Load the extension: `chrome://extensions` → Developer mode → **Load unpacked** → select `extension\`.
 The manifest pins the extension ID (`kdjgcdbahccolkkagbckkchfpcchcfne`) that `Wdm.NativeHost --register` authorizes.
 Use `Wdm.NativeHost --unregister` to remove the registration.
@@ -95,5 +97,7 @@ Free code signing for release builds is provided by [SignPath.io](https://about.
 - Maintainer and approver: Md Anamul Hasan ([@md-anamul-hasan](https://github.com/md-anamul-hasan)).
 
 ## Privacy
+
+Full policy: [docs/PRIVACY.md](docs/PRIVACY.md).
 
 WDM sends no telemetry and has no update check. It connects only to the servers you download from (and, for video-site pages, to whatever `yt-dlp` contacts for that site). Settings and the download list stay in `%APPDATA%\WDM` on your machine.
