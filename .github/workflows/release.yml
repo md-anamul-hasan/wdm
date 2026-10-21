@@ -97,7 +97,9 @@ jobs:
           New-Item -ItemType Directory -Force dist/release | Out-Null
           Copy-Item "dist/installer/WDM-Setup-$v.exe" dist/release
           Compress-Archive -Path extension/* -DestinationPath "dist/release/WDM-Extension-$v.zip"
-          Get-ChildItem dist/release -File | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content dist/release/SHA256SUMS.txt -Encoding ascii
+          # LF endings so `sha256sum -c` works on Linux and macOS too
+          $sums = Get-ChildItem dist/release -File | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" }
+          [IO.File]::WriteAllText("$PWD/dist/release/SHA256SUMS.txt", ($sums -join "`n") + "`n")
 
       - uses: actions/upload-artifact@v4
         with:
