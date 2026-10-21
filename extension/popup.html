@@ -7,19 +7,39 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <h2><img class="logo-icon" src="icon48.png" alt="WDM Icon" title="WDM Icon" width="20" height="20" /> WDM Integration <span class="status-badge" id="hostStatus">Ready</span></h2>
-  <div class="subtitle">Windows Download Manager</div>
+  <header class="head">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    </div>
+    <div class="title"><strong>WDM</strong><span>Download Manager</span></div>
+    <span id="hostStatus" class="pill" data-state="pending" role="status" aria-live="polite">
+      <i class="dot"></i><span id="hostStatusText">Checking…</span>
+    </span>
+  </header>
 
-  <div class="input-group">
-    <input type="text" id="urlInput" placeholder="Paste URL to download..." />
-    <button id="downloadBtn">Send to WDM</button>
-  </div>
+  <form id="sendForm" class="send" novalidate>
+    <input id="urlInput" class="field" type="text" inputmode="url" autocomplete="off" spellcheck="false"
+           placeholder="Paste a link to download" aria-label="Link to download">
+    <button class="btn" type="submit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Send to WDM
+    </button>
+  </form>
 
-  <label class="toggle"><input type="checkbox" id="takeoverToggle" checked /> Take over browser downloads</label>
+  <label class="switch">
+    <span class="label">Take over downloads<small>Large files and archives open in WDM</small></span>
+    <input type="checkbox" id="takeoverToggle" checked>
+    <span class="track" aria-hidden="true"></span>
+  </label>
 
-  <div class="footer">
-    Multi-Connection Dynamic Engine v<span id="version"></span>
-  </div>
+  <footer class="foot">
+    <span>Version <span id="version"></span></span>
+    <a href="https://github.com/md-anamul-hasan/wdm" target="_blank" rel="noopener">Open source</a>
+  </footer>
 
   <script src="popup.js"></script>
 </body>

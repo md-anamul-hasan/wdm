@@ -1,84 +1,200 @@
+/* Colours mirror the desktop app's palette (src/Wdm.Ui/Themes/Styles.xaml); the popup follows the system theme. */
+:root {
+  --bg: #ffffff;
+  --surface-alt: #f1f4f9;
+  --border: #e3e8f0;
+  --border-strong: #c5cedb;
+  --text: #0f172a;
+  --text-muted: #6b7a90;
+  --accent: #2563eb;
+  --accent-hover: #1d4fd8;
+  --accent-pressed: #1a44ba;
+  --accent-soft: #e0eaff;
+  --on-accent: #ffffff;
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --warning: #d97706;
+  --warning-soft: #fef3c7;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161b22;
+    --surface-alt: #1c222b;
+    --border: #262d38;
+    --border-strong: #3a4452;
+    --text: #e6eaf0;
+    --text-muted: #8091a6;
+    --accent: #4c8dff;
+    --accent-hover: #6ba0ff;
+    --accent-pressed: #3b7aeb;
+    --accent-soft: #1b2b4b;
+    --on-accent: #0b1220;
+    --success: #4ade80;
+    --success-soft: #12301e;
+    --danger: #f87171;
+    --danger-soft: #3b1818;
+    --warning: #fbbf24;
+    --warning-soft: #3a2c0b;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
 body {
-  width: 320px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  width: 340px;
   margin: 0;
   padding: 16px;
-  background: #1e1e1e;
-  color: #ffffff;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.4 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
-h2 {
-  margin: 0 0 12px 0;
-  font-size: 16px;
-  color: #38bdf8;
+/* ---- header ------------------------------------------------------------------------------- */
+.head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.logo-icon {
-  width: 20px;
-  height: 20px;
-  vertical-align: middle;
+.logo {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
-.subtitle {
-  font-size: 12px;
-  color: #d4d4d8;
-}
+.logo svg { width: 20px; height: 20px; }
 
-.status-badge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  background: #059669;
-  color: #ffffff;
-}
+.title { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.title strong { font-size: 15px; line-height: 1.2; }
+.title span { font-size: 11.5px; color: var(--text-muted); }
 
-.input-group {
-  margin-top: 14px;
-}
-
-input[type="text"] {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid #3f3f46;
-  background: #27272a;
-  color: #ffffff;
-  font-size: 12px;
-}
-
-button {
-  width: 100%;
-  margin-top: 10px;
-  padding: 9px;
-  border: none;
-  border-radius: 6px;
-  background: #0284c7;
-  color: #ffffff;
+/* ---- status pill (same shape as the app's status badges) ---------------------------------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 150px;
+  padding: 3px 9px;
+  border-radius: 11px;
+  font-size: 11.5px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+}
+
+.pill .dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: currentColor; }
+.pill[data-state="ok"] { background: var(--success-soft); color: var(--success); }
+.pill[data-state="error"] { background: var(--danger-soft); color: var(--danger); }
+.pill[data-state="warn"] { background: var(--warning-soft); color: var(--warning); }
+
+/* ---- send form ---------------------------------------------------------------------------- */
+.send { margin-top: 16px; }
+
+.field {
+  display: block;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font: inherit;
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.field::placeholder { color: var(--text-muted); }
+.field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 36px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.btn:hover { background: var(--accent-hover); }
+.btn:active { background: var(--accent-pressed); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn svg { width: 16px; height: 16px; }
+
+/* ---- takeover switch ---------------------------------------------------------------------- */
+.switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
   cursor: pointer;
 }
 
-button:hover {
-  background: #0369a1;
+.switch .label { display: flex; flex-direction: column; }
+.switch .label small { color: var(--text-muted); font-size: 11.5px; }
+
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+
+.track {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--border-strong);
+  transition: background 0.15s;
 }
 
-.footer {
-  margin-top: 14px;
-  font-size: 11px;
-  color: #a1a1aa;
-  text-align: center;
+.track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.15s;
 }
 
-.toggle {
+.switch input:checked + .track { background: var(--accent); }
+.switch input:checked + .track::after { transform: translateX(14px); }
+.switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- footer ------------------------------------------------------------------------------- */
+.foot {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  font-size: 12px;
-  color: #d4d4d8;
+  justify-content: space-between;
+  margin-top: 14px;
+  font-size: 11.5px;
+  color: var(--text-muted);
 }
+
+.foot a { color: var(--accent); text-decoration: none; }
+.foot a:hover { text-decoration: underline; }
