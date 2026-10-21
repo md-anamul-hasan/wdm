@@ -2,6 +2,11 @@
 
 All notable changes to WDM. Versioning follows [Semantic Versioning](https://semver.org/); the version lives in `Directory.Build.props`.
 
+## [Unreleased]
+
+### Changed
+- A failed download now shows its reason in the details panel instead of only in a status tooltip.
+
 ## [1.0.0] - 2026-10-21
 
 First public release.

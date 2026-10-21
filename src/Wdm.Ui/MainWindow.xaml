@@ -358,6 +358,19 @@
                                        Foreground="{DynamicResource ThemeTextMuted}" FontSize="11.5"/>
                             <TextBlock Text="{Binding SelectedDownload.FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,0,16,0"/>
                         </DockPanel>
+                        <TextBlock Grid.Row="1" Text="{Binding SelectedDownload.ErrorText}" TextWrapping="Wrap" FontSize="12.5"
+                                   Foreground="{DynamicResource ThemeDanger}" VerticalAlignment="Top" IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedDownload.IsError}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <ItemsControl ItemsSource="{Binding SelectedDownload.Segments}">
                                 <ItemsControl.ItemsPanel>

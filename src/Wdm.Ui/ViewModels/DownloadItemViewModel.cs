@@ -230,6 +230,7 @@ public class DownloadItemViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(StatusBadgeBackground));
                 OnPropertyChanged(nameof(StatusLabel));
                 OnPropertyChanged(nameof(StatusToolTip));
+                OnPropertyChanged(nameof(ErrorText));
                 OnPropertyChanged(nameof(IsError));
                 OnPropertyChanged(nameof(IsQueued));
                 OnPropertyChanged(nameof(IsActive));
@@ -277,6 +278,9 @@ public class DownloadItemViewModel : INotifyPropertyChanged
     public string StatusLabel => IsError ? "Error" : Status;
 
     public string StatusToolTip => IsError ? Status : string.Empty;
+
+    /// <summary>The failure reason without the "Error: " prefix, shown in the details panel so it does not hide behind a tooltip.</summary>
+    public string ErrorText => !IsError ? string.Empty : Status.StartsWith("Error:", StringComparison.Ordinal) ? Status[6..].Trim() : "The download failed.";
 
     public double ProgressPercentage
     {
