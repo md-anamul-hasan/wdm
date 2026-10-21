@@ -4,6 +4,14 @@ A multi-connection download manager for Windows built on **.NET 10 / WPF**, with
 WDM is an independent implementation: its behaviour was modelled on what IDM does (observed from its documented
 options, settings keys and native-messaging layout), but it shares no code, assets or branding with it.
 
+![WDM main window, dark theme](docs/media/screenshot-dark.png)
+
+<details><summary>Light theme</summary>
+
+![WDM main window, light theme](docs/media/screenshot-light.png)
+
+</details>
+
 ## What it does
 
 | Area | WDM behaviour |

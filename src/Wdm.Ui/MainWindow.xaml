@@ -354,7 +354,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <DockPanel Margin="0,0,0,8">
-                            <TextBlock Text="{Binding SelectedDownload.Segments.Count, StringFormat='{}{0} connections'}" DockPanel.Dock="Right"
+                            <TextBlock Text="{Binding SelectedDownload.Segments.Count, StringFormat='{}Connections: {0}'}" DockPanel.Dock="Right"
                                        Foreground="{DynamicResource ThemeTextMuted}" FontSize="11.5"/>
                             <TextBlock Text="{Binding SelectedDownload.FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,0,16,0"/>
                         </DockPanel>
@@ -558,7 +558,7 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="STATUS" Width="118">
+                            <DataGridTemplateColumn Header="STATUS" Width="136">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border Background="{Binding StatusBadgeBackground}" CornerRadius="11" Padding="9,3" HorizontalAlignment="Left" ToolTip="{Binding StatusToolTip}">

@@ -621,6 +621,7 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Foreground" Value="{DynamicResource ThemeTextPrimary}"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -631,6 +632,11 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource ThemeRowSelectedText}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- ============================ Dialogs ============================ -->
