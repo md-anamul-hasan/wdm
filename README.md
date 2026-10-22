@@ -14,7 +14,7 @@ options, settings keys and native-messaging layout), but it shares no code, asse
 
 ## Download
 
-Get the installer from the [latest release](https://github.com/md-anamul-hasan/wdm/releases/latest) (Windows 10/11, 64-bit; self-contained, no .NET install needed) and check it against `SHA256SUMS.txt`. Builds are not code-signed yet, so Windows SmartScreen may warn about an unknown publisher.
+Get the installer from the [latest release](https://github.com/md-anamul-hasan/wdm/releases/latest) (Windows 10/11, 64-bit; self-contained, no .NET install needed) and check it against `SHA256SUMS.txt`. Release builds are code-signed with a free certificate from the [SignPath Foundation](https://signpath.org/) (see [Code signing policy](#code-signing-policy)). Earlier releases (1.0.0, 1.0.1) are unsigned, so Windows SmartScreen may warn about an unknown publisher for those.
 
 ## What it does
 
