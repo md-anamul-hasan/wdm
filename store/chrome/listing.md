@@ -38,7 +38,7 @@ Privacy policy: https://github.com/md-anamul-hasan/wdm/blob/master/docs/PRIVACY.
 
 **Icon**: `extension/icon128.png` (128x128)
 
-**Screenshots** (1280x800, up to 5): `screenshot-1-popup.png`, `screenshot-2-optional-access.png`, `screenshot-3-site-grabber.png`, `screenshot-4-main-window.png`, `screenshot-5-batch.png` (regenerate all store images with `scriptsmake-store-media.ps1`)
+**Screenshots** (1280x800, up to 5): `screenshot-1-popup.png`, `screenshot-2-optional-access.png`, `screenshot-3-site-grabber.png`, `screenshot-4-main-window.png`, `screenshot-5-batch.png` (regenerate all store images with `scripts\make-store-media.ps1`)
 
 **Small promo tile** (440x280): `promo-small-440x280.png`
 
