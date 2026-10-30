@@ -690,7 +690,7 @@
                                     </Border>
                                     <TextBlock Grid.Column="1" Text="{TemplateBinding Title}" FontSize="16" FontWeight="SemiBold"
                                                Foreground="{DynamicResource ThemeTextPrimary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                    <Button x:Name="PART_Close" Grid.Column="2" Style="{StaticResource DialogCloseBtn}" ToolTip="Close (Esc)">
+                                    <Button x:Name="PART_Close" Grid.Column="2" Style="{StaticResource DialogCloseBtn}" ToolTip="Close (Esc)" AutomationProperties.Name="Close">
                                         <Path Data="{StaticResource GeoX}" Style="{StaticResource Ico}" Width="14" Height="14"/>
                                     </Button>
                                 </Grid>

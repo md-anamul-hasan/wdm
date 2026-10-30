@@ -27,6 +27,7 @@ public partial class MainViewModel : INotifyPropertyChanged
     // Modal dialog properties
     private bool _isAddModalOpen;
     private string _newDownloadUrl = string.Empty;
+    private string _newDownloadSha256 = string.Empty;
     private string _newDownloadDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
     private int _newDownloadConnections = 8;
 
@@ -161,9 +162,31 @@ public partial class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsYouTubeUrl));
                 OnPropertyChanged(nameof(IsNewDownloadUrlValid));
                 OnPropertyChanged(nameof(ShowUrlError));
+                OnPropertyChanged(nameof(CanConfirmAdd));
             }
         }
     }
+
+    /// <summary>Optional SHA-256 the finished file must match; blank means no verification.</summary>
+    public string NewDownloadSha256
+    {
+        get => _newDownloadSha256;
+        set
+        {
+            if (SetField(ref _newDownloadSha256, value))
+            {
+                OnPropertyChanged(nameof(IsNewSha256Valid));
+                OnPropertyChanged(nameof(ShowSha256Error));
+                OnPropertyChanged(nameof(CanConfirmAdd));
+            }
+        }
+    }
+
+    public bool IsNewSha256Valid => string.IsNullOrWhiteSpace(NewDownloadSha256) || Sha256Checksum.TryNormalize(NewDownloadSha256, out _);
+
+    public bool ShowSha256Error => !IsNewSha256Valid;
+
+    public bool CanConfirmAdd => IsNewDownloadUrlValid && IsNewSha256Valid;
 
     public bool IsYouTubeUrl => MediaResolver.IsYouTubeUrl(NewDownloadUrl);
 

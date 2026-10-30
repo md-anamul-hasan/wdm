@@ -34,6 +34,21 @@ public static class WdmPipe
         }
     }
 
+    /// <summary>True if a running WDM is listening. Connects and hangs up without sending anything (the listener ignores empty requests).</summary>
+    public static async Task<bool> IsListeningAsync(int timeoutMs = 1000)
+    {
+        try
+        {
+            await using var client = new NamedPipeClientStream(".", Name, PipeDirection.Out, PipeOptions.CurrentUserOnly);
+            await client.ConnectAsync(timeoutMs);
+            return true;
+        }
+        catch (Exception ex) when (ex is TimeoutException or IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>Accepts requests until cancelled, invoking <paramref name="onRequest"/> for each.</summary>
     public static async Task ListenAsync(Action<ExternalDownloadRequest> onRequest, CancellationToken ct, TimeSpan? readTimeout = null)
     {
@@ -66,6 +81,8 @@ public static class WdmPipe
                 {
                     continue; // stalled client: drop it
                 }
+
+                if (buffer.Length == 0) continue; // a probe (see IsListeningAsync) or an aborted client
 
                 var request = JsonSerializer.Deserialize<ExternalDownloadRequest>(Encoding.UTF8.GetString(buffer.ToArray()), Json);
                 if (request == null) continue;

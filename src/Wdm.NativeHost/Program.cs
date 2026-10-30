@@ -45,6 +45,8 @@ public class Program
                     return Register(args.Skip(1));
                 case "--unregister" or "-u":
                     return Unregister();
+                case "--diagnose" or "-d":
+                    return await DiagnoseAsync();
             }
         }
 
@@ -269,6 +271,66 @@ public class Program
         Console.WriteLine($"      Chrome:  {chromiumManifest}");
         Console.WriteLine($"      Firefox: {firefoxManifest}");
         return 0;
+    }
+
+    /// <summary>Explains why the browser integration does or does not work, check by check. Exit code 1 if anything is broken.</summary>
+    private static async Task<int> DiagnoseAsync()
+    {
+        int failures = 0, warnings = 0;
+        void Report(DiagnosticFinding f, string indent = "  ")
+        {
+            string tag = f.Level switch { FindingLevel.Ok => "[ OK ]", FindingLevel.Warning => "[WARN]", _ => "[FAIL]" };
+            if (f.Level == FindingLevel.Failure) failures++;
+            if (f.Level == FindingLevel.Warning) warnings++;
+            Console.WriteLine($"{indent}{tag} {f.Message}");
+        }
+
+        Console.WriteLine($"WDM native host {Version}  ({Environment.ProcessPath})");
+
+        Console.WriteLine("\nBrowsers");
+        var browsers = new (string Name, string Root, bool Firefox)[]
+        {
+            ("Chrome", ChromiumRegistryRoots[0], false), ("Edge", ChromiumRegistryRoots[1], false),
+            ("Brave", ChromiumRegistryRoots[2], false), ("Chromium", ChromiumRegistryRoots[3], false),
+            ("Firefox", FirefoxRegistryRoot, true),
+        };
+        foreach (var (name, root, firefox) in browsers)
+        {
+            string? manifestPath = null;
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey($@"{root}\{HostName}");
+                manifestPath = key?.GetValue("") as string;
+            }
+            catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { }
+
+            Console.WriteLine($" {name}");
+            if (string.IsNullOrEmpty(manifestPath))
+            {
+                // Not registered is only a problem if the browser is actually used
+                Report(new(name is "Chrome" or "Edge" or "Brave" ? FindingLevel.Warning : FindingLevel.Ok,
+                    $"Not registered (fine if you do not use {name}). To register: Wdm.NativeHost.exe --register"));
+                continue;
+            }
+            if (!File.Exists(manifestPath))
+            {
+                Report(new(FindingLevel.Failure, $"Registry points to a manifest that does not exist: {manifestPath}. Re-run: Wdm.NativeHost.exe --register"));
+                continue;
+            }
+
+            string json = File.ReadAllText(manifestPath);
+            foreach (var f in firefox ? NativeHostManifestInspector.CheckFirefox(json) : NativeHostManifestInspector.CheckChromium(json, File.Exists)) Report(f);
+        }
+
+        Console.WriteLine("\nWDM application");
+        string? ui = FindWdmUi();
+        Report(ui != null ? new(FindingLevel.Ok, $"Found: {ui}") : new(FindingLevel.Failure, "Wdm.Ui.exe was not found next to the host; the browser cannot start WDM."));
+        Report(await WdmPipe.IsListeningAsync()
+            ? new(FindingLevel.Ok, "WDM is running and accepting downloads.")
+            : new(FindingLevel.Warning, "WDM is not running right now (it is started automatically when the browser sends a download)."));
+
+        Console.WriteLine($"\n{failures} problem(s), {warnings} warning(s).");
+        return failures == 0 ? 0 : 1;
     }
 
     private static int Unregister()

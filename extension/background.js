@@ -1,12 +1,8 @@
 const HOST_NAME = "com.wdm.download";
 
-// File types WDM takes over by default (same list IDM ships with: Options > File types).
-const DEFAULT_EXTENSIONS = new Set((
-  "3gp 7z aac ace aif apk arj asf avi bin bz2 exe gz gzip img iso lzh m4a m4v mkv mov mp3 mp4 mpa mpe mpeg mpg " +
-  "msi msu ogg ogv pdf pps ppt qt ra rar rm rmvb sea sit sitx tar tif tiff wav wma wmv z zip"
-).split(" "));
+// Which downloads WDM takes over is decided by rules.js (defaults + the rules the user sets in the popup).
+if (typeof importScripts === "function") importScripts("rules.js"); // service worker; Firefox loads it via manifest "scripts"
 
-const MIN_UNKNOWN_TYPE_BYTES = 1024 * 1024;
 const MEDIA_REGEX = /\.(mp4|webm|mkv|flv|mp3|aac)(\?.*)?$/i;
 
 // Site access is optional. Without it the extension works from explicit clicks only (activeTab): the toolbar
@@ -140,23 +136,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // The browser starts the download first; we pause it, offer it to WDM, and only cancel the browser's
 // copy once WDM confirms it has taken the job. If WDM is unreachable the browser download resumes untouched.
 
-function extensionOf(name) {
-  const clean = (name || "").split(/[?#]/)[0];
-  const dot = clean.lastIndexOf(".");
-  return dot >= 0 ? clean.slice(dot + 1).toLowerCase() : "";
-}
-
-function shouldTakeOver(item) {
-  if (item.incognito) return false;
-  const url = item.finalUrl || item.url || "";
-  if (!/^https?:/i.test(url)) return false;
-
-  const ext = extensionOf(item.filename) || extensionOf(new URL(url).pathname);
-  if (DEFAULT_EXTENSIONS.has(ext)) return true;
-
-  const mime = (item.mime || "").toLowerCase();
-  const isDocument = mime.startsWith("text/") || mime === "application/json" || mime === "application/xhtml+xml";
-  return !isDocument && item.totalBytes >= MIN_UNKNOWN_TYPE_BYTES;
+async function getRules() {
+  const { rules } = await chrome.storage.local.get("rules");
+  return WdmRules.normalize(rules);
 }
 
 // The service worker can be killed while a handoff is in flight (WDM may take seconds to start), which would leave
@@ -188,7 +170,7 @@ async function settleOrphanedHandoffs() {
 chrome.downloads.onCreated.addListener(async (item) => {
   // Taking over needs the visitor's cookies for the download's site, otherwise logged-in downloads would fail in WDM.
   // Without site access the browser simply keeps its download.
-  if (!(await isTakeoverEnabled()) || !shouldTakeOver(item) || !(await hasAllSites())) return;
+  if (!(await isTakeoverEnabled()) || !WdmRules.shouldTakeOver(item, await getRules()) || !(await hasAllSites())) return;
 
   try { await chrome.downloads.pause(item.id); } catch { /* already finished or not pausable */ }
   await setHandoff(item.id, "pending");

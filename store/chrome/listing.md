@@ -19,12 +19,13 @@ Send downloads from Chrome to WDM, the free and open-source download manager for
 
 WDM splits a file across up to 32 connections, resumes interrupted downloads, and keeps a queue with a scheduler and a speed limit. This extension is the bridge between your browser and the WDM desktop app.
 
-REQUIRES THE WDM DESKTOP APP, VERSION 1.0.2 OR NEWER (Windows 10/11). Install it first from https://github.com/md-anamul-hasan/wdm/releases/latest - the extension does nothing on its own. Older WDM versions cannot connect to this extension.
+REQUIRES THE WDM DESKTOP APP, VERSION 1.0.2 OR NEWER - 2.0 RECOMMENDED (Windows 10/11). Install it first from https://github.com/md-anamul-hasan/wdm/releases/latest - the extension does nothing on its own. Older WDM versions cannot connect to this extension.
 
 WHAT IT DOES
 • Right-click any link, video or audio and choose "Download with WDM".
 • Right-click a page and choose "Download all links with WDM" to queue every link on it.
 • Toolbar popup: paste a URL and send it to WDM.
+• Takeover rules: choose which file types WDM takes over or leaves to the browser, exclude sites (one click for the page you are on), and set the size limit for unrecognised files.
 • Optional "all sites" access (you turn it on in the popup, and off again any time): WDM then takes over large or archive-type downloads using your logged-in session, and shows a "download this media" button on pages that stream video or audio. If WDM is not running or does not confirm, the browser download continues untouched - nothing is ever lost.
 
 PRIVACY
@@ -63,7 +64,7 @@ Privacy policy: https://github.com/md-anamul-hasan/wdm/blob/master/docs/PRIVACY.
 | `contextMenus` | Adds the "Download with WDM" and "Download all links with WDM" right-click entries. |
 | `cookies` | To read the cookies of the download URL's site and pass them to WDM, so downloads that need the user's logged-in session work. Used only for the URL being sent, and only sent to the WDM app on the same computer. Limited to the sites the extension has access to. |
 | `webRequest` | Read-only observation of response headers to notice media streams on a page and offer the "download this media" button. No request is blocked or modified. Receives events only for sites the user granted. |
-| `storage` | Remembers one setting: whether download takeover is on (local storage). Also keeps, in session storage that is cleared when the browser closes, the ids of browser downloads that are mid-hand-off to WDM, so they can be resumed or finished if the browser suspends the extension. No URLs, cookies or page content are stored. |
+| `storage` | Remembers the user's choices in local storage: whether download takeover is on, and the takeover rules the user sets in the popup (file types, excluded sites, size limit). Also keeps, in session storage that is cleared when the browser closes, the ids of browser downloads that are mid-hand-off to WDM, so they can be resumed or finished if the browser suspends the extension. No URLs, cookies or page content are stored. |
 | `activeTab` | Lets the right-click and toolbar actions work on the current page after the user's click (reading that page's links for "Download all links"), without any standing site access. |
 | `scripting` | Reads the links of the current page when the user picks "Download all links with WDM", and registers the media button's script only if the user has granted all-sites access. |
 | Optional host permission `<all_urls>` | NOT requested at install. The user can grant it from the popup. It is needed only for the opt-in features: taking over browser downloads (the extension must read the cookies for whichever site a download comes from, and see the download's site), and the "download this media" button on any site. It contacts none of those sites itself, and the user can turn it off again in the popup. |
@@ -85,10 +86,10 @@ Certify all three: no sale to third parties, no use unrelated to the single purp
 ```
 The extension is the browser half of the free Windows app WDM; it needs the app (and its native messaging host) installed to function.
 
-1. Install WDM 1.0.2 or newer from https://github.com/md-anamul-hasan/wdm/releases/latest (the WDM-Setup installer, Windows 10/11). Keep "Enable browser integration" ticked.
+1. Install WDM 1.0.2 or newer (2.0.0 recommended) from https://github.com/md-anamul-hasan/wdm/releases/latest (the WDM-Setup installer, Windows 10/11). Keep "Enable browser integration" ticked.
 2. Open Chrome, install this extension, open any page with a file link (for example https://github.com/md-anamul-hasan/wdm/releases/latest) and right-click the installer link > "Download with WDM". The WDM window opens and downloads the file.
 3. Or click the toolbar icon, paste a URL and press "Send to WDM".
-4. Optional features: in the popup press "Allow access" (all-sites access, a standard permission prompt). Then downloads of large or archive files started in the browser are taken over by WDM, and pages that play video show a "Download with WDM" button. "Turn off" in the popup removes the access again.
+4. Optional features: in the popup open "Takeover rules" to choose file types and sites. Press "Allow access" (all-sites access, a standard permission prompt). Then downloads of large or archive files started in the browser are taken over by WDM, and pages that play video show a "Download with WDM" button. "Turn off" in the popup removes the access again.
 5. Without WDM installed the popup shows it cannot reach the app and browser downloads proceed normally.
 
 No account or login is needed.
@@ -110,3 +111,4 @@ Bump `version` in `extension/manifest.json` (must be higher than the published o
 |---|---|---|
 | 1.0.0 | First release | all |
 | 1.0.1 | Hand-offs interrupted by the browser suspending the extension are settled on restart (no download stays paused); Firefox manifest declares data collection (not part of the Chrome package). Needs WDM 1.0.2+ on the PC. Permissions unchanged. | Package; description (WDM version); `downloads` and `storage` justifications; test instructions |
+| 2.0.0 | Takeover rules (file types, excluded sites, size limit; "never from this site" button) with a new rules.js; version aligned with WDM 2.0.0. Permissions unchanged. | Package; description; `storage` justification; test instructions |

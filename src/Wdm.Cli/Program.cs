@@ -8,6 +8,9 @@ public class Program
     /// <summary>Exit code when the download was paused (Ctrl+C) rather than finished: 128 + SIGINT, so scripts can tell it from success.</summary>
     public const int ExitPaused = 130;
 
+    /// <summary>Exit code when the finished file does not match <c>--sha256</c>.</summary>
+    public const int ExitChecksumMismatch = 2;
+
     public static async Task<int> Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -16,7 +19,7 @@ public class Program
         if (args.Length == 0)
         {
             PrintBanner();
-            Console.WriteLine("Usage: wdm <url> [-o <directory>] [-c <connections>] [-l <limit_KB/s>]");
+            Console.WriteLine("Usage: wdm <url> [-o <directory>] [-c <connections>] [-l <limit_KB/s>] [--sha256 <hex>]");
             Console.WriteLine("\nExample: wdm https://speed.hetzner.de/100MB.bin -c 8\n");
             return 1;
         }
@@ -31,6 +34,7 @@ public class Program
         string? outDir = null;
         int connections = 8;
         long limitBytesPerSec = 0;
+        string? sha256 = null;
 
         for (int i = 1; i < args.Length; i++)
         {
@@ -41,6 +45,15 @@ public class Program
             else if ((args[i] == "-c" || args[i] == "--connections") && i + 1 < args.Length)
             {
                 if (int.TryParse(args[++i], out int c)) connections = Math.Clamp(c, 1, 32);
+            }
+            else if (args[i] == "--sha256" && i + 1 < args.Length)
+            {
+                sha256 = args[++i];
+                if (!Sha256Checksum.TryNormalize(sha256, out _))
+                {
+                    Console.Error.WriteLine("[WDM Error] --sha256 needs 64 hexadecimal characters.");
+                    return 1;
+                }
             }
             else if ((args[i] == "-l" || args[i] == "--limit") && i + 1 < args.Length)
             {
@@ -143,7 +156,7 @@ public class Program
 
         try
         {
-            await engine.StartAsync(url, outDir, connections, cts.Token);
+            await engine.StartAsync(url, outDir, connections, cts.Token, sha256 == null ? null : new DownloadRequestOptions { ExpectedSha256 = sha256 });
 
             if (engine.Status != DownloadStatus.Completed)
             {
@@ -153,6 +166,13 @@ public class Program
 
             Console.WriteLine($"\n[WDM] Download 100% Complete! Saved to: {engine.Metadata?.TargetFilePath}");
             return 0;
+        }
+        catch (ChecksumMismatchException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"\n[WDM Error] {ex.Message}");
+            Console.ResetColor();
+            return ExitChecksumMismatch;
         }
         catch (OperationCanceledException)
         {

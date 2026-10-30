@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.0 - 2026-10-30
+
+### Added
+- Optional SHA-256 verification: *Add download* field, `wdm --sha256 <hex>` (exit code 2 on mismatch), `/sha256` command-line switch. The file is verified before it is renamed from `.wdm-part`; on mismatch the data is kept and nothing is published. Malformed checksums are refused before any request.
+- `Wdm.NativeHost.exe --diagnose`: per-browser registration, manifest, extension-ID, host-program and "WDM running" checks with the fix for each problem (`NativeHostManifestInspector`).
+- Extension 2.0.0: takeover rules (extra and blocked file types, excluded sites incl. subdomains and referrer, minimum size for unrecognised files) with a "never from this site" shortcut in the popup; rules live in `rules.js` and are unit-tested.
+- Accessible names for icon-only buttons and the new fields (AUD-026, partially).
+
+### Changed
+- Version 2.0.0 for the app and the extension. No data-format break: the only addition is the optional `ExpectedSha256` field in download options.
+- `WdmPipe.IsListeningAsync` (used by `--diagnose`); the IPC listener ignores empty connections.
+
 ## 1.0.2 - 2026-10-30
 
 ### Fixed

@@ -23,10 +23,13 @@ public class DownloadRequestOptions
     /// <summary>Caller-chosen file name; overrides the name derived from the server response.</summary>
     public string? FileName { get; set; }
 
+    /// <summary>Optional SHA-256 the finished file must match (hex, see <see cref="Sha256Checksum"/>). Not a secret.</summary>
+    public string? ExpectedSha256 { get; set; }
+
     /// <summary>Copy without cookies and credentials (what is kept once a download has finished).</summary>
     public DownloadRequestOptions WithoutSecrets() => new()
     {
-        Referer = Referer, CookieHost = CookieHost, UserAgent = UserAgent, FileName = FileName
+        Referer = Referer, CookieHost = CookieHost, UserAgent = UserAgent, FileName = FileName, ExpectedSha256 = ExpectedSha256
     };
 
     [JsonIgnore]

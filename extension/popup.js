@@ -86,3 +86,83 @@ sendForm.addEventListener("submit", sendUrl);
 
 checkHost();
 renderAccess();
+
+// ---- takeover rules ---------------------------------------------------------------------------
+
+const extraExt = document.getElementById("extraExt");
+const blockedExt = document.getElementById("blockedExt");
+const excludedHosts = document.getElementById("excludedHosts");
+const minMb = document.getElementById("minMb");
+const rulesMsg = document.getElementById("rulesMsg");
+const siteBtn = document.getElementById("siteBtn");
+let currentHost = "";
+
+const join = (list) => list.join(", ");
+
+function showRules(rules) {
+  extraExt.value = join(rules.extraExtensions);
+  blockedExt.value = join(rules.blockedExtensions);
+  excludedHosts.value = join(rules.excludedHosts);
+  minMb.value = String(rules.minUnknownMB);
+  renderSiteButton(rules);
+}
+
+/** Reads the form; returns the rules to store and any entries that were not valid. */
+function readRules() {
+  const parts = {
+    extraExtensions: WdmRules.sanitizeList(extraExt.value, "ext"),
+    blockedExtensions: WdmRules.sanitizeList(blockedExt.value, "ext"),
+    excludedHosts: WdmRules.sanitizeList(excludedHosts.value, "host"),
+  };
+  const rules = WdmRules.normalize({
+    extraExtensions: parts.extraExtensions.valid,
+    blockedExtensions: parts.blockedExtensions.valid,
+    excludedHosts: parts.excludedHosts.valid,
+    minUnknownMB: minMb.value,
+  });
+  const rejected = [...parts.extraExtensions.rejected, ...parts.blockedExtensions.rejected, ...parts.excludedHosts.rejected];
+  return { rules, rejected };
+}
+
+async function saveRules() {
+  const { rules, rejected } = readRules();
+  await chrome.storage.local.set({ rules });
+  showRules(rules);
+  rulesMsg.textContent = rejected.length ? `Saved. Ignored invalid entries: ${rejected.join(", ")}` : "Saved.";
+}
+
+async function resetRules() {
+  await chrome.storage.local.remove("rules");
+  showRules(WdmRules.normalize(null));
+  rulesMsg.textContent = "Back to the defaults.";
+}
+
+function renderSiteButton(rules) {
+  if (!currentHost) { siteBtn.hidden = true; return; }
+  const excluded = WdmRules.hostMatches(currentHost, rules.excludedHosts);
+  siteBtn.hidden = false;
+  siteBtn.textContent = excluded ? `Take over downloads from ${currentHost} again` : `Never take over downloads from ${currentHost}`;
+}
+
+siteBtn.addEventListener("click", async () => {
+  const { rules } = readRules();
+  const excluded = WdmRules.hostMatches(currentHost, rules.excludedHosts);
+  const hosts = excluded
+    ? rules.excludedHosts.filter((h) => h !== currentHost && !currentHost.endsWith("." + h))
+    : [...rules.excludedHosts, currentHost];
+  await chrome.storage.local.set({ rules: { ...rules, excludedHosts: hosts } });
+  showRules(WdmRules.normalize({ ...rules, excludedHosts: hosts }));
+  rulesMsg.textContent = excluded ? `Rules updated for ${currentHost}.` : `${currentHost} will no longer be taken over.`;
+});
+
+document.getElementById("saveRules").addEventListener("click", saveRules);
+document.getElementById("resetRules").addEventListener("click", resetRules);
+
+(async () => {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.url && /^https?:/i.test(tab.url)) currentHost = new URL(tab.url).hostname.toLowerCase();
+  } catch { /* no tab information: the shortcut simply stays hidden */ }
+  const { rules } = await chrome.storage.local.get("rules");
+  showRules(WdmRules.normalize(rules));
+})();
