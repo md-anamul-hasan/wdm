@@ -1,6 +1,6 @@
 # Privacy Policy — WDM and the WDM browser extension
 
-_Last updated: 2026-10-21_
+_Last updated: 2026-10-30_
 
 WDM (Windows Download Manager) and its browser extension, "WDM Download Manager Integration", are free, open-source software maintained by Md Anamul Hasan. This policy covers both.
 
