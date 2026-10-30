@@ -76,19 +76,19 @@ public class DiagnosticsTests
     [Fact]
     public async Task PipeProbe_ReflectsWhetherWdmIsRunning_AndDoesNotDisturbIt()
     {
-        Assert.False(await WdmPipe.IsListeningAsync(300));
-
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         int delivered = 0;
-        var listener = WdmPipe.ListenAsync(_ => Interlocked.Increment(ref delivered), cts.Token);
+        await using var pipe = new PipeFixture(_ => Interlocked.Increment(ref delivered));
 
+        // The listener creates its first pipe instance asynchronously; the probe retries until it is up
         bool up = false;
-        for (int i = 0; i < 30 && !up; i++) up = await WdmPipe.IsListeningAsync(300);
+        for (int i = 0; i < 40 && !up; i++) up = await WdmPipe.IsListeningAsync(300, pipe.Name);
         Assert.True(up);
-        Assert.True(await WdmPipe.IsListeningAsync(1000)); // probing repeatedly keeps working
-        Assert.Equal(0, delivered);                        // a probe never counts as a download
 
-        cts.Cancel();
-        try { await listener; } catch (OperationCanceledException) { }
+        for (int i = 0; i < 5; i++) Assert.True(await WdmPipe.IsListeningAsync(2000, pipe.Name)); // repeated probes keep working
+        Assert.Equal(0, delivered);                                                               // a probe never counts as a download
     }
+
+    [Fact]
+    public async Task PipeProbe_ReportsNotRunningWhenNobodyListens()
+        => Assert.False(await WdmPipe.IsListeningAsync(200, $"WDM.Test.nobody.{Guid.NewGuid():N}"));
 }

@@ -8,6 +8,9 @@
 - Extension 2.0.0: takeover rules (extra and blocked file types, excluded sites incl. subdomains and referrer, minimum size for unrecognised files) with a "never from this site" shortcut in the popup; rules live in `rules.js` and are unit-tested.
 - Accessible names for icon-only buttons and the new fields (AUD-026, partially).
 
+### Fixed
+- IPC listener no longer stops for good after an unexpected error (previously only three exception types were survived), so browser hand-offs cannot silently stop until WDM is restarted.
+
 ### Changed
 - Version 2.0.0 for the app and the extension. No data-format break: the only addition is the optional `ExpectedSha256` field in download options.
 - `WdmPipe.IsListeningAsync` (used by `--diagnose`); the IPC listener ignores empty connections.

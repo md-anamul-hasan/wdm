@@ -9,7 +9,7 @@
 | UI / end-to-end | none | 0 | needs Windows (FlaUI planned) |
 | Real browser + native host | none | 0 | needs Windows + browser |
 
-142 .NET tests + 21 Node tests; all pass; no external network use; each test uses its own temp dir and port.
+144 .NET tests + 21 Node tests; all pass; no external network use; each test uses its own temp dir and port.
 
 ## Commands (verified in this audit)
 ```
@@ -34,3 +34,6 @@ Disk-full, access-denied, power-loss; sleep/DST for the scheduler end-to-end (th
 
 ## Rules for new tests
 No internet; no shared global state (pipe tests go in collection `NamedPipe`); every fixed bug gets a test named after its issue ID; byte-compare with SHA-256, never just file length.
+
+## Lessons from the v2.0.0 tag run
+A pipe test passed on a Windows dry run and failed on the tag run (same code). Cause: tests shared one real pipe name and one failure leaked a listener that broke the next tests. Rule: tests that use IPC get their own pipe name (`PipeFixture`) and always stop their listener; "green once" on a new concurrency test is not evidence, run it several times.

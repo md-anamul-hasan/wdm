@@ -236,50 +236,54 @@ public class AuditFaultInjectionTests : IDisposable
     [Fact]
     public async Task Pipe_SilentClient_DoesNotBlockLaterRequests()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(40));
         var received = new TaskCompletionSource<ExternalDownloadRequest>();
-        var listener = WdmPipe.ListenAsync(r => received.TrySetResult(r), cts.Token, readTimeout: TimeSpan.FromMilliseconds(500));
+        await using var pipe = new PipeFixture(r => received.TrySetResult(r), readTimeout: TimeSpan.FromMilliseconds(500));
 
-        await using var silent = new NamedPipeClientStream(".", WdmPipe.Name, PipeDirection.Out, PipeOptions.CurrentUserOnly);
+        await using var silent = new NamedPipeClientStream(".", pipe.Name, PipeDirection.Out, PipeOptions.CurrentUserOnly);
         await silent.ConnectAsync(5000);
         // ...and never writes or closes.
 
-        bool delivered = false;
-        var sent = new ExternalDownloadRequest { Urls = { "https://example.com/after-silent.bin" } };
-        // A send can be accepted by the dead instance's socket backlog and lost, so keep sending until the listener has it
-        for (int i = 0; i < 60 && !received.Task.IsCompleted; i++)
-        {
-            delivered |= await WdmPipe.TrySendAsync(sent, 300);
-            await Task.Delay(150);
-        }
+        await pipe.SendUntilAsync(new ExternalDownloadRequest { Urls = { "https://example.com/after-silent.bin" } }, received.Task);
 
-        var got = await received.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var got = await received.Task.WaitAsync(TimeSpan.FromSeconds(15));
         Assert.Equal("https://example.com/after-silent.bin", got.Urls[0]);
-
-        cts.Cancel();
-        try { await listener; } catch (OperationCanceledException) { }
     }
 
     // AUD-007: URLs received over IPC are re-validated; only http(s) reaches the UI.
     [Fact]
     public async Task Pipe_DropsNonHttpUrlsFromRequests()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var received = new TaskCompletionSource<ExternalDownloadRequest>();
-        var listener = WdmPipe.ListenAsync(r => received.TrySetResult(r), cts.Token);
+        await using var pipe = new PipeFixture(r => received.TrySetResult(r));
 
         var sent = new ExternalDownloadRequest
         {
             Urls = { "file:///C:/Windows/System32/config/SAM", "ftp://example.com/x", "https://example.com/ok.bin" }
         };
-        bool delivered = false;
-        for (int i = 0; i < 30 && !delivered; i++) delivered = await WdmPipe.TrySendAsync(sent, 500);
+        await pipe.SendUntilAsync(sent, received.Task);
 
-        var got = await received.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var got = await received.Task.WaitAsync(TimeSpan.FromSeconds(15));
         Assert.Equal(new[] { "https://example.com/ok.bin" }, got.Urls);
+    }
 
-        cts.Cancel();
-        try { await listener; } catch (OperationCanceledException) { }
+    // AUD-036: an exception thrown while handling one request must not end the listener (it would silently stop all hand-offs).
+    [Fact]
+    public async Task Pipe_ListenerSurvivesAFailingHandler()
+    {
+        int calls = 0;
+        var second = new TaskCompletionSource<ExternalDownloadRequest>();
+        await using var pipe = new PipeFixture(r =>
+        {
+            if (Interlocked.Increment(ref calls) == 1) throw new InvalidOperationException("UI handler blew up");
+            second.TrySetResult(r);
+        });
+
+        var request = new ExternalDownloadRequest { Urls = { "https://example.com/again.bin" } };
+        await pipe.SendUntilAsync(request, second.Task);
+
+        var got = await second.Task.WaitAsync(TimeSpan.FromSeconds(15));
+        Assert.Equal("https://example.com/again.bin", got.Urls[0]);
+        Assert.True(calls >= 2);
     }
 
     // AUD-008: CR/LF in browser-supplied header values must never smuggle an extra header onto the wire.

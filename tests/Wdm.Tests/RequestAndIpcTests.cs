@@ -42,24 +42,15 @@ public class RequestAndIpcTests
     [Fact]
     public async Task Pipe_DeliversRequestToListener()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var received = new TaskCompletionSource<ExternalDownloadRequest>();
-        var listener = WdmPipe.ListenAsync(r => received.TrySetResult(r), cts.Token);
+        await using var pipe = new PipeFixture(r => received.TrySetResult(r));
 
         var sent = new ExternalDownloadRequest { Urls = { "https://example.com/f.bin" }, Referer = "https://example.com/", Cookies = "a=b" };
-        bool delivered = false;
-        for (int i = 0; i < 20 && !delivered; i++)
-        {
-            delivered = await WdmPipe.TrySendAsync(sent, 500);
-        }
+        await pipe.SendUntilAsync(sent, received.Task);
 
-        var got = await received.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.True(delivered);
+        var got = await received.Task.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.Equal("https://example.com/f.bin", got.Urls[0]);
         Assert.Equal("a=b", got.Cookies);
-
-        cts.Cancel();
-        await listener;
     }
 
     [Fact]
