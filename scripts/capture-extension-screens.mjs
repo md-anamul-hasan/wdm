@@ -1,5 +1,9 @@
 // Renders the REAL extension popup (extension/popup.html) with a mocked `chrome` API and saves the screenshots
-// that scripts/make-store-media.ps1 turns into Chrome Web Store images. Needs Playwright with Chromium:
+// that scripts/make-store-media.ps1 turns into Chrome Web Store images.
+//
+// You only need to run this when the popup (extension/popup.*) changes: the PNGs are committed.
+// One-time setup (installs Playwright into node_modules without touching package.json; uses Edge/Chrome already on your PC):
+//   npm install --no-save playwright
 //   node scripts/capture-extension-screens.mjs
 // Output: docs/media/screenshots/extension-popup-{on,access,rules}-{dark,light}.png (2x scale, 340 px wide popup).
 // Also fails if the popup throws or logs an error, so it doubles as a smoke test of popup.js / rules.js.
@@ -8,7 +12,13 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const require = createRequire(import.meta.url);
-const { chromium } = require("playwright");
+let chromium;
+try {
+  ({ chromium } = require("playwright"));
+} catch {
+  console.error("Playwright is not installed. From the repository root run:\n\n  npm install --no-save playwright\n\nand then run this script again.");
+  process.exit(2);
+}
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const popupUrl = pathToFileURL(path.join(root, "extension", "popup.html")).href;
@@ -43,7 +53,18 @@ function mockChrome({ allSites, rules, host, version, hostVersion }) {
   };
 }
 
-const browser = await chromium.launch();
+// Prefer Playwright's own Chromium; if it was never downloaded, fall back to the Edge or Chrome installed on the PC
+async function launchBrowser() {
+  const attempts = [{}, { channel: "msedge" }, { channel: "chrome" }];
+  const errors = [];
+  for (const options of attempts) {
+    try { return await chromium.launch(options); } catch (e) { errors.push(`${options.channel ?? "playwright chromium"}: ${e.message.split("\n")[0]}`); }
+  }
+  console.error("No browser could be started:\n  " + errors.join("\n  ") + "\nInstall one with: npx playwright install chromium");
+  process.exit(2);
+}
+
+const browser = await launchBrowser();
 const problems = [];
 
 for (const scheme of ["dark", "light"]) {
