@@ -1,0 +1,25 @@
+# Weekly dependency PRs. Each PR runs .github/workflows/ci.yml (build + all tests) before it can be merged.
+version: 2
+updates:
+  # NuGet packages of every project (src/*, tests/*)
+  - package-ecosystem: "nuget"
+    directories:
+      - "/src/*"
+      - "/tests/*"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    groups:
+      nuget-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # GitHub Actions are pinned to commit SHAs (with the tag in a comment); Dependabot bumps both together
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]

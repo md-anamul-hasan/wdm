@@ -56,8 +56,15 @@ Things only you can do (accounts, Windows, publishing, decisions). Ordered by pr
 | 16 | Delete download + file | Removes `.wdm-part`, `.wdm-state` and the file |
 | 17 | Installer | Contains `ffmpeg.exe`, `ffmpeg-LICENSE.txt`, `yt-dlp.exe`, `THIRD_PARTY_NOTICES.md`, `LICENSE`; a YouTube download that needs merging works |
 
-## D. Repo housekeeping (5 min each)
-- Enable Dependabot (`.github/dependabot.yml`: ecosystems `nuget`, `github-actions`) so SHA pins don't rot.
-- Branch protection on `master`: require the test workflow (add a PR `ci.yml` running `dotnet test` + `node --test`; I did not add one because it triggers on every PR and you may want different policy).
+## D. Repo housekeeping
+- **Done in the repo:** `.github/dependabot.yml` (weekly NuGet + GitHub Actions PRs) and `.github/workflows/ci.yml` (build + all tests on every pull request, including Dependabot's).
+- **Repository settings (only the owner can change; one-time):**
+  ```powershell
+  gh api -X PUT repos/md-anamul-hasan/wdm/private-vulnerability-reporting   # makes the SECURITY.md link work
+  gh api -X PUT repos/md-anamul-hasan/wdm/vulnerability-alerts              # Dependabot alerts
+  gh api -X PUT repos/md-anamul-hasan/wdm/automated-security-fixes          # Dependabot security updates
+  ```
+  Or in the web UI: Settings → Code security → enable *Private vulnerability reporting*, *Dependabot alerts*, *Dependabot security updates*.
+- Branch protection on `master`: Settings → Branches → require the `ci / test` check before merging (it appears after the first PR run).
 - SignPath approval pending → set `SIGNPATH_ORGANIZATION_ID` variable and `SIGNPATH_API_TOKEN` secret (never commit them).
 - Edge Add-ons listing (optional): after publishing, register its new ID with `--register --extension-id <id>` or add it to `NativeHostManifest`.
