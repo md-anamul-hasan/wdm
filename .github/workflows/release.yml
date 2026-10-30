@@ -6,22 +6,27 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write   # only the final "gh release create" step needs this
     env:
       # Set the SIGNPATH_ORGANIZATION_ID repository variable and SIGNPATH_API_TOKEN secret once SignPath approves the project.
       SIGN: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: 10.0.x
 
       - name: Test
         run: dotnet test Wdm.slnx -c Release --nologo
+
+      - name: Extension tests
+        run: node --test tests/extension/background.test.mjs
 
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
@@ -40,13 +45,13 @@ jobs:
       - name: Upload binaries
         if: env.SIGN == 'true'
         id: upload-binaries
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: binaries-unsigned
           path: dist/unsigned/*
       - name: Sign binaries
         if: env.SIGN == 'true'
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@ced31329c0317e779dad2eec2a7c3bb46ea1343e # v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
@@ -69,13 +74,13 @@ jobs:
       - name: Upload installer
         if: env.SIGN == 'true'
         id: upload-installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: installer-unsigned
           path: dist/installer/WDM-Setup-*.exe
       - name: Sign installer
         if: env.SIGN == 'true'
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@ced31329c0317e779dad2eec2a7c3bb46ea1343e # v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
@@ -101,7 +106,7 @@ jobs:
           $sums = Get-ChildItem dist/release -File | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" }
           [IO.File]::WriteAllText("$PWD/dist/release/SHA256SUMS.txt", ($sums -join "`n") + "`n")
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release
           path: dist/release/*

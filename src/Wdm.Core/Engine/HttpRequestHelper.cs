@@ -67,8 +67,9 @@ public static class HttpRequestHelper
 
     private static void Apply(HttpRequestMessage request, DownloadRequestOptions? options, RangeHeaderValue? range, Uri origin, Uri current)
     {
+        // TryAddWithoutValidation does not stop CR/LF smuggling extra headers onto the wire, so values are checked here
         request.Headers.TryAddWithoutValidation("User-Agent",
-            string.IsNullOrWhiteSpace(options?.UserAgent) ? DefaultUserAgent : options!.UserAgent);
+            string.IsNullOrWhiteSpace(options?.UserAgent) || HasControlCharacters(options!.UserAgent) ? DefaultUserAgent : options.UserAgent);
         request.Headers.TryAddWithoutValidation("Accept", "*/*");
         request.Headers.TryAddWithoutValidation("Accept-Encoding", "identity");
 
@@ -79,7 +80,7 @@ public static class HttpRequestHelper
 
         if (options == null) return;
 
-        if (!string.IsNullOrWhiteSpace(options.Referer))
+        if (!string.IsNullOrWhiteSpace(options.Referer) && !HasControlCharacters(options.Referer))
         {
             request.Headers.TryAddWithoutValidation("Referer", options.Referer);
         }
@@ -89,7 +90,7 @@ public static class HttpRequestHelper
         if (downgraded) return;
 
         string cookieHost = string.IsNullOrWhiteSpace(options.CookieHost) ? origin.Host : options.CookieHost;
-        if (!string.IsNullOrWhiteSpace(options.Cookies) &&
+        if (!string.IsNullOrWhiteSpace(options.Cookies) && !HasControlCharacters(options.Cookies) &&
             string.Equals(current.Host, cookieHost, StringComparison.OrdinalIgnoreCase))
         {
             request.Headers.TryAddWithoutValidation("Cookie", options.Cookies);
@@ -102,6 +103,9 @@ public static class HttpRequestHelper
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", token);
         }
     }
+
+    /// <summary>True for CR, LF and other control characters (tab excepted), which are never valid in these header values.</summary>
+    internal static bool HasControlCharacters(string value) => value.Any(c => char.IsControl(c) && c != '\t');
 
     private static bool IsRedirect(HttpStatusCode code) =>
         code is HttpStatusCode.MovedPermanently or HttpStatusCode.Found or HttpStatusCode.SeeOther

@@ -7,7 +7,10 @@ using Wdm.Core.Models;
 namespace Wdm.Core.Engine;
 
 /// <summary>Raised for failures that retrying the same request cannot fix.</summary>
-public sealed class NonRetryableDownloadException(string message) : Exception(message);
+public class NonRetryableDownloadException(string message) : Exception(message);
+
+/// <summary>The server advertised byte ranges but answered a ranged request with the whole body.</summary>
+public sealed class RangeIgnoredException(string message) : NonRetryableDownloadException(message);
 
 /// <summary>
 /// Worker responsible for downloading an individual byte segment using HTTP range requests.
@@ -38,6 +41,9 @@ public class HttpConnectionWorker
         _speedLimiter = speedLimiter;
         _onBytesRead = onBytesRead;
     }
+
+    private static bool IsPermanentClientError(HttpStatusCode code) =>
+        (int)code is >= 400 and < 500 && code != HttpStatusCode.RequestTimeout && (int)code != 429;
 
     public async Task DownloadSegmentAsync(
         string url,
@@ -72,14 +78,27 @@ public class HttpConnectionWorker
                 if (response.StatusCode != HttpStatusCode.PartialContent &&
                     response.StatusCode != HttpStatusCode.OK)
                 {
-                    throw new HttpRequestException($"Server returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
+                    string message = $"Server returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}";
+                    // Access revoked, link expired, file gone or range unsatisfiable: asking again changes nothing
+                    if (IsPermanentClientError(response.StatusCode)) throw new NonRetryableDownloadException(message);
+                    throw new HttpRequestException(message);
+                }
+
+                // Bytes are written at an absolute offset, so a 206 that starts elsewhere than requested would corrupt the file
+                if (range?.Ranges.FirstOrDefault()?.From is long requestedStart &&
+                    response.StatusCode == HttpStatusCode.PartialContent &&
+                    response.Content.Headers.ContentRange is { From: { } servedStart } &&
+                    servedStart != requestedStart)
+                {
+                    throw new NonRetryableDownloadException(
+                        $"The server answered with bytes {servedStart}- instead of the requested {requestedStart}-.");
                 }
 
                 // A 200 to a request for a non-zero offset means the server ignored the Range header;
                 // writing that body at this offset would silently corrupt the file.
                 if (range != null && response.StatusCode == HttpStatusCode.OK && segment.CurrentOffset > 0)
                 {
-                    throw new NonRetryableDownloadException("The server does not support resuming (ignored Range request).");
+                    throw new RangeIgnoredException("The server does not support resuming (ignored Range request).");
                 }
 
                 segment.State = SegmentState.Downloading;

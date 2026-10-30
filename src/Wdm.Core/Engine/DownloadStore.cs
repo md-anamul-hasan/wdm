@@ -16,6 +16,14 @@ public class DownloadRecord
     public DateTime AddedAt { get; set; } = DateTime.Now;
     public DateTime? CompletedAt { get; set; }
     public DownloadRequestOptions? Options { get; set; }
+
+    /// <summary>What is persisted: a finished download no longer needs its cookies or credentials.</summary>
+    internal DownloadRecord ForStorage()
+    {
+        var copy = (DownloadRecord)MemberwiseClone();
+        if (Status == "Completed" && Options is { HasSecrets: true }) copy.Options = Options.WithoutSecrets();
+        return copy;
+    }
 }
 
 /// <summary>Persists the download list to %APPDATA%\WDM\downloads.json (atomic replace).</summary>
@@ -36,7 +44,18 @@ public class DownloadStore
         {
             if (File.Exists(_path))
             {
-                return JsonSerializer.Deserialize<List<DownloadRecord>>(File.ReadAllText(_path), JsonOptions) ?? new();
+                var json = File.ReadAllText(_path);
+                var records = JsonSerializer.Deserialize<List<DownloadRecord>>(json, JsonOptions) ?? new();
+
+                // Migrate: lists written by older versions hold cookies/passwords in clear (and secrets of finished downloads)
+                if (records.Any(r => r.Options is { } o && (SecretProtector.IsLegacyPlaintext(o.Cookies) ||
+                                                              SecretProtector.IsLegacyPlaintext(o.Username) ||
+                                                              SecretProtector.IsLegacyPlaintext(o.Password) ||
+                                                              (r.Status == "Completed" && o.HasSecrets))))
+                {
+                    Save(records);
+                }
+                return records;
             }
         }
         catch (JsonException)
@@ -59,7 +78,7 @@ public class DownloadStore
                 if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
 
                 var temp = _path + ".tmp";
-                File.WriteAllText(temp, JsonSerializer.Serialize(records, JsonOptions));
+                File.WriteAllText(temp, JsonSerializer.Serialize(records.Select(r => r.ForStorage()).ToList(), JsonOptions));
                 File.Move(temp, _path, overwrite: true);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }

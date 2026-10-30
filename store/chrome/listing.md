@@ -96,10 +96,9 @@ No account or login is needed.
 
 ## After the first upload
 
-The store assigns the extension its own ID (different from the sideloaded one). Authorize it for the native host:
-
-1. Copy the 32-letter ID from the dashboard.
-2. Add it to `PublishedChromeExtensionIds` in `src/Wdm.NativeHost/Program.cs`, rebuild and release (the installer then authorizes it by default). To test before that: `Wdm.NativeHost.exe --register --extension-id <id>`.
+The store assigned the ID `flnbghmpkajibfdfhbcfhkcjkhlokfgi`. It is built into `NativeHostManifest.StoreChromeExtensionId`
+(`src/Wdm.Core/Ipc/NativeHostManifest.cs`), so `Wdm.NativeHost.exe --register` authorizes it by default.
+Other IDs (for example an Edge Add-ons listing) can be added with `--register --extension-id <id>`.
 
 ## Updating later
 

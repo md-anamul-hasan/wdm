@@ -36,14 +36,23 @@ public class NetworkProber
             {
                 response.Dispose();
                 response = await HttpRequestHelper.SendAsync(_httpClient, HttpMethod.Get, url, options, new RangeHeaderValue(0, 0), cancellationToken);
-                response.EnsureSuccessStatusCode();
+
+                // 416 with "Content-Range: bytes */0" is how servers say "this file is empty"
+                bool emptyFile = response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable &&
+                                 response.Content.Headers.ContentRange is { Length: 0 };
+                if (!emptyFile) response.EnsureSuccessStatusCode();
             }
 
             // Read headers
             metadata.SupportsRanges = response.Headers.AcceptRanges.Contains("bytes") ||
                                      response.StatusCode == HttpStatusCode.PartialContent;
 
-            if (response.Content.Headers.ContentRange?.Length.HasValue == true)
+            if (response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
+            {
+                metadata.TotalBytes = 0;
+                metadata.SupportsRanges = false;
+            }
+            else if (response.Content.Headers.ContentRange?.Length.HasValue == true)
             {
                 metadata.TotalBytes = response.Content.Headers.ContentRange.Length.Value;
                 metadata.SupportsRanges = true;
@@ -78,6 +87,7 @@ public class NetworkProber
             }
 
             metadata.TargetFilePath = ReserveFilePath(Path.Combine(destDir, metadata.FileName), url);
+            metadata.PartFilePath = ResumeManager.GetPartPath(metadata.TargetFilePath);
 
             return metadata;
         }
@@ -157,7 +167,8 @@ public class NetworkProber
     /// <summary>Strips path separators and invalid characters, Windows device names and trailing dots/spaces.</summary>
     public static string SanitizeFileName(string name)
     {
-        var invalid = Path.GetInvalidFileNameChars();
+        // Windows rules on every platform: server-supplied names must not traverse paths wherever they are parsed
+        var invalid = Path.GetInvalidFileNameChars().Concat(new[] { '/', '\\', ':', '*', '?', '"', '<', '>', '|' }).Distinct().ToArray();
         var clean = string.Concat(name.Split(invalid, StringSplitOptions.RemoveEmptyEntries)).Trim().TrimEnd('.', ' ');
         if (clean.Length > 200) clean = clean[..200].TrimEnd('.', ' ');
         if (clean.Length == 0) return "download.dat";
@@ -167,16 +178,12 @@ public class NetworkProber
     }
 
     /// <summary>
-    /// Picks the file this download will write to and claims it so a concurrent download of the same
-    /// name cannot take it. A path that holds a resumable checkpoint for the same URL is returned as-is.
+    /// Picks the final name for this download and claims it by creating its <c>.wdm-part</c> file, so a concurrent
+    /// download of the same name cannot take it. A name holding a resumable checkpoint for the same URL is returned as-is.
+    /// Existing files, checkpoints and part files of other downloads are never touched.
     /// </summary>
     private static string ReserveFilePath(string fullPath, string url)
     {
-        if (File.Exists(ResumeManager.GetCheckpointPath(fullPath)) && CheckpointUrl(fullPath) == url)
-        {
-            return fullPath;
-        }
-
         var dir = Path.GetDirectoryName(fullPath) ?? "";
         var nameWithoutExt = Path.GetFileNameWithoutExtension(fullPath);
         var ext = Path.GetExtension(fullPath);
@@ -185,23 +192,22 @@ public class NetworkProber
         {
             string candidate = counter == 0 ? fullPath : Path.Combine(dir, $"{nameWithoutExt} ({counter}){ext}");
 
-            if (File.Exists(candidate) || File.Exists(ResumeManager.GetCheckpointPath(candidate)))
+            if (File.Exists(ResumeManager.GetCheckpointPath(candidate)))
             {
-                if (counter > 0 && File.Exists(ResumeManager.GetCheckpointPath(candidate)) && CheckpointUrl(candidate) == url)
-                {
-                    return candidate;
-                }
+                if (CheckpointUrl(candidate) == url) return candidate; // resume
                 continue;
             }
 
+            if (File.Exists(candidate)) continue;
+
             try
             {
-                using (new FileStream(candidate, FileMode.CreateNew, FileAccess.Write, FileShare.None)) { }
+                using (new FileStream(ResumeManager.GetPartPath(candidate), FileMode.CreateNew, FileAccess.Write, FileShare.None)) { }
                 return candidate;
             }
-            catch (IOException) when (File.Exists(candidate))
+            catch (IOException) when (File.Exists(ResumeManager.GetPartPath(candidate)))
             {
-                // Lost the race to another download: try the next name
+                // Lost the race to another download (or an orphaned part file): try the next name
             }
         }
     }

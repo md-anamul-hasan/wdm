@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WDM Download Manager Integration",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Sends downloads and streaming media from your browser to the free WDM download manager for Windows.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAk61zMqde+hZSRGpm2313sYbitKxv2CKmh1i5YE03FX7J6VoxTbkh5rF2HwkcKea9EXnIdsZh+0ykN1wXAonaE+/IuRMNLOKhjyb02s+CGZMuolAjcWzYxPzGJx1Lk9BW1vrocIJrHVU1CiCJo9DI9WSpRNOVFfFqOSLufXn/RE6su9cqLyKX9/HUuEUe+9iA4/qkZFj1iXyf15FXLkdWT32ZhLygZSyc5JlOFNM3T0BWzJQAKvVxM/EC1vCBY6rA2W1T8K9ceqU0OKa6eMlMt/c8eNh+rSOH56JMI1CPi1+sfXjmzTXMg0FRJu32MJ64qwXLQN5kf/baAH1XzY5RRwIDAQAB",
   "permissions": [
@@ -24,7 +24,10 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "wdm@windowsdownloadmanager.com",
-      "strict_min_version": "128.0"
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
   "icons": {

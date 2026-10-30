@@ -60,16 +60,22 @@ public partial class MainViewModel
         timer.Start();
     }
 
+    private DateTime _lastSchedulerCheck = DateTime.Now;
+
     private void OnSchedulerTick()
     {
+        var previous = _lastSchedulerCheck;
+        var current = DateTime.Now;
+        _lastSchedulerCheck = current;
+
         if (Settings.SchedulerEnabled)
         {
-            var now = DateTime.Now.ToString("HH:mm");
-            if (now == Settings.SchedulerStartTime && !IsQueueActive)
+            // Compares against the previous tick (not the exact minute) so sleep, a busy UI thread or a DST jump cannot skip a trigger
+            if (ScheduleTrigger.Crossed(previous, current, Settings.SchedulerStartTime) && !IsQueueActive)
             {
                 StartQueue();
             }
-            else if (now == Settings.SchedulerStopTime && IsQueueActive && Settings.SchedulerStopQueueAtEndTime)
+            else if (ScheduleTrigger.Crossed(previous, current, Settings.SchedulerStopTime) && IsQueueActive && Settings.SchedulerStopQueueAtEndTime)
             {
                 StopQueue();
             }

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Wdm.Tests;
 
+[Collection("NamedPipe")]
 public class RequestAndIpcTests
 {
     private static int GetFreePort()
@@ -24,7 +25,7 @@ public class RequestAndIpcTests
         var req = LaunchArguments.Parse(new[] { "/d", "https://example.com/a.zip", "/p", @"C:\Temp", "/f", "b.zip", "/n" });
 
         Assert.Equal(new[] { "https://example.com/a.zip" }, req.Urls);
-        Assert.Equal(@"C:\Temp", req.DestinationDirectory);
+        Assert.Equal(Path.GetFullPath(@"C:\Temp"), req.DestinationDirectory);
         Assert.Equal("b.zip", req.FileName);
         Assert.True(req.Silent);
         Assert.False(req.QueueOnly);

@@ -159,15 +159,43 @@ function shouldTakeOver(item) {
   return !isDocument && item.totalBytes >= MIN_UNKNOWN_TYPE_BYTES;
 }
 
+// The service worker can be killed while a handoff is in flight (WDM may take seconds to start), which would leave
+// the browser's copy paused forever. Handoffs are therefore journalled in session storage and settled on worker start:
+// "pending" -> resume the browser download; "accepted" -> WDM already owns it, finish cancelling the browser copy.
+const HANDOFF_KEY = "wdmHandoffs";
+
+async function setHandoff(id, state) {
+  const { [HANDOFF_KEY]: journal = {} } = await chrome.storage.session.get(HANDOFF_KEY);
+  if (state) journal[id] = state; else delete journal[id];
+  await chrome.storage.session.set({ [HANDOFF_KEY]: journal });
+}
+
+async function settleOrphanedHandoffs() {
+  const { [HANDOFF_KEY]: journal = {} } = await chrome.storage.session.get(HANDOFF_KEY);
+  for (const [id, state] of Object.entries(journal)) {
+    try {
+      if (state === "accepted") {
+        await chrome.downloads.cancel(Number(id));
+        await chrome.downloads.erase({ id: Number(id) });
+      } else {
+        await chrome.downloads.resume(Number(id));
+      }
+    } catch { /* download finished or vanished */ }
+  }
+  await chrome.storage.session.remove(HANDOFF_KEY);
+}
+
 chrome.downloads.onCreated.addListener(async (item) => {
   // Taking over needs the visitor's cookies for the download's site, otherwise logged-in downloads would fail in WDM.
   // Without site access the browser simply keeps its download.
   if (!(await isTakeoverEnabled()) || !shouldTakeOver(item) || !(await hasAllSites())) return;
 
   try { await chrome.downloads.pause(item.id); } catch { /* already finished or not pausable */ }
+  await setHandoff(item.id, "pending");
 
   const url = item.finalUrl || item.url;
   const accepted = await sendDownloadToWdm(url, item.referrer);
+  if (accepted) await setHandoff(item.id, "accepted");
 
   try {
     if (accepted) {
@@ -177,7 +205,11 @@ chrome.downloads.onCreated.addListener(async (item) => {
       await chrome.downloads.resume(item.id);
     }
   } catch { /* download vanished while we were deciding */ }
+  await setHandoff(item.id, null);
 });
+
+// Every worker start is a fresh context, so any journalled handoff belongs to a worker that died mid-flight.
+settleOrphanedHandoffs().catch((err) => console.warn("[WDM] Could not settle earlier downloads:", err));
 
 // ---- media sniffing (needs site access) -------------------------------------------------------
 

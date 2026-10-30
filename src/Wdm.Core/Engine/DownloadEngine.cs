@@ -100,10 +100,20 @@ public class DownloadEngine : IAsyncDisposable
             probe.SupportsRanges &&
             (probe.ETag != null ? existing.ETag == probe.ETag : probe.LastModified.HasValue && existing.LastModified == probe.LastModified);
 
+        // The checkpoint only describes bytes that are still on disk: a deleted, replaced or truncated partial file,
+        // or a damaged segment table, means the saved progress cannot be trusted (restart rather than complete with holes).
+        // Checkpoints from WDM 1.0.x have no part file: they were written straight into the target file.
+        bool legacyInPlace = existing is { PartFilePath: null };
+        string existingWritePath = legacyInPlace ? probe.TargetFilePath : ResumeManager.GetPartPath(probe.TargetFilePath);
+        if (sameFile && !CheckpointMatchesDisk(existing!, existingWritePath)) sameFile = false;
+
         if (existing != null && sameFile)
         {
-            // Resume existing download!
+            // Resume existing download! Location and identity come from the probe, never from the checkpoint file.
             _metadata = existing;
+            _metadata.TargetFilePath = probe.TargetFilePath;
+            _metadata.PartFilePath = legacyInPlace ? null : existingWritePath;
+            _metadata.FileName = probe.FileName;
             _metadata.Options = options ?? existing.Options;
             _options = _metadata.Options;
             _segmenter.Restore(_metadata.Segments);
@@ -116,7 +126,7 @@ public class DownloadEngine : IAsyncDisposable
         }
 
         // Initialize storage writer
-        _storageWriter = new StorageWriter(_metadata.TargetFilePath, _metadata.TotalBytes);
+        _storageWriter = new StorageWriter(WritePath, _metadata.TotalBytes);
 
         // Persist right away so the file reserved by the probe is always tied to this URL
         await ResumeManager.SaveCheckpointAsync(_metadata, CancellationToken.None);
@@ -126,8 +136,54 @@ public class DownloadEngine : IAsyncDisposable
 
         SetStatus(DownloadStatus.Downloading);
 
-        _orchestratorTask = RunDownloadLoopAsync(connectionCount, ct);
+        _orchestratorTask = RunWithRangeFallbackAsync(connectionCount, ct);
         await _orchestratorTask;
+    }
+
+    /// <summary>
+    /// A server that advertises byte ranges but ignores them cannot be downloaded in parallel (or resumed).
+    /// Instead of failing, start over once as a single plain stream, which every HTTP server supports.
+    /// </summary>
+    private async Task RunWithRangeFallbackAsync(int connectionCount, CancellationToken ct)
+    {
+        try
+        {
+            await RunDownloadLoopAsync(connectionCount, ct);
+        }
+        catch (RangeIgnoredException) when (_metadata != null && !ct.IsCancellationRequested)
+        {
+            _metadata.SupportsRanges = false;
+            _metadata.ErrorMessage = null;
+            _metadata.Segments = _segmenter.Initialize(_metadata.TotalBytes, 1, supportsRanges: false);
+            _storageWriter = new StorageWriter(WritePath, _metadata.TotalBytes);
+            Interlocked.Exchange(ref _totalDownloadedBytes, 0);
+            await ResumeManager.SaveCheckpointAsync(_metadata, CancellationToken.None);
+
+            SetStatus(DownloadStatus.Downloading);
+            await RunDownloadLoopAsync(1, ct);
+        }
+    }
+
+    /// <summary>Where bytes go while downloading: the part file, or the target itself for downloads started by WDM 1.0.x.</summary>
+    private string WritePath => _metadata!.PartFilePath ?? _metadata.TargetFilePath;
+
+    private static bool CheckpointMatchesDisk(DownloadMetadata checkpoint, string writePath)
+    {
+        try
+        {
+            var info = new FileInfo(writePath);
+            return info.Exists && info.Length == checkpoint.TotalBytes &&
+                   DynamicSegmenter.IsConsistent(checkpoint.Segments, checkpoint.TotalBytes);
+        }
+        catch (IOException) { return false; }
+        catch (UnauthorizedAccessException) { return false; }
+    }
+
+    /// <summary>Flushes file data, then persists progress that is guaranteed to be on disk.</summary>
+    private Task SaveCheckpointAsync()
+    {
+        var writer = _storageWriter;
+        return ResumeManager.SaveCheckpointAsync(_metadata!, CancellationToken.None, writer == null ? null : writer.Flush);
     }
 
     private async Task RunDownloadLoopAsync(int connectionCount, CancellationToken ct)
@@ -141,12 +197,14 @@ public class DownloadEngine : IAsyncDisposable
         {
             try
             {
+                int tick = 0;
                 while (!reportingCts.Token.IsCancellationRequested && await checkpointTimer.WaitForNextTickAsync(reportingCts.Token).ConfigureAwait(false))
                 {
                     UpdateMetrics();
-                    if (_metadata != null && Status != DownloadStatus.Completed)
+                    // Progress is reported twice a second; the (fsync-ing) checkpoint every two seconds
+                    if (++tick % 4 == 0 && _metadata != null && Status != DownloadStatus.Completed)
                     {
-                        await ResumeManager.SaveCheckpointAsync(_metadata, CancellationToken.None).ConfigureAwait(false);
+                        await SaveCheckpointAsync().ConfigureAwait(false);
                     }
                 }
             }
@@ -205,7 +263,17 @@ public class DownloadEngine : IAsyncDisposable
                     _storageWriter?.SetLength(_metadata.TotalBytes);
                 }
                 _metadata.CompletedAt = DateTimeOffset.UtcNow;
-                ResumeManager.DeleteCheckpoint(_metadata.TargetFilePath);
+
+                // Close (and flush) first; only then does the file get its real name, and only after that is the checkpoint
+                // dropped: until the rename succeeded, the checkpoint is the record that the data is not finished.
+                if (_storageWriter != null)
+                {
+                    await _storageWriter.DisposeAsync();
+                    _storageWriter = null;
+                }
+                string checkpointOwner = _metadata.TargetFilePath;
+                PublishFinishedFile();
+                ResumeManager.DeleteCheckpoint(checkpointOwner);
             }
             SetStatus(DownloadStatus.Completed);
             UpdateMetrics();
@@ -215,7 +283,7 @@ public class DownloadEngine : IAsyncDisposable
             SetStatus(DownloadStatus.Paused);
             if (_metadata != null)
             {
-                await ResumeManager.SaveCheckpointAsync(_metadata, CancellationToken.None);
+                await SaveCheckpointAsync();
             }
         }
         catch (Exception ex)
@@ -224,7 +292,7 @@ public class DownloadEngine : IAsyncDisposable
             if (_metadata != null)
             {
                 _metadata.ErrorMessage = ex.Message;
-                await ResumeManager.SaveCheckpointAsync(_metadata, CancellationToken.None);
+                await SaveCheckpointAsync();
             }
             throw;
         }
@@ -282,6 +350,33 @@ public class DownloadEngine : IAsyncDisposable
             }
 
             await worker.DownloadSegmentAsync(_metadata.Url, segment, ct);
+        }
+    }
+
+    /// <summary>Gives the finished part file its final name; if that name was taken meanwhile, the next free "name (n).ext" is used.</summary>
+    private void PublishFinishedFile()
+    {
+        var meta = _metadata!;
+        if (meta.PartFilePath == null) return; // legacy in-place download: already under its final name
+
+        string dir = Path.GetDirectoryName(meta.TargetFilePath) ?? "";
+        string stem = Path.GetFileNameWithoutExtension(meta.TargetFilePath);
+        string ext = Path.GetExtension(meta.TargetFilePath);
+
+        for (int counter = 0; ; counter++)
+        {
+            string candidate = counter == 0 ? meta.TargetFilePath : Path.Combine(dir, $"{stem} ({counter}){ext}");
+            if (counter > 0 && File.Exists(ResumeManager.GetPartPath(candidate))) continue; // reserved by another download
+
+            try
+            {
+                File.Move(meta.PartFilePath!, candidate, overwrite: false);
+                meta.TargetFilePath = candidate;
+                meta.FileName = Path.GetFileName(candidate);
+                meta.PartFilePath = null;
+                return;
+            }
+            catch (IOException) when (File.Exists(candidate)) { }
         }
     }
 

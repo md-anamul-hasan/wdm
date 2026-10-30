@@ -47,3 +47,8 @@ WDM is a general-purpose utility and is not directed at children, and it collect
 ## Changes and contact
 
 Changes to this policy are published in this repository with a new date. Questions: open an issue at https://github.com/md-anamul-hasan/wdm/issues.
+
+## What WDM stores on your computer (added in 1.0.2)
+- `%APPDATA%\WDM\downloads.json` and, next to an unfinished download, `<name>.wdm-state`: the download list and resume data. Cookies and passwords used for a download are encrypted with Windows DPAPI for your Windows account and are deleted when the download completes. Older versions stored them unencrypted; WDM 1.0.2 re-encrypts them the first time it starts.
+- Unfinished downloads are kept as `<name>.wdm-part` in the download folder until they complete, then renamed.
+- Nothing is sent anywhere except the downloads you start.

@@ -70,6 +70,24 @@ public class DynamicSegmenter
     }
 
     /// <summary>
+    /// True when <paramref name="segments"/> tile [0, totalBytes) exactly (no gap, no overlap) and every
+    /// progress marker lies inside its own segment. A checkpoint failing this is never trusted for writing.
+    /// </summary>
+    public static bool IsConsistent(IReadOnlyCollection<DownloadSegment> segments, long totalBytes)
+    {
+        if (totalBytes <= 0 || segments.Count == 0) return false;
+
+        long expectedStart = 0;
+        foreach (var seg in segments.OrderBy(s => s.StartOffset))
+        {
+            if (seg.IsOpenEnded || seg.StartOffset != expectedStart || seg.EndOffset < seg.StartOffset || seg.EndOffset >= totalBytes) return false;
+            if (seg.CurrentOffset < seg.StartOffset || seg.CurrentOffset > seg.EndOffset + 1) return false;
+            expectedStart = seg.EndOffset + 1;
+        }
+        return expectedStart == totalBytes;
+    }
+
+    /// <summary>
     /// Restores segments from an existing checkpoint.
     /// </summary>
     public void Restore(IEnumerable<DownloadSegment> existingSegments)
