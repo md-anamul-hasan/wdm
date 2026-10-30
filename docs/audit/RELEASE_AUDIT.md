@@ -9,6 +9,8 @@ Inputs read: `.github/workflows/release.yml`, `scripts/*.ps1`, `installer/wdm.is
 | Third-party actions | floating tags `@v4`, `@v1` | pinned to commit SHAs resolved with `git ls-remote` on 2026-10-30 (tag kept in a comment) |
 | Extension tests | not run in CI | `node --test tests/extension/background.test.mjs` before packaging |
 
+Incident (v1.0.2): the tag run built and tested everything but the publish step failed because a release already existed (created via the web UI); fixed by making the step idempotent (AUD-032). **Create release tags with `git tag` + `git push`, or in the UI create only the tag if possible; with the fix either path now works.**
+
 Still open: signing and publishing share one job/token (split into `build` → `publish` jobs so the signing job never holds `contents: write`); `choco install innosetup` is unpinned; SHA pins must be refreshed periodically (Dependabot `github-actions` ecosystem recommended); the modified workflow **was run** (dispatch on the branch, run 41060931118) and all build/test/installer steps passed; the signing and publish steps were skipped (no SignPath variables; publish only on tags) and are therefore still unexercised.
 
 ## Findings

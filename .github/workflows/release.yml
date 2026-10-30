@@ -120,4 +120,15 @@ jobs:
           $v = "${{ github.ref_name }}".TrimStart('v')
           $notes = "docs/release-notes-$v.md"
           if (-not (Test-Path $notes)) { throw "Missing $notes - write the release notes before tagging" }
-          gh release create "${{ github.ref_name }}" dist/release/* --title "WDM $v" --notes-file $notes
+          $tag = "${{ github.ref_name }}"
+          # Idempotent: a release may already exist (created in the web UI, or this job is being re-run)
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag dist/release/* --clobber
+            if ($LASTEXITCODE -ne 0) { throw "gh release upload failed" }
+            gh release edit $tag --title "WDM $v" --notes-file $notes
+            if ($LASTEXITCODE -ne 0) { throw "gh release edit failed" }
+          } else {
+            gh release create $tag dist/release/* --title "WDM $v" --notes-file $notes
+            if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
+          }
