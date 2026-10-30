@@ -9,7 +9,7 @@
 | UI / end-to-end | none | 0 | needs Windows (FlaUI planned) |
 | Real browser + native host | none | 0 | needs Windows + browser |
 
-106 .NET tests + 8 Node tests; all pass; no external network use; each test uses its own temp dir and port.
+119 .NET tests + 8 Node tests; all pass; no external network use; each test uses its own temp dir and port.
 
 ## Commands (verified in this audit)
 ```
@@ -21,7 +21,7 @@ dotnet build Wdm.slnx -c Release -p:EnableWindowsTargeting=true     # compiles t
 ```
 
 ## Coverage (Coverlet, Core only, Linux, all 106 tests)
-Line **72.7 %**, branch **67.2 %** (65.1 % / 60.4 % when the audit started adding tests; the original suite alone was not measured). Weakest: `MediaResolver` process/yt-dlp path (only parsing and URL matching are tested), `AppSettings` Load/Save (needs `WDM_DATA_DIR` isolation), `DownloadProgress` formatting. Engine, worker, segmenter, writer, pipe, request helper: 85–100 %.
+Line **74.0 %**, branch **68.7 %** (65.1 % / 60.4 % when the audit started adding tests; the original suite alone was not measured). Weakest: `MediaResolver` process/yt-dlp path (only parsing and URL matching are tested), `AppSettings` Load/Save (needs `WDM_DATA_DIR` isolation), `DownloadProgress` formatting. Engine, worker, segmenter, writer, pipe, request helper: 85–100 %.
 
 ## Flakiness
 Full suite run 14 times in a row after the last fix: 0 failures. One earlier flake (`RepeatedPauseAndResume`) was a test-design flaw (rate limiter bucket let a resumed run finish before the pause landed), fixed in the test.

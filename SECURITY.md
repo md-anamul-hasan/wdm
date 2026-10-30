@@ -12,5 +12,6 @@ Only the latest release receives fixes.
 - Browser → native host: Chrome/Edge/Brave enforce `allowed_origins` for the extension IDs in `NativeHostManifest`; Firefox uses `allowed_extensions`.
 - Native host → app: per-user named pipe (`CurrentUserOnly`), 1 MB limit, 5 s read timeout, http(s) URLs only.
 - Credentials/cookies are only sent to the host they were issued for and never over an HTTPS→HTTP redirect.
-- Known limitation: cookies and passwords of a download are stored unencrypted in `%APPDATA%\WDM\downloads.json` and the `.wdm-state` file (tracked as AUD-013).
+- Cookies and passwords of a download are stored encrypted with Windows DPAPI (current user) in `%APPDATA%\WDM\downloads.json` and the `.wdm-state` file, and removed once the download finishes. Anyone running as the same Windows user can still decrypt them.
+- Bundled yt-dlp and FFmpeg are pinned by version and SHA-256 (`scripts/tools.lock.json`).
 - Full details: `docs/audit/SECURITY_AUDIT.md`.

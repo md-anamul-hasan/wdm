@@ -20,8 +20,8 @@ Method: source review, then a failing test for each claim before fixing. IDs ref
 | High | AUD-009 | Store extension not authorized by native host (functional break, not an exposure) | Fixed in source, needs release |
 | High | AUD-002 | Wrong `Content-Range` ⇒ silent data corruption | Fixed |
 | High | AUD-004 | Checkpoint is trusted input (path, segments) | Fixed |
-| Medium | AUD-013 | Cookies / passwords stored in plaintext | Open (approval needed) |
-| Medium | AUD-019 | Bundled yt-dlp/ffmpeg fetched unverified | Open |
+| Medium | AUD-013 | Cookies / passwords stored in plaintext | Fixed (DPAPI + dropped on completion); DPAPI unverified until run on Windows |
+| Medium | AUD-019 | Bundled yt-dlp/ffmpeg fetched unverified | Fixed (pinned + SHA-256, verified by running the script) |
 | Medium | AUD-020 | Workflow actions not SHA-pinned; broad token scope | Open |
 | Low | AUD-008 | CR/LF header smuggling | Fixed |
 | Low | AUD-006/007 | IPC DoS-by-silence, URL re-validation | Fixed |

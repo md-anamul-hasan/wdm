@@ -11,7 +11,7 @@ Things only you can do (accounts, Windows, publishing, decisions). Ordered by pr
    dotnet test Wdm.slnx -c Release
    node --test tests/extension/background.test.mjs
    ```
-   Expect 106 .NET tests + 8 Node tests green. Then launch `src\Wdm.Ui\bin\Release\net10.0-windows\Wdm.Ui.exe` and download a file with 8 connections, pause, resume.
+   Expect 119 .NET tests + 8 Node tests green. Then launch `src\Wdm.Ui\bin\Release\net10.0-windows\Wdm.Ui.exe` and download a file with 8 connections, pause, resume.
 3. **Build the installer locally once**: `.\scripts\build-installer.ps1` (needs Inno Setup 6: `winget install JRSoftware.InnoSetup`). Install it on a clean Windows VM; confirm Start-menu entry, then check `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.wdm.download` and open `%APPDATA%\WDM\NativeMessaging\com.wdm.download.json`: `allowed_origins` must list **both** `kdjgcdbahccolkkagbckkchfpcchcfne` and `flnbghmpkajibfdfhbcfhkcjkhlokfgi`.
 4. **Upgrade test:** install 1.0.1 first, then 1.0.2 over it; downloads list and settings in `%APPDATA%\WDM` must survive. **Uninstall test:** `%APPDATA%\WDM` and your download folder must remain; the registry keys above must be gone.
 5. **Tag and release:** `git tag v1.0.2 && git push origin v1.0.2`. The workflow needs `docs/release-notes-1.0.2.md` (already drafted). Watch the Actions run — it has never executed with my changes (SHA-pinned actions, new Node step, split permissions). If it fails, the error is most likely in those three edits.
@@ -33,15 +33,25 @@ Things only you can do (accounts, Windows, publishing, decisions). Ordered by pr
 | 10 | Accessibility | Run Accessibility Insights (FastPass) on the main window; Tab through everything; try Narrator on icon-only buttons | File findings for AUD-026/027 |
 | 11 | High DPI | 125/150/200 % scaling | no clipped text |
 
-## C. Decisions I need from you
-| Decision | Options | My recommendation |
+## C. Decisions (all resolved — recorded for the audit trail)
+| Decision | Outcome |
+|---|---|
+| Encrypt stored cookies/passwords; stop storing for completed downloads | Yes → implemented (DPAPI, migration, dropped on completion) |
+| `.wdm-part` while downloading | Yes → implemented; 1.0.x partials still resume |
+| CLI exit 130 when paused | Yes → implemented and verified |
+| Pin yt-dlp/ffmpeg | Done: yt-dlp 2026.10.26, FFmpeg n8.1.3 LGPL (immutable BtbN autobuild tag), SHA-256 verified |
+| Firefox `data_collection_permissions` | Kept as `none` (open-source, data only goes to the local app); revisit if a remote endpoint is ever added |
+| SECURITY.md reporting | Still **your action**: enable GitHub private vulnerability reporting (Settings → Code security) |
+
+### Extra Windows checks for the new behaviour (add to section B)
+| # | Test | Pass criteria |
 |---|---|---|
-| Encrypt stored cookies/passwords (AUD-013) | DPAPI `ProtectedData` w/ one-time migration · don't persist cookies at all (re-captured on retry) · leave | Don't persist cookies/passwords for **completed** downloads and DPAPI-protect the rest. Say yes and I will implement with a migration test. |
-| `.wdm-part` suffix while downloading (AUD-014) | yes/no | Yes — prevents "looks finished" files; resume must also find old-style partials. |
-| CLI exit code when paused (AUD-030) | keep 0 · 130 | 130 |
-| Pin yt-dlp/ffmpeg (AUD-019) | give me the versions you want, or "latest at date X" | I need network access to compute SHA-256 of the exact GitHub assets (the sandbox could reach git but I haven't pulled the binaries); tell me if you want me to try. |
-| Firefox `data_collection_permissions: none` | confirm | Accurate only if you agree "data stays on this PC" counts as none. |
-| SECURITY.md reporting | enable GitHub *private vulnerability reporting* (repo Settings → Code security) | do it, otherwise the link in SECURITY.md 404s |
+| 12 | DPAPI round trip | Start a download with a cookie (browser handoff), pause, close WDM. Open `%APPDATA%\WDM\downloads.json` and the `*.wdm-state`: values start with `dpapi1:`, no readable cookie. Reopen WDM, resume: the logged-in download continues |
+| 13 | Migration | Put a 1.0.1 `downloads.json` with a plaintext cookie in `%APPDATA%\WDM`, start 1.0.2: file no longer contains the cookie text |
+| 14 | `.wdm-part` | During a download the folder has `name.ext.wdm-part` + `.wdm-state` and no `name.ext`; after completion only `name.ext`. Antivirus holding the file at rename time should end as an error you can retry, not data loss |
+| 15 | Upgrade of a paused 1.0.1 download | Pause in 1.0.1, install 1.0.2, resume: finishes in place, SHA-256 matches |
+| 16 | Delete download + file | Removes `.wdm-part`, `.wdm-state` and the file |
+| 17 | Installer | Contains `ffmpeg.exe`, `ffmpeg-LICENSE.txt`, `yt-dlp.exe`, `THIRD_PARTY_NOTICES.md`, `LICENSE`; a YouTube download that needs merging works |
 
 ## D. Repo housekeeping (5 min each)
 - Enable Dependabot (`.github/dependabot.yml`: ecosystems `nuget`, `github-actions`) so SHA pins don't rot.

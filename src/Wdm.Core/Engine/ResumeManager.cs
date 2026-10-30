@@ -16,6 +16,9 @@ public static class ResumeManager
 
     public static string GetCheckpointPath(string targetFilePath) => targetFilePath + ".wdm-state";
 
+    /// <summary>The in-progress file for a download whose final name is <paramref name="targetFilePath"/>.</summary>
+    public static string GetPartPath(string targetFilePath) => targetFilePath + ".wdm-part";
+
     /// <param name="flushData">
     /// Called after the progress snapshot is taken and before it is written: the checkpoint may only claim
     /// bytes that have reached the disk, otherwise a power loss would resume over data that never landed.

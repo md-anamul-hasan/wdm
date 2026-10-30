@@ -26,4 +26,4 @@
 ## Firefox gaps to test on Windows
 1. Load via `about:debugging`; confirm `sendNativeMessage` reaches the host with `allowed_extensions`.
 2. `downloads.onCreated` timing: does `pause()` win the race for small files?
-3. AMO submission: confirm the `data_collection_permissions: none` declaration; `package-extension.ps1` strips `browser_specific_settings`, so a Firefox package script is still missing (roadmap).
+3. AMO submission: `data_collection_permissions: {required: ["none"]}` is kept. Rationale (owner asked for best practice; project is open source): Mozilla's categories cover data *collected and transmitted off the device*; this extension only hands links/cookies to the local WDM app, which sends them solely to the site being downloaded from, and the code is public. Revisit if any remote endpoint is ever added. `package-extension.ps1` strips `browser_specific_settings`, so a Firefox package script is still missing (roadmap).

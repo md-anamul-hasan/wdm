@@ -49,7 +49,7 @@ dotnet test  Wdm.slnx
 .\scripts\publish.ps1
 ```
 
-Installer: `.\scripts\build-installer.ps1` builds a self-contained `dist\installer\WDM-Setup-<version>.exe` (needs Inno Setup 6: `winget install JRSoftware.InnoSetup`). Both scripts download `yt-dlp.exe` and the LGPL build of `ffmpeg.exe` (BtbN) on first run; neither is stored in the repository. The version comes from `Directory.Build.props`.
+Installer: `.\scripts\build-installer.ps1` builds a self-contained `dist\installer\WDM-Setup-<version>.exe` (needs Inno Setup 6: `winget install JRSoftware.InnoSetup`). Both scripts download the pinned `yt-dlp.exe` and LGPL `ffmpeg.exe` listed in `scripts/tools.lock.json` and verify their SHA-256 (see `THIRD_PARTY_NOTICES.md`); neither is stored in the repository. The version comes from `Directory.Build.props`.
 
 Release for a website: `.\scripts\package-release.ps1` writes `dist\release\` with the installer, a zip of the extension and `SHA256SUMS.txt`.
 
@@ -101,3 +101,14 @@ Free code signing for release builds is provided by [SignPath.io](https://about.
 Full policy: [docs/PRIVACY.md](docs/PRIVACY.md).
 
 WDM sends no telemetry and has no update check. It connects only to the servers you download from (and, for video-site pages, to whatever `yt-dlp` contacts for that site). Settings and the download list stay in `%APPDATA%\WDM` on your machine.
+
+## Command line
+`wdm <url> [-o <dir>] [-c <connections 1-32>] [-l <KB/s>]`
+
+| Exit code | Meaning |
+|---|---|
+| 0 | download completed |
+| 1 | error (bad URL, HTTP error, I/O error) |
+| 130 | paused with Ctrl+C; run the same command again to resume |
+
+Unfinished downloads are written to `<name>.wdm-part` and renamed when complete, so a half-downloaded file never appears under its real name.

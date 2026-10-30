@@ -87,7 +87,7 @@ public class AuditFaultInjectionTests : IDisposable
 
         string target = first.Metadata!.TargetFilePath;
         Assert.True(File.Exists(ResumeManager.GetCheckpointPath(target)));
-        File.Delete(target); // user clean-up, antivirus quarantine, removable drive...
+        File.Delete(ResumeManager.GetPartPath(target)); // user clean-up, antivirus quarantine, removable drive...
 
         await using var second = new DownloadEngine();
         await second.StartAsync(url, _dir, connectionCount: 4);
@@ -110,7 +110,7 @@ public class AuditFaultInjectionTests : IDisposable
         try { await first.StartAsync(url, _dir, connectionCount: 4, pause.Token); } catch (OperationCanceledException) { }
         await first.DisposeAsync();
 
-        using (var fs = new FileStream(first.Metadata!.TargetFilePath, FileMode.Open, FileAccess.Write, FileShare.None))
+        using (var fs = new FileStream(ResumeManager.GetPartPath(first.Metadata!.TargetFilePath), FileMode.Open, FileAccess.Write, FileShare.None))
         {
             fs.SetLength(1000);
         }

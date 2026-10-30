@@ -5,6 +5,9 @@ namespace Wdm.Cli;
 
 public class Program
 {
+    /// <summary>Exit code when the download was paused (Ctrl+C) rather than finished: 128 + SIGINT, so scripts can tell it from success.</summary>
+    public const int ExitPaused = 130;
+
     public static async Task<int> Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -145,7 +148,7 @@ public class Program
             if (engine.Status != DownloadStatus.Completed)
             {
                 Console.WriteLine("\n[WDM] Download paused. Checkpoint saved. Run again with the same URL to resume instantly.");
-                return 0;
+                return ExitPaused;
             }
 
             Console.WriteLine($"\n[WDM] Download 100% Complete! Saved to: {engine.Metadata?.TargetFilePath}");
@@ -154,7 +157,7 @@ public class Program
         catch (OperationCanceledException)
         {
             Console.WriteLine("\n[WDM] Download paused. Checkpoint saved. Run again with the same URL to resume instantly.");
-            return 0;
+            return ExitPaused;
         }
         catch (Exception ex)
         {

@@ -10,6 +10,12 @@
 - Hardened browser/IPC input handling (control characters in headers, stalled clients, non-http links).
 - Extension 1.0.1: a download paused by WDM's takeover can no longer stay paused if the browser suspends the extension.
 
+### Security and reliability
+- **Cookies and passwords are encrypted** (Windows DPAPI) in `downloads.json` and resume files, and removed when a download finishes. Existing plaintext entries are converted the first time WDM 1.0.2 starts.
+- **Unfinished downloads are saved as `name.ext.wdm-part`** and renamed when complete, so an interrupted download can no longer be mistaken for a finished file. Downloads paused in 1.0.1 resume normally.
+- Bundled yt-dlp and FFmpeg are now pinned to specific versions and checked against SHA-256 hashes at build time (yt-dlp 2026.10.26, FFmpeg n8.1.3 LGPL). See `THIRD_PARTY_NOTICES.md`.
+- Command line: exit code 130 when paused with Ctrl+C.
+
 ### Files
 | File | Purpose |
 |---|---|

@@ -1,0 +1,18 @@
+{
+  "_comment": "Pinned third-party tools bundled by scripts/fetch-tools.ps1. Every download is verified against these SHA-256 values; a mismatch aborts the build. To update: change version, url and hashes together (see docs/audit/RELEASE_AUDIT.md).",
+  "yt-dlp": {
+    "version": "2026.10.26",
+    "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp.exe",
+    "sha256": "f5389d3698ecde4ef06f4e6b1ce0294fe9ac1396228c8990b8d3416d6d177a7d",
+    "source": "SHA-256 equals the value in the release's SHA2-256SUMS (checked 2026-10-30)"
+  },
+  "ffmpeg": {
+    "version": "n8.1.3-25-g611cec792a (LGPL, win64)",
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-29-19-17/ffmpeg-n8.1.3-25-g611cec792a-win64-lgpl-8.1.zip",
+    "zipSha256": "74e7863feef0d40b72236caf53823b132bcd429657be742d0a9213c0581cb573",
+    "exeEntry": "ffmpeg-n8.1.3-25-g611cec792a-win64-lgpl-8.1/bin/ffmpeg.exe",
+    "exeSha256": "98fffa46446b0a2086fb8f1e31197ffa9e17d9b041e48d886d535d02fdb727cd",
+    "licenseEntry": "ffmpeg-n8.1.3-25-g611cec792a-win64-lgpl-8.1/LICENSE.txt",
+    "source": "zip SHA-256 equals the value in the autobuild release's checksums.sha256 (checked 2026-10-30)"
+  }
+}

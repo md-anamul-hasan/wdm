@@ -12,9 +12,9 @@ Environment: Linux sandbox, .NET SDK 10.0.114, Node 22. **No Windows, no running
 | | Before | After |
 |---|---|---|
 | Release build, whole solution (`dotnet build Wdm.slnx -c Release -p:EnableWindowsTargeting=true`) | not run | 0 warnings, 0 errors incl. Wdm.Ui (compile only; UI never run) |
-| .NET tests | 45: 43 pass, 2 fail | 106: 106 pass; 14 consecutive full runs, 0 failures |
+| .NET tests | 45: 43 pass, 2 fail | 119: 119 pass; 8+ consecutive full runs after the last change, 0 failures |
 | Extension tests | none | 8 pass (mocked `chrome`) |
-| Core line / branch coverage | not measured | 72.7 % / 67.2 % |
+| Core line / branch coverage | not measured | 74.0 % / 68.7 % |
 | NuGet vulnerabilities | — | none (`dotnet list package --vulnerable --include-transitive`) |
 | Loopback throughput, 256 MiB | — | 1 conn ≈ 270–300 MB/s; 2+ ≈ 400 MB/s; no managed leak across 18 downloads |
 
@@ -22,7 +22,7 @@ Environment: Linux sandbox, .NET SDK 10.0.114, Node 22. **No Windows, no running
 | Validation | Result | Evidence |
 |---|---|---|
 | Restore / Release build (5 projects) | Pass (UI compile-only) | command above |
-| Unit + integration + fault injection | Pass 106/106 | `dotnet test tests/Wdm.Tests -c Release` |
+| Unit + integration + fault injection | Pass 119/119 | `dotnet test tests/Wdm.Tests -c Release` |
 | Extension logic | Pass 8/8 (mock) | `node --test tests/extension/background.test.mjs` |
 | Dependency vulnerabilities | Pass | `dotnet list ... --vulnerable` |
 | Security | Source review + exploit tests; no SAST tool | SECURITY_AUDIT.md |
@@ -40,9 +40,13 @@ Environment: Linux sandbox, .NET SDK 10.0.114, Node 22. **No Windows, no running
 | Extension takeover | Verified with mocks; not in a browser |
 | Web Store release | Reviewed; ID bug fixed in source — **needs release** |
 | Firefox | Not verified |
+| Secrets at rest | DPAPI wiring tested with a fake cipher; real DPAPI **unverified** (Windows-only) |
+| `.wdm-part` | Tested incl. legacy 1.0.x checkpoints, name collisions, crash-before-rename; Windows file-locking behaviour (AV) unverified |
+| CLI | Exit codes verified by running it: paused 130, completed 0, errors 1 |
 | Scheduler | Fixed + unit-tested; timer wiring compile-only |
 | CI / release | Hardened (SHA pins, read-only default token, extension tests); never executed |
 | UI/UX, accessibility | Static review only |
+| Pinned tools | yt-dlp 2026.10.26 + FFmpeg n8.1.3 LGPL pinned by SHA-256; `fetch-tools.ps1` run under PowerShell 7 (fresh / rerun / tampered / wrong hash); all 6 scripts parse; `package-extension.ps1` produced a valid store zip |
 | Docs | All `docs/audit/*`, PRODUCT_ROADMAP, SECURITY.md, CONTRIBUTING.md, release notes 1.0.2 written. **Not written:** USER_GUIDE, FAQ, TROUBLESHOOTING, CLI docs (no verified Windows behaviour to describe) |
 | Feature enrichment | Roadmap only; nothing implemented beyond fixes |
 

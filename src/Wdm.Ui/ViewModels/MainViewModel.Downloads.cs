@@ -336,6 +336,8 @@ public partial class MainViewModel
         try
         {
             ResumeManager.DeleteCheckpoint(path);
+            var part = ResumeManager.GetPartPath(path);
+            if (File.Exists(part)) File.Delete(part);
             if (File.Exists(path)) File.Delete(path);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
