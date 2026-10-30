@@ -11,6 +11,7 @@ public partial class MainViewModel
     {
         if (!keepPending) PendingOptions = null;
         NewDownloadUrl = initialUrl ?? string.Empty;
+        NewDownloadSha256 = PendingOptions?.ExpectedSha256 ?? string.Empty;
         IsAddModalOpen = true;
     }
 
@@ -18,6 +19,7 @@ public partial class MainViewModel
     {
         IsAddModalOpen = false;
         NewDownloadUrl = string.Empty;
+        NewDownloadSha256 = string.Empty;
         PendingOptions = null;
     }
 

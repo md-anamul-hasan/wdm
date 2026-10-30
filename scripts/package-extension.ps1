@@ -24,7 +24,8 @@ try {
     Get-ChildItem $src -File | Where-Object { $_.Name -ne 'manifest.json' } | Copy-Item -Destination $stage
     $manifest | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $stage 'manifest.json') -Encoding utf8
 
-    foreach ($file in @($manifest.icons.PSObject.Properties.Value) + $manifest.background.service_worker + $manifest.action.default_popup) {
+    # rules.js is not named in the Chrome manifest (background.js loads it with importScripts), so it is checked explicitly
+    foreach ($file in @($manifest.icons.PSObject.Properties.Value) + $manifest.background.service_worker + $manifest.action.default_popup + 'rules.js') {
         if (-not (Test-Path (Join-Path $stage $file))) { throw "manifest references missing file: $file" }
     }
 

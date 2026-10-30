@@ -29,6 +29,10 @@ public static class LaunchArguments
             {
                 request.FileName = list[++i].Trim('"');
             }
+            else if (key is "/sha256" or "-sha256" or "--sha256" && hasValue)
+            {
+                request.Sha256 = list[++i].Trim('"');
+            }
             else if (key is "/n" or "-n" or "--silent")
             {
                 request.Silent = true;

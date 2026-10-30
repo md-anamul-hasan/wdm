@@ -52,3 +52,13 @@ Environment: Linux sandbox, .NET SDK 10.0.114, Node 22. **No Windows, no running
 | Feature enrichment | Roadmap only; nothing implemented beyond fixes |
 
 Everything you need to do next, with steps: **OWNER_ACTION_PLAN.md**. Per-issue detail: **ISSUE_REGISTER.md**.
+
+## Addendum — WDM / extension 2.0.0 (2026-10-30)
+| | 1.0.2 | 2.0.0 candidate |
+|---|---|---|
+| .NET tests | 119 | **142** (4 consecutive full runs green) |
+| Extension tests | 8 | **21** (also run against the unzipped Chrome-store package: behaviour tests pass) |
+| Core coverage line / branch | 74 % / 69 % | **75.9 % / 70.6 %** |
+| Build | 0 warnings, 0 errors | 0 warnings, 0 errors (solution incl. WPF UI, compile-only on Linux) |
+
+New in 2.0: SHA-256 verification, `--diagnose`, takeover rules, accessible names. Not verified here: UI behaviour of the new checksum field and button names (WPF never run), `--diagnose` against a real registry, popup rules UI in a browser. Windows CI result for the 2.0.0 branch is recorded in the release PR.

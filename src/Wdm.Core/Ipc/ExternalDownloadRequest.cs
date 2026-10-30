@@ -21,6 +21,9 @@ public class ExternalDownloadRequest
     public string? FileName { get; set; }
     public string? DestinationDirectory { get; set; }
 
+    /// <summary>Optional SHA-256 of the file (single-URL requests only).</summary>
+    public string? Sha256 { get; set; }
+
     /// <summary>Start immediately without showing the "add download" dialog.</summary>
     public bool Silent { get; set; }
 
@@ -39,7 +42,8 @@ public class ExternalDownloadRequest
         Cookies = Cookies,
         CookieHost = CookieHost,
         UserAgent = UserAgent,
-        FileName = Urls.Count == 1 ? FileName : null
+        FileName = Urls.Count == 1 ? FileName : null,
+        ExpectedSha256 = Urls.Count == 1 ? Sha256 : null
     };
 
     public static bool IsHttpUrl(string? value) =>

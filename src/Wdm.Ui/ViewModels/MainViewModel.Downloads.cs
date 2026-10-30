@@ -18,7 +18,19 @@ public partial class MainViewModel
         int connections = Math.Clamp(NewDownloadConnections, 1, 32);
         string? targetDir = string.IsNullOrWhiteSpace(NewDownloadDir) ? null : NewDownloadDir.Trim();
 
+        if (!IsNewSha256Valid) return;
+
         var options = PendingOptions;
+        if (Sha256Checksum.TryNormalize(NewDownloadSha256, out var sha256))
+        {
+            options ??= new DownloadRequestOptions();
+            options.ExpectedSha256 = sha256;
+        }
+        else if (options != null)
+        {
+            options.ExpectedSha256 = null; // the user cleared a checksum that came with the request
+        }
+
         AddDownload(url, targetDir ?? Settings.DefaultDownloadDirectory, connections, options);
         CloseAddModal();
     }

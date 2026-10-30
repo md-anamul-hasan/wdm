@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../extension");
 const source = fs.readFileSync(path.join(root, "background.js"), "utf8");
 
-function load({ hostReply = { status: "ok" }, allSites = true, takeover = true, journal = {} } = {}) {
+function load({ hostReply = { status: "ok" }, allSites = true, takeover = true, journal = {}, rules } = {}) {
   const calls = [];
   const listeners = {};
   const store = { wdmHandoffs: journal };
@@ -22,7 +22,7 @@ function load({ hostReply = { status: "ok" }, allSites = true, takeover = true, 
     },
     contextMenus: { create() {}, onClicked: ev("menu") },
     storage: {
-      local: { get: async () => ({ takeover }) },
+      local: { get: async () => ({ takeover, rules }) },
       session: {
         get: async (k) => ({ [k]: structuredClone(store[k]) }),
         set: async (o) => Object.assign(store, structuredClone(o)),
@@ -42,7 +42,11 @@ function load({ hostReply = { status: "ok" }, allSites = true, takeover = true, 
     tabs: { create() {}, sendMessage: async () => {} },
     webRequest: { onHeadersReceived: ev("headers") },
   };
-  vm.runInNewContext(source, { chrome, console, navigator: { userAgent: "UA" }, URL, Set, Promise });
+  const ctx = vm.createContext({
+    chrome, console, navigator: { userAgent: "UA" }, URL, Set, Promise,
+    importScripts: (file) => vm.runInContext(fs.readFileSync(path.join(root, file), "utf8"), ctx), // as in a real service worker
+  });
+  vm.runInContext(source, ctx);
   return { calls, listeners, store };
 }
 
@@ -107,7 +111,32 @@ test("manifest is MV3, keeps host access optional, and declares Firefox data col
   assert.deepEqual(m.optional_host_permissions, ["<all_urls>"]);
   assert.equal(m.host_permissions, undefined);
   assert.deepEqual(m.browser_specific_settings.gecko.data_collection_permissions.required, ["none"]);
+  assert.deepEqual(m.background.scripts, ["rules.js", "background.js"]); // Firefox loads rules.js first; Chrome uses importScripts
   for (const f of [...Object.values(m.icons), m.background.service_worker, m.action.default_popup]) {
     assert.ok(fs.existsSync(path.join(root, f)), `missing ${f}`);
+  }
+});
+
+test("a site excluded in the rules is never taken over", async () => {
+  const { calls, listeners } = load({ rules: { excludedHosts: ["example.com"] } });
+  await new Promise((r) => setTimeout(r, 5));
+  await listeners.created(item({ url: "https://cdn.example.com/a.zip" }));
+  assert.deepEqual(calls, []);
+});
+
+test("user-added file types are taken over", async () => {
+  const { calls, listeners } = load({ rules: { extraExtensions: ["epub"] } });
+  await new Promise((r) => setTimeout(r, 5));
+  await listeners.created(item({ url: "https://example.com/book.epub", filename: "book.epub" }));
+  assert.deepEqual(names(calls), ["pause", "cancel", "erase"]);
+});
+
+test("every file the manifest and popup reference exists", () => {
+  const m = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
+  for (const f of m.background.scripts) assert.ok(fs.existsSync(path.join(root, f)), `missing ${f}`);
+  const html = fs.readFileSync(path.join(root, "popup.html"), "utf8");
+  for (const [, ref] of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
+    if (/^https?:/.test(ref)) continue;
+    assert.ok(fs.existsSync(path.join(root, ref)), `popup.html references missing ${ref}`);
   }
 });

@@ -71,10 +71,10 @@
                         </StackPanel>
                     </Button>
                         <Rectangle Width="1" Height="20" Fill="{DynamicResource ThemeBorder}" Margin="0,0,10,0"/>
-                        <Button Style="{StaticResource IconBtn}" Click="OnStartQueueClick" ToolTip="Start queue - run every unfinished download" Margin="0,0,2,0">
+                        <Button Style="{StaticResource IconBtn}" Click="OnStartQueueClick" ToolTip="Start queue - run every unfinished download" Margin="0,0,2,0" AutomationProperties.Name="Start queue">
                         <Path Data="{StaticResource GeoQueuePlay}" Style="{StaticResource Ico}" Width="17" Height="17" />
                     </Button>
-                        <Button Style="{StaticResource IconBtn}" Click="OnStopQueueClick" ToolTip="Stop queue - pause everything" Margin="0,0,2,0">
+                        <Button Style="{StaticResource IconBtn}" Click="OnStopQueueClick" ToolTip="Stop queue - pause everything" Margin="0,0,2,0" AutomationProperties.Name="Stop queue">
                         <Path Data="{StaticResource GeoQueueStop}" Style="{StaticResource Ico}" Width="17" Height="17" />
                     </Button>
                     </StackPanel>
@@ -105,7 +105,7 @@
                                 </TextBlock.Style>
                             </TextBlock>
                             <Button Grid.Column="2" Style="{StaticResource IconBtn}" Width="26" Height="26" MinHeight="26" Click="OnClearSearchClick" ToolTip="Clear"
-                                    Visibility="{Binding Text.Length, ElementName=SearchBox, Converter={StaticResource NotZeroToVis}}">
+                                    Visibility="{Binding Text.Length, ElementName=SearchBox, Converter={StaticResource NotZeroToVis}}" AutomationProperties.Name="Clear">
                                 <Path Data="{StaticResource GeoX}" Style="{StaticResource Ico}" Width="11" Height="11"/>
                             </Button>
                         </Grid>
@@ -113,13 +113,13 @@
 
                     <!-- Tools -->
                     <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Style="{StaticResource IconBtn}" Click="OnGrabberClick" ToolTip="Site grabber - find downloadable files on a page" Margin="0,0,2,0">
+                        <Button Style="{StaticResource IconBtn}" Click="OnGrabberClick" ToolTip="Site grabber - find downloadable files on a page" Margin="0,0,2,0" AutomationProperties.Name="Site grabber">
                         <Path Data="{StaticResource GeoGlobe}" Style="{StaticResource Ico}" Width="17" Height="17" />
                     </Button>
-                        <Button Style="{StaticResource IconBtn}" Click="OnSchedulerClick" ToolTip="Scheduler" Margin="0,0,2,0">
+                        <Button Style="{StaticResource IconBtn}" Click="OnSchedulerClick" ToolTip="Scheduler" Margin="0,0,2,0" AutomationProperties.Name="Scheduler">
                         <Path Data="{StaticResource GeoClock}" Style="{StaticResource Ico}" Width="17" Height="17" />
                     </Button>
-                        <Button Style="{StaticResource IconBtn}" Click="OnToggleThemeClick" ToolTip="Switch light / dark theme" Margin="0,0,2,0">
+                        <Button Style="{StaticResource IconBtn}" Click="OnToggleThemeClick" ToolTip="Switch light / dark theme" Margin="0,0,2,0" AutomationProperties.Name="Switch light / dark theme">
                             <Path Width="17" Height="17">
                                 <Path.Style>
                                     <Style TargetType="Path" BasedOn="{StaticResource Ico}">
@@ -133,10 +133,10 @@
                                 </Path.Style>
                             </Path>
                         </Button>
-                        <Button Style="{StaticResource IconBtn}" Click="OnOpenSettingsClick" ToolTip="Options" Margin="0,0,2,0">
+                        <Button Style="{StaticResource IconBtn}" Click="OnOpenSettingsClick" ToolTip="Options" Margin="0,0,2,0" AutomationProperties.Name="Options">
                         <Path Data="{StaticResource GeoSettings}" Style="{StaticResource Ico}" Width="17" Height="17" />
                     </Button>
-                        <Button x:Name="MoreBtn" Style="{StaticResource IconBtn}" Click="OnMoreClick" ToolTip="More">
+                        <Button x:Name="MoreBtn" Style="{StaticResource IconBtn}" Click="OnMoreClick" ToolTip="More" AutomationProperties.Name="More">
                             <Path Data="{StaticResource GeoMore}" Style="{StaticResource Ico}" Width="17" Height="17" StrokeThickness="3"/>
                             <Button.ContextMenu>
                                 <ContextMenu>
@@ -441,7 +441,7 @@
                 <Border DockPanel.Dock="Top" Background="{DynamicResource ThemeAccentSoft}" Padding="16,8"
                         Visibility="{Binding IsClipboardBannerVisible, Converter={StaticResource BoolToVis}}">
                     <DockPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource IconBtn}" Width="28" Height="28" MinHeight="28" Click="OnDismissClipboardBannerClick" ToolTip="Dismiss">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource IconBtn}" Width="28" Height="28" MinHeight="28" Click="OnDismissClipboardBannerClick" ToolTip="Dismiss" AutomationProperties.Name="Dismiss">
                             <Path Data="{StaticResource GeoX}" Style="{StaticResource Ico}" Width="12" Height="12"/>
                         </Button>
                         <Button DockPanel.Dock="Right" Content="Download" Style="{StaticResource BtnPrimary}" MinWidth="90" MinHeight="28" Margin="12,0,6,0" Click="OnDownloadClipboardBannerClick"/>
@@ -628,7 +628,7 @@
                     </Border>
 
                     <TextBlock Text="Address" FontSize="12" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" Margin="0,0,0,6"/>
-                    <TextBox x:Name="AddUrlBox" Text="{Binding NewDownloadUrl, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBox x:Name="AddUrlBox" Text="{Binding NewDownloadUrl, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Download address"/>
                     <TextBlock Text="Enter a full http:// or https:// address" Foreground="{DynamicResource ThemeDanger}" FontSize="11.5" Margin="2,5,0,0"
                                Visibility="{Binding ShowUrlError, Converter={StaticResource BoolToVis}}"/>
 
@@ -642,6 +642,13 @@
                         <Button Grid.Column="1" Content="Browse" Margin="8,0,0,0" Style="{StaticResource BtnSecondary}" MinWidth="80" Click="OnBrowseFolderClick"/>
                     </Grid>
 
+                    <TextBlock Text="SHA-256 (optional)" FontSize="12" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding NewDownloadSha256, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Expected SHA-256 checksum"
+                             ToolTip="If you know the file's SHA-256, WDM checks it after the download and will not publish a file that does not match"/>
+                    <TextBlock Text="Enter 64 hexadecimal characters, or leave empty" Foreground="{DynamicResource ThemeDanger}" FontSize="11.5" Margin="2,5,0,0"
+                               Visibility="{Binding ShowSha256Error, Converter={StaticResource BoolToVis}}"/>
+                    <Border Height="14"/>
+
                     <DockPanel Margin="0,0,0,2">
                             <TextBlock Text="{Binding NewDownloadConnections, StringFormat='{}{0}'}" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" DockPanel.Dock="Right"/>
                             <TextBlock Text="Connections" Foreground="{DynamicResource ThemeTextSecondary}"/>
@@ -652,7 +659,7 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Cancel" Style="{StaticResource BtnSecondary}" Click="OnCancelModalClick"/>
                         <Button Content="Download" Style="{StaticResource BtnPrimary}" Margin="10,0,0,0" Click="OnConfirmModalClick"
-                                IsDefault="True" IsEnabled="{Binding IsNewDownloadUrlValid}"/>
+                                IsDefault="True" IsEnabled="{Binding CanConfirmAdd}"/>
                     </StackPanel>
                 </ctl:DialogCard.Footer>
             </ctl:DialogCard>

@@ -1,6 +1,6 @@
 # Privacy Policy — WDM and the WDM browser extension
 
-_Last updated: 2026-10-30_
+_Last updated: 2026-10-30 (2.0.0)_
 
 WDM (Windows Download Manager) and its browser extension, "WDM Download Manager Integration", are free, open-source software maintained by Md Anamul Hasan. This policy covers both.
 
@@ -23,7 +23,7 @@ When installed, the extension has no standing access to websites. The toolbar po
 | Browser user-agent string | So the file server sees the same browser identity | Same as above |
 | Media request addresses seen on a page (webRequest headers) | To show the "download this media" button on pages that stream video or audio | Kept in memory for that tab only. Not stored, not sent anywhere except to WDM when you press the button. |
 | Page links | Only when you choose "Download all links with WDM" | To the WDM app on your computer |
-| The "take over downloads" on/off setting | To remember your choice | Stored locally with `chrome.storage.local` |
+| The "take over downloads" on/off setting and your takeover rules (file types, excluded sites, size limit) | To remember your choices | Stored locally with `chrome.storage.local`; never sent anywhere |
 
 The extension does not read, store or transmit your browsing history, form input, passwords or page content, and it loads no remotely hosted code.
 

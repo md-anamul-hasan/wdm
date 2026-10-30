@@ -5,23 +5,23 @@
 |---|---|---|---|
 | Unit | `tests/Wdm.Tests` (segmenter, writer, resume, limiter, args, settings, schedule) | ~50 | any OS |
 | Integration (in-process HTTP server on loopback) | `IntegrationDownloadTests`, `RegressionTests`, `AuditFaultInjectionTests`, `AuditStressTests` | ~50 | any OS |
-| Extension logic (mocked `chrome`) | `tests/extension/background.test.mjs` | 8 | Node ≥ 20 |
+| Extension logic (mocked `chrome`) | `tests/extension/*.test.mjs` (background handoff, takeover rules) | 21 | Node ≥ 20 |
 | UI / end-to-end | none | 0 | needs Windows (FlaUI planned) |
 | Real browser + native host | none | 0 | needs Windows + browser |
 
-119 .NET tests + 8 Node tests; all pass; no external network use; each test uses its own temp dir and port.
+142 .NET tests + 21 Node tests; all pass; no external network use; each test uses its own temp dir and port.
 
 ## Commands (verified in this audit)
 ```
 dotnet test tests/Wdm.Tests -c Release
 dotnet test tests/Wdm.Tests -c Release --collect:"XPlat Code Coverage"
-node --test tests/extension/background.test.mjs
+node --test "tests/extension/*.test.mjs"
 WDM_BENCH=1 dotnet test tests/Wdm.Tests -c Release --filter AuditBenchmark --logger "console;verbosity=detailed"
 dotnet build Wdm.slnx -c Release -p:EnableWindowsTargeting=true     # compiles the WPF UI on Linux/macOS (compile only)
 ```
 
 ## Coverage (Coverlet, Core only, Linux, all 106 tests)
-Line **74.0 %**, branch **68.7 %** (65.1 % / 60.4 % when the audit started adding tests; the original suite alone was not measured). Weakest: `MediaResolver` process/yt-dlp path (only parsing and URL matching are tested), `AppSettings` Load/Save (needs `WDM_DATA_DIR` isolation), `DownloadProgress` formatting. Engine, worker, segmenter, writer, pipe, request helper: 85–100 %.
+Line **75.9 %**, branch **70.6 %** (65.1 % / 60.4 % when the audit started adding tests; the original suite alone was not measured). Weakest: `MediaResolver` process/yt-dlp path (only parsing and URL matching are tested), `AppSettings` Load/Save (needs `WDM_DATA_DIR` isolation), `DownloadProgress` formatting. Engine, worker, segmenter, writer, pipe, request helper: 85–100 %.
 
 ## Flakiness
 Full suite run 14 times in a row after the last fix: 0 failures. One earlier flake (`RepeatedPauseAndResume`) was a test-design flaw (rate limiter bucket let a resumed run finish before the pause landed), fixed in the test.

@@ -103,12 +103,16 @@ Full policy: [docs/PRIVACY.md](docs/PRIVACY.md).
 WDM sends no telemetry and has no update check. It connects only to the servers you download from (and, for video-site pages, to whatever `yt-dlp` contacts for that site). Settings and the download list stay in `%APPDATA%\WDM` on your machine.
 
 ## Command line
-`wdm <url> [-o <dir>] [-c <connections 1-32>] [-l <KB/s>]`
+`wdm <url> [-o <dir>] [-c <connections 1-32>] [-l <KB/s>] [--sha256 <hex>]` — full reference: [docs/CLI.md](docs/CLI.md)
 
 | Exit code | Meaning |
 |---|---|
 | 0 | download completed |
-| 1 | error (bad URL, HTTP error, I/O error) |
+| 1 | error (bad URL or checksum text, HTTP error, I/O error) |
+| 2 | finished, but the file does not match `--sha256` (data kept as `<name>.wdm-part`) |
 | 130 | paused with Ctrl+C; run the same command again to resume |
 
 Unfinished downloads are written to `<name>.wdm-part` and renamed when complete, so a half-downloaded file never appears under its real name.
+
+## What is new in 2.0
+Optional SHA-256 verification (Add-download field, `--sha256`), `Wdm.NativeHost.exe --diagnose` for browser-integration problems, takeover rules in the extension popup, screen-reader labels. See [CHANGELOG.md](CHANGELOG.md) and [docs/BROWSER_INTEGRATION.md](docs/BROWSER_INTEGRATION.md).

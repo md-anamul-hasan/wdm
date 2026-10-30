@@ -65,6 +65,12 @@ public class DownloadEngine : IAsyncDisposable
 
         _options = options;
 
+        // A checksum the user typed wrongly must fail now, not after hours of downloading
+        if (!string.IsNullOrWhiteSpace(options?.ExpectedSha256) && !Sha256Checksum.TryNormalize(options.ExpectedSha256, out _))
+        {
+            throw new ArgumentException("The SHA-256 checksum is not valid (expected 64 hex characters).", nameof(options));
+        }
+
         // Check if URL is a YouTube/video platform URL
         if (MediaResolver.IsYouTubeUrl(url))
         {
@@ -262,7 +268,6 @@ public class DownloadEngine : IAsyncDisposable
                     _metadata.TotalBytes = Interlocked.Read(ref _totalDownloadedBytes);
                     _storageWriter?.SetLength(_metadata.TotalBytes);
                 }
-                _metadata.CompletedAt = DateTimeOffset.UtcNow;
 
                 // Close (and flush) first; only then does the file get its real name, and only after that is the checkpoint
                 // dropped: until the rename succeeded, the checkpoint is the record that the data is not finished.
@@ -271,6 +276,16 @@ public class DownloadEngine : IAsyncDisposable
                     await _storageWriter.DisposeAsync();
                     _storageWriter = null;
                 }
+
+                // Optional integrity check on the finished bytes, before the file gets its real name.
+                // On mismatch the data is kept (never deleted on a guess) and the download ends in Error.
+                if (Sha256Checksum.TryNormalize(_metadata.Options?.ExpectedSha256, out var expectedSha))
+                {
+                    string actualSha = await Sha256Checksum.ComputeFileAsync(WritePath, ct);
+                    if (actualSha != expectedSha) throw new ChecksumMismatchException(expectedSha, actualSha, WritePath);
+                }
+
+                _metadata.CompletedAt = DateTimeOffset.UtcNow;
                 string checkpointOwner = _metadata.TargetFilePath;
                 PublishFinishedFile();
                 ResumeManager.DeleteCheckpoint(checkpointOwner);
