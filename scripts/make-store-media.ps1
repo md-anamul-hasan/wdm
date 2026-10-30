@@ -1,5 +1,10 @@
-# Builds the Chrome Web Store images in store/chrome from the app screenshots in docs/media.
+# Builds the Chrome Web Store images in store/chrome from the screenshots in docs/media (Windows PowerShell or pwsh on Windows:
+# it uses System.Drawing and the Segoe UI font).
 # Outputs: 5 screenshots (1280x800), small promo tile (440x280), marquee (1400x560).
+#
+# The extension popup screenshots (docs/media/screenshots/extension-popup-*.png) are rendered from the real extension/popup.html;
+# regenerate them first whenever the popup changes:   node scripts/capture-extension-screens.mjs
+# (needs Playwright + Chromium). Then run this script and upload the PNGs in store/chrome to the dashboard.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
@@ -67,25 +72,35 @@ function Add-Text($g, $text, $x, $y, $w, $size, $style, $color, $align) {
 }
 
 function Save-Png($canvas, $name) {
+    $size = "$($canvas.Bmp.Width)x$($canvas.Bmp.Height)"
     $canvas.G.Dispose()
     $canvas.Bmp.Save((Join-Path $out $name), [System.Drawing.Imaging.ImageFormat]::Png)
     $canvas.Bmp.Dispose()
-    Write-Host "wrote store/chrome/$name"
+    Write-Host "wrote store/chrome/$name ($size)"
 }
 
 function Load-Img($path) { [System.Drawing.Image]::FromFile($path) }
 
-# Remove the previous set
-Get-ChildItem $out -Filter *.png | Remove-Item -Force
-
-# ---- screenshots 1280x800: headline + subtitle + framed capture
+# ---- screenshots 1280x800: headline + subtitle + framed capture.
+# The store allows five. Popup shots are tall (Tall = true) and are framed by height instead of width.
 $items = @(
     @{ File = 'extension-popup-on-dark.png'; Name = 'screenshot-1-popup.png'; Title = 'Send any link to WDM'; Sub = 'Toolbar popup, right-click menu and automatic download takeover'; Tall = $true },
-    @{ File = 'extension-popup-access-light.png'; Name = 'screenshot-2-optional-access.png'; Title = 'Site access is optional'; Sub = 'Turn it on only if you want WDM to take over downloads, off again any time'; Tall = $true },
-    @{ File = 'grabber-dark.png'; Name = 'screenshot-3-site-grabber.png'; Title = 'Grab every link on a page'; Sub = 'Scan a page, tick the files or streams you want, download them all' },
-    @{ File = '..\screenshot-dark.png'; Name = 'screenshot-4-main-window.png'; Title = 'Fast, resumable downloads'; Sub = 'Up to 32 connections per file, pause and resume, queue and scheduler' },
-    @{ File = 'batch-light.png'; Name = 'screenshot-5-batch.png'; Title = 'Paste a list, download them all'; Sub = 'Batch download with one address per line' }
+    @{ File = 'extension-popup-rules-light.png'; Name = 'screenshot-2-takeover-rules.png'; Title = 'Choose what WDM takes over'; Sub = 'File types, sites and a size limit - or skip the site you are on with one click'; Tall = $true },
+    @{ File = 'extension-popup-access-light.png'; Name = 'screenshot-3-optional-access.png'; Title = 'Site access is optional'; Sub = 'Turn it on only if you want WDM to take over downloads, off again any time'; Tall = $true },
+    @{ File = 'grabber-dark.png'; Name = 'screenshot-4-site-grabber.png'; Title = 'Grab every link on a page'; Sub = 'Scan a page, tick the files or streams you want, download them all' },
+    @{ File = '..\screenshot-dark.png'; Name = 'screenshot-5-main-window.png'; Title = 'Fast, resumable downloads'; Sub = 'Up to 32 connections per file, pause and resume, queue and scheduler' }
 )
+
+# Check every source image BEFORE touching the output folder, so a missing file cannot leave store/chrome half empty
+$sources = @($items | ForEach-Object { Join-Path $shots $_.File }) + $icon + (Join-Path $root 'docs\media\screenshot-dark.png')
+$missing = $sources | Where-Object { -not (Test-Path $_) }
+if ($missing) { throw "Missing source image(s):`n  $($missing -join "`n  ")`nRun: node scripts/capture-extension-screens.mjs (popup shots) or restore docs/media." }
+
+if (-not (Test-Path $out)) { New-Item -ItemType Directory $out | Out-Null }
+
+# Remove the previous set (names changed between versions, so stale files must not linger)
+Get-ChildItem $out -Filter *.png | Remove-Item -Force
+
 foreach ($it in $items) {
     $c = New-Canvas 1280 800
     [void](Add-Text $c.G $it.Title 0 38 1280 54 'Regular' '#ffffff' 'Center')
@@ -112,7 +127,7 @@ $ic = Load-Img $icon
 $c.G.DrawImage($ic, 90, 110, 80, 80); $ic.Dispose()
 [void](Add-Text $c.G 'WDM' 190 122 400 68 'Regular' '#ffffff' 'Near')
 [void](Add-Text $c.G 'Send downloads and videos to the free, open-source WDM download manager.' 90 232 640 40 'Regular' '#ffffff' 'Near')
-[void](Add-Text $c.G 'Multi-connection speed, pause and resume, queue.' 90 424 640 22 'Regular' '#bfd2f5' 'Near')
+[void](Add-Text $c.G 'Takeover rules, resume, queue, SHA-256 check.' 90 424 640 22 'Regular' '#bfd2f5' 'Near')
 $img = Load-Img (Join-Path $root 'docs\media\screenshot-dark.png')
 [void](Add-Framed $c.G $img 760 90 1000 640 16)
 $img.Dispose()
