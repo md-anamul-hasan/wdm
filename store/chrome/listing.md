@@ -39,7 +39,7 @@ Privacy policy: https://github.com/md-anamul-hasan/wdm/blob/master/docs/PRIVACY.
 
 **Icon**: `extension/icon128.png` (128x128)
 
-**Screenshots** (1280x800, up to 5): `screenshot-1-popup.png`, `screenshot-2-optional-access.png`, `screenshot-3-site-grabber.png`, `screenshot-4-main-window.png`, `screenshot-5-batch.png` (regenerate all store images with `scripts\make-store-media.ps1`)
+**Screenshots** (1280x800, up to 5): `screenshot-1-popup.png`, `screenshot-2-takeover-rules.png`, `screenshot-3-optional-access.png`, `screenshot-4-site-grabber.png`, `screenshot-5-main-window.png`. Regenerate: `node scripts/capture-extension-screens.mjs` (popup shots, needs Playwright), then `scripts\make-store-media.ps1` (composes all store images; Windows).
 
 **Small promo tile** (440x280): `promo-small-440x280.png`
 
@@ -112,3 +112,4 @@ Bump `version` in `extension/manifest.json` (must be higher than the published o
 | 1.0.0 | First release | all |
 | 1.0.1 | Hand-offs interrupted by the browser suspending the extension are settled on restart (no download stays paused); Firefox manifest declares data collection (not part of the Chrome package). Needs WDM 1.0.2+ on the PC. Permissions unchanged. | Package; description (WDM version); `downloads` and `storage` justifications; test instructions |
 | 2.0.0 | Takeover rules (file types, excluded sites, size limit; "never from this site" button) with a new rules.js; version aligned with WDM 2.0.0. Permissions unchanged. | Package; description; `storage` justification; test instructions |
+| 2.0.1 | Popup layout fix (long site names wrap). Same permissions and features as 2.0.0. **Upload this instead of 2.0.0 if 2.0.0 is not already live.** New screenshot set (takeover rules added, batch dropped). | Package; screenshots |

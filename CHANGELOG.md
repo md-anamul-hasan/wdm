@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Extension 2.0.1 (Chrome Web Store build): the popup's "Never take over downloads from <site>" button wraps long host names instead of overflowing; tighter spacing in the rules section.
+- `scripts/make-store-media.ps1`: store screenshots now show the takeover rules (replacing the batch screenshot), the marquee mentions rules and SHA-256, and the script checks that every source image exists before it clears `store/chrome`.
+- New `scripts/capture-extension-screens.mjs` renders the real popup (light and dark) with Playwright for those screenshots; it also fails on any popup script error.
+
 ## 2.0.0 - 2026-10-30
 
 ### Added
