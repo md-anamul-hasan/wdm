@@ -17,11 +17,11 @@ public static class WdmPipe
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
 
     /// <summary>Sends a request to the running instance. Returns false if none is listening.</summary>
-    public static async Task<bool> TrySendAsync(ExternalDownloadRequest request, int timeoutMs = 1500)
+    public static async Task<bool> TrySendAsync(ExternalDownloadRequest request, int timeoutMs = 1500, string? pipeName = null)
     {
         try
         {
-            await using var client = new NamedPipeClientStream(".", Name, PipeDirection.Out, PipeOptions.CurrentUserOnly);
+            await using var client = new NamedPipeClientStream(".", pipeName ?? Name, PipeDirection.Out, PipeOptions.CurrentUserOnly);
             await client.ConnectAsync(timeoutMs);
             var payload = JsonSerializer.SerializeToUtf8Bytes(request, Json);
             await client.WriteAsync(payload);
@@ -34,23 +34,30 @@ public static class WdmPipe
         }
     }
 
-    /// <summary>True if a running WDM is listening. Connects and hangs up without sending anything (the listener ignores empty requests).</summary>
-    public static async Task<bool> IsListeningAsync(int timeoutMs = 1000)
+    /// <summary>
+    /// True if a running WDM is listening. Connects and hangs up without sending anything (the listener ignores empty requests).
+    /// Retries once: between two clients the listener briefly has no free pipe instance, which must not read as "not running".
+    /// </summary>
+    public static async Task<bool> IsListeningAsync(int timeoutMs = 2000, string? pipeName = null)
     {
-        try
+        for (int attempt = 0; attempt < 2; attempt++)
         {
-            await using var client = new NamedPipeClientStream(".", Name, PipeDirection.Out, PipeOptions.CurrentUserOnly);
-            await client.ConnectAsync(timeoutMs);
-            return true;
+            try
+            {
+                await using var client = new NamedPipeClientStream(".", pipeName ?? Name, PipeDirection.Out, PipeOptions.CurrentUserOnly);
+                await client.ConnectAsync(timeoutMs);
+                return true;
+            }
+            catch (Exception ex) when (ex is TimeoutException or IOException or UnauthorizedAccessException)
+            {
+                if (attempt == 0) await Task.Delay(150);
+            }
         }
-        catch (Exception ex) when (ex is TimeoutException or IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
+        return false;
     }
 
     /// <summary>Accepts requests until cancelled, invoking <paramref name="onRequest"/> for each.</summary>
-    public static async Task ListenAsync(Action<ExternalDownloadRequest> onRequest, CancellationToken ct, TimeSpan? readTimeout = null)
+    public static async Task ListenAsync(Action<ExternalDownloadRequest> onRequest, CancellationToken ct, TimeSpan? readTimeout = null, string? pipeName = null)
     {
         var clientTimeout = readTimeout ?? TimeSpan.FromSeconds(5);
         while (!ct.IsCancellationRequested)
@@ -58,7 +65,7 @@ public static class WdmPipe
             try
             {
                 await using var server = new NamedPipeServerStream(
-                    Name, PipeDirection.In, 1, PipeTransmissionMode.Byte,
+                    pipeName ?? Name, PipeDirection.In, 1, PipeTransmissionMode.Byte,
                     PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
                 await server.WaitForConnectionAsync(ct);
 
@@ -94,10 +101,12 @@ public static class WdmPipe
                     onRequest(request);
                 }
             }
-            catch (OperationCanceledException) { break; }
-            catch (Exception ex) when (ex is IOException or JsonException or InvalidDataException)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { break; }
+            catch (Exception)
             {
-                // Malformed or aborted client: drop it and keep serving (brief pause so a persistent failure cannot spin)
+                // Whatever went wrong with one client or while opening the next pipe instance (malformed JSON, aborted client,
+                // access denied while the previous instance is still closing...), the listener must keep serving: if it ended,
+                // browser hand-offs would silently stop until WDM is restarted. A short pause keeps a persistent failure from spinning.
                 try { await Task.Delay(100, ct); } catch (OperationCanceledException) { break; }
             }
         }

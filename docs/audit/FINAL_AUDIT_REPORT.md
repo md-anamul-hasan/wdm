@@ -56,7 +56,7 @@ Everything you need to do next, with steps: **OWNER_ACTION_PLAN.md**. Per-issue 
 ## Addendum — WDM / extension 2.0.0 (2026-10-30)
 | | 1.0.2 | 2.0.0 candidate |
 |---|---|---|
-| .NET tests | 119 | **142** (4 consecutive full runs green) |
+| .NET tests | 119 | **144** (4 consecutive full runs green; Windows CI re-verified after the pipe fix) |
 | Extension tests | 8 | **21** (also run against the unzipped Chrome-store package: behaviour tests pass) |
 | Core coverage line / branch | 74 % / 69 % | **75.9 % / 70.6 %** |
 | Build | 0 warnings, 0 errors | 0 warnings, 0 errors (solution incl. WPF UI, compile-only on Linux) |
