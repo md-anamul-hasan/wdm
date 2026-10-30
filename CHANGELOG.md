@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (engineering audit; prepared as 1.0.2)
+## 1.0.2 - 2026-10-30
 
 ### Fixed
 - **Browser integration for Chrome Web Store installs:** the native host now authorizes the published extension ID `flnbghmpkajibfdfhbcfhkcjkhlokfgi` by default; before, only the sideloaded ID was allowed, so the store extension reported "WDM not found" unless re-registered with `--extension-id`.

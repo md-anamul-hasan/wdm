@@ -27,7 +27,8 @@ Environment: Linux sandbox, .NET SDK 10.0.114, Node 22. **No Windows, no running
 | Dependency vulnerabilities | Pass | `dotnet list ... --vulnerable` |
 | Security | Source review + exploit tests; no SAST tool | SECURITY_AUDIT.md |
 | Performance | Loopback only | PERFORMANCE_AUDIT.md |
-| WPF runtime, installer, upgrade/uninstall, PowerShell scripts, workflow execution | **Not verified** | needs Windows / GitHub |
+| Windows CI (run 41060931118, `windows-latest`, workflow_dispatch on the branch) | **Pass**: solution build incl. WPF UI, 119 .NET tests, extension tests, pinned yt-dlp/ffmpeg download+verify, Inno Setup installer build, packaging (108 MB artifact); signing/publish skipped by design | https://github.com/md-anamul-hasan/wdm/actions/runs/41060931118 |
+| WPF UI runtime, installer install/upgrade/uninstall, real DPAPI | **Not verified** (CI builds but does not run them) | needs a Windows machine |
 | Real Chrome/Edge/Brave/Firefox + native host | **Not verified** | needs Windows |
 | Power loss, disk full, access denied | **Not verified** | needs Windows |
 
@@ -44,7 +45,7 @@ Environment: Linux sandbox, .NET SDK 10.0.114, Node 22. **No Windows, no running
 | `.wdm-part` | Tested incl. legacy 1.0.x checkpoints, name collisions, crash-before-rename; Windows file-locking behaviour (AV) unverified |
 | CLI | Exit codes verified by running it: paused 130, completed 0, errors 1 |
 | Scheduler | Fixed + unit-tested; timer wiring compile-only |
-| CI / release | Hardened (SHA pins, read-only default token, extension tests); never executed |
+| CI / release | Hardened (SHA pins, read-only default token, extension tests); **executed green on Windows** (dispatch run, publish step skipped) |
 | UI/UX, accessibility | Static review only |
 | Pinned tools | yt-dlp 2026.10.26 + FFmpeg n8.1.3 LGPL pinned by SHA-256; `fetch-tools.ps1` run under PowerShell 7 (fresh / rerun / tampered / wrong hash); all 6 scripts parse; `package-extension.ps1` produced a valid store zip |
 | Docs | All `docs/audit/*`, PRODUCT_ROADMAP, SECURITY.md, CONTRIBUTING.md, release notes 1.0.2 written. **Not written:** USER_GUIDE, FAQ, TROUBLESHOOTING, CLI docs (no verified Windows behaviour to describe) |
