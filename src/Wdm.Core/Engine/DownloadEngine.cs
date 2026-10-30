@@ -100,10 +100,16 @@ public class DownloadEngine : IAsyncDisposable
             probe.SupportsRanges &&
             (probe.ETag != null ? existing.ETag == probe.ETag : probe.LastModified.HasValue && existing.LastModified == probe.LastModified);
 
+        // The checkpoint only describes bytes that are still on disk: a deleted, replaced or truncated partial file,
+        // or a damaged segment table, means the saved progress cannot be trusted (restart rather than complete with holes).
+        if (sameFile && !CheckpointMatchesDisk(existing!, probe.TargetFilePath)) sameFile = false;
+
         if (existing != null && sameFile)
         {
-            // Resume existing download!
+            // Resume existing download! Location and identity come from the probe, never from the checkpoint file.
             _metadata = existing;
+            _metadata.TargetFilePath = probe.TargetFilePath;
+            _metadata.FileName = probe.FileName;
             _metadata.Options = options ?? existing.Options;
             _options = _metadata.Options;
             _segmenter.Restore(_metadata.Segments);
@@ -130,6 +136,25 @@ public class DownloadEngine : IAsyncDisposable
         await _orchestratorTask;
     }
 
+    private static bool CheckpointMatchesDisk(DownloadMetadata checkpoint, string targetFilePath)
+    {
+        try
+        {
+            var info = new FileInfo(targetFilePath);
+            return info.Exists && info.Length == checkpoint.TotalBytes &&
+                   DynamicSegmenter.IsConsistent(checkpoint.Segments, checkpoint.TotalBytes);
+        }
+        catch (IOException) { return false; }
+        catch (UnauthorizedAccessException) { return false; }
+    }
+
+    /// <summary>Flushes file data, then persists progress that is guaranteed to be on disk.</summary>
+    private Task SaveCheckpointAsync()
+    {
+        var writer = _storageWriter;
+        return ResumeManager.SaveCheckpointAsync(_metadata!, CancellationToken.None, writer == null ? null : writer.Flush);
+    }
+
     private async Task RunDownloadLoopAsync(int connectionCount, CancellationToken ct)
     {
         _lastSpeedCheckTicks = Stopwatch.GetTimestamp();
@@ -141,12 +166,14 @@ public class DownloadEngine : IAsyncDisposable
         {
             try
             {
+                int tick = 0;
                 while (!reportingCts.Token.IsCancellationRequested && await checkpointTimer.WaitForNextTickAsync(reportingCts.Token).ConfigureAwait(false))
                 {
                     UpdateMetrics();
-                    if (_metadata != null && Status != DownloadStatus.Completed)
+                    // Progress is reported twice a second; the (fsync-ing) checkpoint every two seconds
+                    if (++tick % 4 == 0 && _metadata != null && Status != DownloadStatus.Completed)
                     {
-                        await ResumeManager.SaveCheckpointAsync(_metadata, CancellationToken.None).ConfigureAwait(false);
+                        await SaveCheckpointAsync().ConfigureAwait(false);
                     }
                 }
             }
@@ -205,6 +232,7 @@ public class DownloadEngine : IAsyncDisposable
                     _storageWriter?.SetLength(_metadata.TotalBytes);
                 }
                 _metadata.CompletedAt = DateTimeOffset.UtcNow;
+                _storageWriter?.Flush(); // the checkpoint is the only record that the file is incomplete: keep it until the data is durable
                 ResumeManager.DeleteCheckpoint(_metadata.TargetFilePath);
             }
             SetStatus(DownloadStatus.Completed);
@@ -215,7 +243,7 @@ public class DownloadEngine : IAsyncDisposable
             SetStatus(DownloadStatus.Paused);
             if (_metadata != null)
             {
-                await ResumeManager.SaveCheckpointAsync(_metadata, CancellationToken.None);
+                await SaveCheckpointAsync();
             }
         }
         catch (Exception ex)
@@ -224,7 +252,7 @@ public class DownloadEngine : IAsyncDisposable
             if (_metadata != null)
             {
                 _metadata.ErrorMessage = ex.Message;
-                await ResumeManager.SaveCheckpointAsync(_metadata, CancellationToken.None);
+                await SaveCheckpointAsync();
             }
             throw;
         }

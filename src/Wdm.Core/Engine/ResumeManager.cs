@@ -16,12 +16,17 @@ public static class ResumeManager
 
     public static string GetCheckpointPath(string targetFilePath) => targetFilePath + ".wdm-state";
 
-    public static async Task SaveCheckpointAsync(DownloadMetadata metadata, CancellationToken cancellationToken = default)
+    /// <param name="flushData">
+    /// Called after the progress snapshot is taken and before it is written: the checkpoint may only claim
+    /// bytes that have reached the disk, otherwise a power loss would resume over data that never landed.
+    /// </param>
+    public static async Task SaveCheckpointAsync(DownloadMetadata metadata, CancellationToken cancellationToken = default, Action? flushData = null)
     {
         var checkpointPath = GetCheckpointPath(metadata.TargetFilePath);
         var tempPath = $"{checkpointPath}.{Guid.NewGuid():N}.tmp";
 
         var json = JsonSerializer.Serialize(metadata, JsonOptions);
+        flushData?.Invoke();
         await File.WriteAllTextAsync(tempPath, json, cancellationToken);
         int retries = 5;
         while (true)

@@ -157,7 +157,8 @@ public class NetworkProber
     /// <summary>Strips path separators and invalid characters, Windows device names and trailing dots/spaces.</summary>
     public static string SanitizeFileName(string name)
     {
-        var invalid = Path.GetInvalidFileNameChars();
+        // Windows rules on every platform: server-supplied names must not traverse paths wherever they are parsed
+        var invalid = Path.GetInvalidFileNameChars().Concat(new[] { '/', '\\', ':', '*', '?', '"', '<', '>', '|' }).Distinct().ToArray();
         var clean = string.Concat(name.Split(invalid, StringSplitOptions.RemoveEmptyEntries)).Trim().TrimEnd('.', ' ');
         if (clean.Length > 200) clean = clean[..200].TrimEnd('.', ' ');
         if (clean.Length == 0) return "download.dat";

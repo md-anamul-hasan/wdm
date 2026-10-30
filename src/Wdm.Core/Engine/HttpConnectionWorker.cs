@@ -39,6 +39,9 @@ public class HttpConnectionWorker
         _onBytesRead = onBytesRead;
     }
 
+    private static bool IsPermanentClientError(HttpStatusCode code) =>
+        (int)code is >= 400 and < 500 && code != HttpStatusCode.RequestTimeout && (int)code != 429;
+
     public async Task DownloadSegmentAsync(
         string url,
         DownloadSegment segment,
@@ -72,7 +75,20 @@ public class HttpConnectionWorker
                 if (response.StatusCode != HttpStatusCode.PartialContent &&
                     response.StatusCode != HttpStatusCode.OK)
                 {
-                    throw new HttpRequestException($"Server returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
+                    string message = $"Server returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}";
+                    // Access revoked, link expired, file gone or range unsatisfiable: asking again changes nothing
+                    if (IsPermanentClientError(response.StatusCode)) throw new NonRetryableDownloadException(message);
+                    throw new HttpRequestException(message);
+                }
+
+                // Bytes are written at an absolute offset, so a 206 that starts elsewhere than requested would corrupt the file
+                if (range?.Ranges.FirstOrDefault()?.From is long requestedStart &&
+                    response.StatusCode == HttpStatusCode.PartialContent &&
+                    response.Content.Headers.ContentRange is { From: { } servedStart } &&
+                    servedStart != requestedStart)
+                {
+                    throw new NonRetryableDownloadException(
+                        $"The server answered with bytes {servedStart}- instead of the requested {requestedStart}-.");
                 }
 
                 // A 200 to a request for a non-zero offset means the server ignored the Range header;

@@ -35,8 +35,9 @@ public static class WdmPipe
     }
 
     /// <summary>Accepts requests until cancelled, invoking <paramref name="onRequest"/> for each.</summary>
-    public static async Task ListenAsync(Action<ExternalDownloadRequest> onRequest, CancellationToken ct)
+    public static async Task ListenAsync(Action<ExternalDownloadRequest> onRequest, CancellationToken ct, TimeSpan? readTimeout = null)
     {
+        var clientTimeout = readTimeout ?? TimeSpan.FromSeconds(5);
         while (!ct.IsCancellationRequested)
         {
             try
@@ -46,17 +47,32 @@ public static class WdmPipe
                     PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
                 await server.WaitForConnectionAsync(ct);
 
+                // A client that connects and then goes silent must not hold the single pipe instance forever
+                using var readCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                readCts.CancelAfter(clientTimeout);
+
                 using var buffer = new MemoryStream();
                 var chunk = new byte[8192];
                 int read;
-                while ((read = await server.ReadAsync(chunk, ct)) > 0)
+                try
                 {
-                    buffer.Write(chunk, 0, read);
-                    if (buffer.Length > MaxMessageBytes) throw new InvalidDataException("IPC message too large.");
+                    while ((read = await server.ReadAsync(chunk, readCts.Token)) > 0)
+                    {
+                        buffer.Write(chunk, 0, read);
+                        if (buffer.Length > MaxMessageBytes) throw new InvalidDataException("IPC message too large.");
+                    }
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    continue; // stalled client: drop it
                 }
 
                 var request = JsonSerializer.Deserialize<ExternalDownloadRequest>(Encoding.UTF8.GetString(buffer.ToArray()), Json);
-                if (request is { IsEmpty: false } or { ActivateOnly: true })
+                if (request == null) continue;
+
+                // Only http(s) URLs may reach the UI, whatever the sender claims
+                request.Urls = request.Urls.Where(ExternalDownloadRequest.IsHttpUrl).Distinct().ToList();
+                if (!request.IsEmpty || request.ActivateOnly)
                 {
                     onRequest(request);
                 }
