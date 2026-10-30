@@ -2,7 +2,7 @@
 #define AppName "WDM"
 #define AppFullName "WDM - Windows Download Manager"
 #ifndef AppVersion
-  #define AppVersion "1.0.1"
+  #define AppVersion "1.0.2"
 #endif
 #define StageDir "..\dist\stage"
 
@@ -52,4 +52,4 @@ Filename: "{app}\Wdm.Ui.exe"; Description: "Launch WDM"; Flags: nowait postinsta
 Filename: "{app}\Wdm.NativeHost.exe"; Parameters: "--unregister"; Flags: runhidden; RunOnceId: "UnregisterHost"
 
 [Messages]
-FinishedLabel=WDM is installed.%n%nTo finish browser integration, open chrome://extensions (or edge://extensions), turn on Developer mode, choose "Load unpacked" and select:%n%n{app}\extension
+FinishedLabel=WDM is installed.%n%nTo finish browser integration, install "WDM Download Manager Integration" from the Chrome Web Store (works in Chrome, Edge and Brave).%n%nOffline alternative: open chrome://extensions, turn on Developer mode, choose "Load unpacked" and select:%n%n{app}\extension

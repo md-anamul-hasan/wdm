@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (engineering audit)
+## Unreleased (engineering audit; prepared as 1.0.2)
 
 ### Fixed
 - **Browser integration for Chrome Web Store installs:** the native host now authorizes the published extension ID `flnbghmpkajibfdfhbcfhkcjkhlokfgi` by default; before, only the sideloaded ID was allowed, so the store extension reported "WDM not found" unless re-registered with `--extension-id`.
@@ -12,6 +12,7 @@
 - IPC: a client that connects and stays silent no longer blocks the listener; non-http(s) URLs are discarded on receipt.
 - File-name sanitising rejects `/ \ : * ? " < > |` on every platform.
 - Extension: a handoff interrupted by the MV3 service worker being suspended no longer leaves the browser download paused; it is settled on the next worker start.
+- Servers that advertise but ignore byte ranges fall back to one connection; empty files download; scheduler start/stop no longer missed after sleep or a DST jump; installer/README point to the Web Store extension.
 - Firefox manifest declares `data_collection_permissions` (required by AMO for new extensions).
 
 ### Added

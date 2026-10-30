@@ -55,7 +55,7 @@ Release for a website: `.\scripts\package-release.ps1` writes `dist\release\` wi
 
 Chrome Web Store submission: `.\scripts\package-extension.ps1` builds the store zip, and `store/chrome/listing.md` has the listing text, permission justifications and reviewer instructions.
 
-Load the extension: `chrome://extensions` → Developer mode → **Load unpacked** → select `extension\`.
+Install the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/wdm-download-manager-inte/flnbghmpkajibfdfhbcfhkcjkhlokfgi) (Chrome, Edge, Brave), or load it manually: `chrome://extensions` → Developer mode → **Load unpacked** → select `extension\`.
 The manifest pins the extension ID (`kdjgcdbahccolkkagbckkchfpcchcfne`) that `Wdm.NativeHost --register` authorizes.
 Use `Wdm.NativeHost --unregister` to remove the registration.
 

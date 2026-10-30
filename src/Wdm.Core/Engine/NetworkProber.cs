@@ -36,14 +36,23 @@ public class NetworkProber
             {
                 response.Dispose();
                 response = await HttpRequestHelper.SendAsync(_httpClient, HttpMethod.Get, url, options, new RangeHeaderValue(0, 0), cancellationToken);
-                response.EnsureSuccessStatusCode();
+
+                // 416 with "Content-Range: bytes */0" is how servers say "this file is empty"
+                bool emptyFile = response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable &&
+                                 response.Content.Headers.ContentRange is { Length: 0 };
+                if (!emptyFile) response.EnsureSuccessStatusCode();
             }
 
             // Read headers
             metadata.SupportsRanges = response.Headers.AcceptRanges.Contains("bytes") ||
                                      response.StatusCode == HttpStatusCode.PartialContent;
 
-            if (response.Content.Headers.ContentRange?.Length.HasValue == true)
+            if (response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
+            {
+                metadata.TotalBytes = 0;
+                metadata.SupportsRanges = false;
+            }
+            else if (response.Content.Headers.ContentRange?.Length.HasValue == true)
             {
                 metadata.TotalBytes = response.Content.Headers.ContentRange.Length.Value;
                 metadata.SupportsRanges = true;

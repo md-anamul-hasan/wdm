@@ -7,7 +7,10 @@ using Wdm.Core.Models;
 namespace Wdm.Core.Engine;
 
 /// <summary>Raised for failures that retrying the same request cannot fix.</summary>
-public sealed class NonRetryableDownloadException(string message) : Exception(message);
+public class NonRetryableDownloadException(string message) : Exception(message);
+
+/// <summary>The server advertised byte ranges but answered a ranged request with the whole body.</summary>
+public sealed class RangeIgnoredException(string message) : NonRetryableDownloadException(message);
 
 /// <summary>
 /// Worker responsible for downloading an individual byte segment using HTTP range requests.
@@ -95,7 +98,7 @@ public class HttpConnectionWorker
                 // writing that body at this offset would silently corrupt the file.
                 if (range != null && response.StatusCode == HttpStatusCode.OK && segment.CurrentOffset > 0)
                 {
-                    throw new NonRetryableDownloadException("The server does not support resuming (ignored Range request).");
+                    throw new RangeIgnoredException("The server does not support resuming (ignored Range request).");
                 }
 
                 segment.State = SegmentState.Downloading;

@@ -132,8 +132,32 @@ public class DownloadEngine : IAsyncDisposable
 
         SetStatus(DownloadStatus.Downloading);
 
-        _orchestratorTask = RunDownloadLoopAsync(connectionCount, ct);
+        _orchestratorTask = RunWithRangeFallbackAsync(connectionCount, ct);
         await _orchestratorTask;
+    }
+
+    /// <summary>
+    /// A server that advertises byte ranges but ignores them cannot be downloaded in parallel (or resumed).
+    /// Instead of failing, start over once as a single plain stream, which every HTTP server supports.
+    /// </summary>
+    private async Task RunWithRangeFallbackAsync(int connectionCount, CancellationToken ct)
+    {
+        try
+        {
+            await RunDownloadLoopAsync(connectionCount, ct);
+        }
+        catch (RangeIgnoredException) when (_metadata != null && !ct.IsCancellationRequested)
+        {
+            _metadata.SupportsRanges = false;
+            _metadata.ErrorMessage = null;
+            _metadata.Segments = _segmenter.Initialize(_metadata.TotalBytes, 1, supportsRanges: false);
+            _storageWriter = new StorageWriter(_metadata.TargetFilePath, _metadata.TotalBytes);
+            Interlocked.Exchange(ref _totalDownloadedBytes, 0);
+            await ResumeManager.SaveCheckpointAsync(_metadata, CancellationToken.None);
+
+            SetStatus(DownloadStatus.Downloading);
+            await RunDownloadLoopAsync(1, ct);
+        }
     }
 
     private static bool CheckpointMatchesDisk(DownloadMetadata checkpoint, string targetFilePath)
