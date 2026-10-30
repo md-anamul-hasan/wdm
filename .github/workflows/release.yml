@@ -45,7 +45,7 @@ jobs:
       - name: Upload binaries
         if: env.SIGN == 'true'
         id: upload-binaries
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: binaries-unsigned
           path: dist/unsigned/*
@@ -74,7 +74,7 @@ jobs:
       - name: Upload installer
         if: env.SIGN == 'true'
         id: upload-installer
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: installer-unsigned
           path: dist/installer/WDM-Setup-*.exe
@@ -106,7 +106,7 @@ jobs:
           $sums = Get-ChildItem dist/release -File | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" }
           [IO.File]::WriteAllText("$PWD/dist/release/SHA256SUMS.txt", ($sums -join "`n") + "`n")
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release
           path: dist/release/*
