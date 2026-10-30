@@ -83,17 +83,13 @@ Certify all three: no sale to third parties, no use unrelated to the single purp
 
 ## Test instructions tab (for reviewers)
 
-```
-The extension is the browser half of the free Windows app WDM; it needs the app (and its native messaging host) installed to function.
+The dashboard limits "Additional instructions" to **500 characters** (the username and password fields stay empty: no login is needed). Paste exactly this (494 characters):
 
-1. Install WDM 1.0.2 or newer (2.0.0 recommended) from https://github.com/md-anamul-hasan/wdm/releases/latest (the WDM-Setup installer, Windows 10/11). Keep "Enable browser integration" ticked.
-2. Open Chrome, install this extension, open any page with a file link (for example https://github.com/md-anamul-hasan/wdm/releases/latest) and right-click the installer link > "Download with WDM". The WDM window opens and downloads the file.
-3. Or click the toolbar icon, paste a URL and press "Send to WDM".
-4. Optional features: in the popup open "Takeover rules" to choose file types and sites. Press "Allow access" (all-sites access, a standard permission prompt). Then downloads of large or archive files started in the browser are taken over by WDM, and pages that play video show a "Download with WDM" button. "Turn off" in the popup removes the access again.
-5. Without WDM installed the popup shows it cannot reach the app and browser downloads proceed normally.
-
-No account or login is needed.
 ```
+Needs the free Windows app WDM 1.0.2+: github.com/md-anamul-hasan/wdm/releases/latest (WDM-Setup; keep "Enable browser integration" ticked). Then install the extension, right-click any file link > "Download with WDM": WDM opens and downloads it. Or paste a URL in the toolbar popup > "Send to WDM". Optional: popup > "Allow access" enables takeover of large downloads and the Takeover rules. Without WDM the popup says it cannot connect and browser downloads continue normally. No login needed.
+```
+
+Longer reviewer notes (not for the dashboard): the app installs the native messaging host `com.wdm.download`; without it the extension reports "WDM not found" and never touches the browser's own downloads. With "all sites" access on, a large or archive download is paused, offered to WDM, and cancelled in the browser only after WDM confirms.
 
 ## After the first upload
 
