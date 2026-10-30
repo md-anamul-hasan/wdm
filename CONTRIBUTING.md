@@ -20,3 +20,12 @@ node --test tests/extension/background.test.mjs
 
 ## Browser extension
 Load `extension/` unpacked (Developer mode). Native host registration: `Wdm.NativeHost.exe --register [--extension-id <id>]`. Chrome Web Store ID: `flnbghmpkajibfdfhbcfhkcjkhlokfgi`.
+
+## Store screenshots
+The popup screenshots in `docs/media/screenshots` are committed. After changing `extension/popup.*`, regenerate them and rebuild the store images:
+
+```
+npm install --no-save playwright
+node scripts/capture-extension-screens.mjs
+.\scripts\make-store-media.ps1
+```
