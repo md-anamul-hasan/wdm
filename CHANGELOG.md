@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+- Screen readers: the toolbar buttons Add URL, Resume, Pause and Delete and the speed-limit button now have accessible names, and every input control (search, folders, connection sliders, speed limit, user agent, scheduler times, site grabber address, batch addresses, download list) has one; `XamlAccessibilityTests` fails when a button or input in `MainWindow.xaml` has none (AUD-026, completed for the main window).
+- The sidebar showed a doubled bullet while the queue ran ("● ● Queue Active"): the status text no longer carries its own bullet.
+
 ### Changed
 - Extension 2.0.1 (Chrome Web Store build): the popup's "Never take over downloads from <site>" button wraps long host names instead of overflowing; tighter spacing in the rules section.
 - `scripts/make-store-media.ps1`: store screenshots now show the takeover rules (replacing the batch screenshot), the marquee mentions rules and SHA-256, and the script checks that every source image exists before it clears `store/chrome`.

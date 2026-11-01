@@ -14,7 +14,7 @@ options, settings keys and native-messaging layout), but it shares no code, asse
 
 ## Download
 
-Get the installer from the [latest release](https://github.com/md-anamul-hasan/wdm/releases/latest) (Windows 10/11, 64-bit; self-contained, no .NET install needed) and check it against `SHA256SUMS.txt`. Release builds are code-signed with a free certificate from the [SignPath Foundation](https://signpath.org/) (see [Code signing policy](#code-signing-policy)). Earlier releases (1.0.0, 1.0.1) are unsigned, so Windows SmartScreen may warn about an unknown publisher for those.
+Get the installer from the [latest release](https://github.com/md-anamul-hasan/wdm/releases/latest) (Windows 10/11, 64-bit; self-contained, no .NET install needed) and check it against `SHA256SUMS.txt`. Release builds are to be code-signed with a free certificate from the [SignPath Foundation](https://signpath.org/) (see [Code signing policy](#code-signing-policy)). No release up to 2.0.0 is signed yet (the signing step starts once the SignPath Foundation approves the project), so Windows SmartScreen may warn about an unknown publisher: check the installer against `SHA256SUMS.txt`.
 
 ## What it does
 
@@ -55,8 +55,8 @@ Release for a website: `.\scripts\package-release.ps1` writes `dist\release\` wi
 
 Chrome Web Store submission: `.\scripts\package-extension.ps1` builds the store zip, and `store/chrome/listing.md` has the listing text, permission justifications and reviewer instructions.
 
-Install the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/wdm-download-manager-inte/flnbghmpkajibfdfhbcfhkcjkhlokfgi) (Chrome, Edge, Brave), or load it manually: `chrome://extensions` → Developer mode → **Load unpacked** → select `extension\`.
-The manifest pins the extension ID (`kdjgcdbahccolkkagbckkchfpcchcfne`) that `Wdm.NativeHost --register` authorizes.
+Install the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/wdm-download-manager-inte/flnbghmpkajibfdfhbcfhkcjkhlokfgi) ("WDM Download Manager Integration"; Chrome, Edge, Brave), or load it manually: `chrome://extensions` → Developer mode → **Load unpacked** → select `extension\`.
+`Wdm.NativeHost --register` authorizes both the store extension (`flnbghmpkajibfdfhbcfhkcjkhlokfgi`) and the sideloaded one (`kdjgcdbahccolkkagbckkchfpcchcfne`, pinned by the manifest key).
 Use `Wdm.NativeHost --unregister` to remove the registration.
 
 Set `WDM_DATA_DIR` to relocate settings and the download list (portable mode / testing).
@@ -69,7 +69,7 @@ src/Wdm.Ui          WPF app (MVVM): MainWindow, MainViewModel, DownloadItemViewM
 src/Wdm.Cli         terminal downloader
 src/Wdm.NativeHost  browser <-> WDM bridge + registration
 extension/          MV3 browser extension (Chrome/Edge/Brave; Firefox id included)
-tests/Wdm.Tests     xUnit (45 tests): segmentation, storage/resume, end-to-end and unknown-length downloads, speed limiter,
+tests/Wdm.Tests     xUnit (147 tests): segmentation, storage/resume, end-to-end and unknown-length downloads, speed limiter,
                     file-name handling, cookie/credential scoping, IPC, settings
 scripts/            publish.ps1 (publish + register), build-installer.ps1 (Inno Setup installer),
                     fetch-tools.ps1 (downloads yt-dlp + ffmpeg for both)
@@ -81,7 +81,7 @@ Directory.Build.props  single source of the product version
 
 - YouTube-style pages are fetched with `yt-dlp`; `scripts/publish.ps1` and the installer bundle `ffmpeg.exe` beside it, which joins the separate video and audio streams (a copy on `PATH` also works; without ffmpeg the download fails with a hint).
 - No tray icon, proxy settings or per-site logins UI yet (credentials are supported by the engine via `DownloadRequestOptions`).
-- The browser takeover list is a fixed default file-type list in `extension/background.js` (not yet editable from the app).
+- Which downloads the extension takes over is set in the extension popup (takeover rules), not in the app.
 - Firefox support is declared in the manifest but not verified in this repository.
 
 ## License
@@ -92,6 +92,7 @@ Directory.Build.props  single source of the product version
 
 Free code signing for release builds is provided by [SignPath.io](https://about.signpath.io/), with a certificate from the [SignPath Foundation](https://signpath.org/).
 
+- Status: signing is not active yet; the installers published so far are unsigned. The workflow signs a release only when the repository variable `SIGNPATH_ORGANIZATION_ID` is set, which happens after approval.
 - Releases are built and signed only by the GitHub Actions workflow `.github/workflows/release.yml` from tagged commits of this repository.
 - Only WDM's own binaries and its installer are signed; bundled third-party tools are not.
 - Maintainer and approver: Md Anamul Hasan ([@md-anamul-hasan](https://github.com/md-anamul-hasan)).

@@ -46,25 +46,25 @@
 
                     <!-- Primary actions -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Style="{StaticResource AccentBtn}" Click="OnAddUrlClick" ToolTip="Add a download (Ctrl+N)" Margin="0,0,10,0">
+                        <Button Style="{StaticResource AccentBtn}" Click="OnAddUrlClick" ToolTip="Add a download (Ctrl+N)" Margin="0,0,10,0" AutomationProperties.Name="Add URL">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource GeoPlus}" Style="{StaticResource Ico}" Width="16" Height="16" />
                                 <TextBlock Text="Add URL" Margin="8,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource CmdBtn}" Click="OnResumeClick" ToolTip="Resume the selected download" Margin="0,0,2,0" IsEnabled="{Binding CanResumeSelected}">
+                        <Button Style="{StaticResource CmdBtn}" Click="OnResumeClick" ToolTip="Resume the selected download" Margin="0,0,2,0" IsEnabled="{Binding CanResumeSelected}" AutomationProperties.Name="Resume">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource GeoPlay}" Style="{StaticResource Ico}" Width="16" Height="16" />
                             <TextBlock Text="Resume" Margin="8,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                        <Button Style="{StaticResource CmdBtn}" Click="OnPauseClick" ToolTip="Pause the selected download" Margin="0,0,2,0" IsEnabled="{Binding CanPauseSelected}">
+                        <Button Style="{StaticResource CmdBtn}" Click="OnPauseClick" ToolTip="Pause the selected download" Margin="0,0,2,0" IsEnabled="{Binding CanPauseSelected}" AutomationProperties.Name="Pause">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource GeoPause}" Style="{StaticResource Ico}" Width="16" Height="16" />
                             <TextBlock Text="Pause" Margin="8,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                        <Button Style="{StaticResource CmdBtn}" Click="OnDeleteClick" ToolTip="Remove the selected download (Del)" Margin="0,0,8,0" IsEnabled="{Binding HasSelection}">
+                        <Button Style="{StaticResource CmdBtn}" Click="OnDeleteClick" ToolTip="Remove the selected download (Del)" Margin="0,0,8,0" IsEnabled="{Binding HasSelection}" AutomationProperties.Name="Delete">
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource GeoTrash}" Style="{StaticResource Ico}" Width="16" Height="16" />
                             <TextBlock Text="Delete" Margin="8,0,0,0" VerticalAlignment="Center"/>
@@ -90,7 +90,7 @@
                             </Grid.ColumnDefinitions>
                             <Path Data="{StaticResource GeoSearch}" Style="{StaticResource Ico}" Width="14" Height="14" HorizontalAlignment="Center"
                                   TextElement.Foreground="{DynamicResource ThemeTextMuted}"/>
-                            <TextBox x:Name="SearchBox" Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Background="Transparent"
+                            <TextBox AutomationProperties.Name="Search downloads" x:Name="SearchBox" Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Background="Transparent"
                                      BorderThickness="0" Padding="0,0,0,1" VerticalAlignment="Center" ToolTip="Search downloads (Ctrl+F)"/>
                             <TextBlock Grid.Column="1" Text="Search downloads" IsHitTestVisible="False" Foreground="{DynamicResource ThemeTextMuted}" VerticalAlignment="Center">
                                 <TextBlock.Style>
@@ -406,7 +406,7 @@
                 <Border DockPanel.Dock="Top" Padding="16,10" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="0,0,0,1">
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Style="{StaticResource CmdBtn}" Click="OnToggleSpeedLimiterClick" MinHeight="28" Padding="10,0"
-                                ToolTip="Click to turn the speed limit on or off">
+                                ToolTip="Click to turn the speed limit on or off" AutomationProperties.Name="Speed limit">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="{StaticResource GeoBolt}" Style="{StaticResource Ico}" Width="13" Height="13" />
                                 <TextBlock Margin="7,0,0,0" FontSize="12">
@@ -454,7 +454,7 @@
                 </Border>
 
                 <Grid>
-                    <DataGrid x:Name="DownloadsGrid" ItemsSource="{Binding FilteredDownloads}"
+                    <DataGrid AutomationProperties.Name="Downloads" x:Name="DownloadsGrid" ItemsSource="{Binding FilteredDownloads}"
                               SelectedItem="{Binding SelectedDownload, Mode=TwoWay}"
                               MouseDoubleClick="OnDownloadsGridMouseDoubleClick"
                               AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True"
@@ -638,7 +638,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox Text="{Binding NewDownloadDir, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox AutomationProperties.Name="Save to folder" Text="{Binding NewDownloadDir, UpdateSourceTrigger=PropertyChanged}"/>
                         <Button Grid.Column="1" Content="Browse" Margin="8,0,0,0" Style="{StaticResource BtnSecondary}" MinWidth="80" Click="OnBrowseFolderClick"/>
                     </Grid>
 
@@ -653,7 +653,7 @@
                             <TextBlock Text="{Binding NewDownloadConnections, StringFormat='{}{0}'}" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" DockPanel.Dock="Right"/>
                             <TextBlock Text="Connections" Foreground="{DynamicResource ThemeTextSecondary}"/>
                         </DockPanel>
-                        <Slider Minimum="1" Maximum="32" Value="{Binding NewDownloadConnections}" Margin="0,0,0,10" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                        <Slider AutomationProperties.Name="Connections" Minimum="1" Maximum="32" Value="{Binding NewDownloadConnections}" Margin="0,0,0,10" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"/>
                 </StackPanel>
                 <ctl:DialogCard.Footer>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -677,7 +677,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Text="{Binding Settings.DefaultDownloadDirectory, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox AutomationProperties.Name="Default download folder" Text="{Binding Settings.DefaultDownloadDirectory, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Button Grid.Column="1" Content="Browse" Margin="8,0,0,0" Style="{StaticResource BtnSecondary}" MinWidth="80" Click="OnBrowseSettingsFolderClick"/>
                                 </Grid>
                             </GroupBox>
@@ -698,17 +698,17 @@
                             <TextBlock Text="{Binding Settings.DefaultConnections, StringFormat='{}{0}'}" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" DockPanel.Dock="Right"/>
                             <TextBlock Text="Connections per download" Foreground="{DynamicResource ThemeTextSecondary}"/>
                         </DockPanel>
-                        <Slider Minimum="1" Maximum="32" Value="{Binding Settings.DefaultConnections}" Margin="0,0,0,10" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                        <Slider AutomationProperties.Name="Default connections" Minimum="1" Maximum="32" Value="{Binding Settings.DefaultConnections}" Margin="0,0,0,10" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"/>
                                     <DockPanel Margin="0,0,0,2">
                             <TextBlock Text="{Binding Settings.MaxConcurrentDownloads, StringFormat='{}{0}'}" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" DockPanel.Dock="Right"/>
                             <TextBlock Text="Simultaneous downloads" Foreground="{DynamicResource ThemeTextSecondary}"/>
                         </DockPanel>
-                        <Slider Minimum="1" Maximum="10" Value="{Binding Settings.MaxConcurrentDownloads}" Margin="0,0,0,10" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                        <Slider AutomationProperties.Name="Simultaneous downloads" Minimum="1" Maximum="10" Value="{Binding Settings.MaxConcurrentDownloads}" Margin="0,0,0,10" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"/>
                                     <DockPanel Margin="0,0,0,2">
                             <TextBlock Text="{Binding Settings.NetworkTimeoutSeconds, StringFormat='{}{0} s'}" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" DockPanel.Dock="Right"/>
                             <TextBlock Text="Stalled connection timeout" Foreground="{DynamicResource ThemeTextSecondary}"/>
                         </DockPanel>
-                        <Slider Minimum="5" Maximum="120" Value="{Binding Settings.NetworkTimeoutSeconds}" Margin="0,0,0,10" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                        <Slider AutomationProperties.Name="Network timeout in seconds" Minimum="5" Maximum="120" Value="{Binding Settings.NetworkTimeoutSeconds}" Margin="0,0,0,10" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"/>
                                     <CheckBox Content="Split active segments to keep every connection busy" IsChecked="{Binding Settings.EnableDynamicMiddleSplit}"/>
                                 </StackPanel>
                             </GroupBox>
@@ -717,7 +717,7 @@
                                     <CheckBox Content="Limit total download speed" IsChecked="{Binding IsSpeedLimiterEnabled}" Margin="0,0,0,12"/>
                                     <DockPanel>
                                         <TextBlock Text="KB/s" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource ThemeTextMuted}"/>
-                                        <TextBox Text="{Binding SpeedLimitKb, UpdateSourceTrigger=PropertyChanged}" Width="100" DockPanel.Dock="Right"/>
+                                        <TextBox AutomationProperties.Name="Speed limit in KB per second" Text="{Binding SpeedLimitKb, UpdateSourceTrigger=PropertyChanged}" Width="100" DockPanel.Dock="Right"/>
                                         <TextBlock Text="Maximum speed" VerticalAlignment="Center" Foreground="{DynamicResource ThemeTextSecondary}"/>
                                     </DockPanel>
                                 </StackPanel>
@@ -727,7 +727,7 @@
                     <TabItem Header="Network">
                         <GroupBox Header="USER AGENT" Padding="14">
                             <StackPanel>
-                                <TextBox Text="{Binding Settings.UserAgent, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AcceptsReturn="False"/>
+                                <TextBox AutomationProperties.Name="User agent" Text="{Binding Settings.UserAgent, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AcceptsReturn="False"/>
                                 <TextBlock Text="Sent with every request unless the browser supplies its own." FontSize="11.5" Margin="2,8,0,0" Foreground="{DynamicResource ThemeTextMuted}"/>
                             </StackPanel>
                         </GroupBox>
@@ -755,7 +755,7 @@
                                     <ColumnDefinition Width="110"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Start at" VerticalAlignment="Center" Foreground="{DynamicResource ThemeTextSecondary}"/>
-                                <TextBox Grid.Column="1" Text="{Binding SchedulerStartTime, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Center"/>
+                                <TextBox AutomationProperties.Name="Start time" Grid.Column="1" Text="{Binding SchedulerStartTime, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Center"/>
                             </Grid>
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -763,7 +763,7 @@
                                     <ColumnDefinition Width="110"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Stop at" VerticalAlignment="Center" Foreground="{DynamicResource ThemeTextSecondary}"/>
-                                <TextBox Grid.Column="1" Text="{Binding SchedulerStopTime, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Center"/>
+                                <TextBox AutomationProperties.Name="Stop time" Grid.Column="1" Text="{Binding SchedulerStopTime, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Center"/>
                             </Grid>
                             <TextBlock Text="24-hour format, for example 02:00 or 18:30." FontSize="11.5" Margin="0,10,0,0" Foreground="{DynamicResource ThemeTextMuted}"/>
                         </StackPanel>
@@ -791,13 +791,13 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox x:Name="GrabberBox" Text="{Binding GrabberUrl, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox AutomationProperties.Name="Page address" x:Name="GrabberBox" Text="{Binding GrabberUrl, UpdateSourceTrigger=PropertyChanged}"/>
                         <Button Grid.Column="1" Content="Scan page" Margin="8,0,0,0" Style="{StaticResource BtnPrimary}" MinWidth="100"
                                 Click="OnAnalyzeGrabberClick" IsEnabled="{Binding IsGrabberBusy, Converter={StaticResource InvBool}}"/>
                     </Grid>
                     <TextBlock Text="{Binding GrabberStatusText}" FontSize="12" Foreground="{DynamicResource ThemeTextMuted}" Margin="2,0,0,10" TextWrapping="Wrap"/>
                     <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="10" Height="250" ClipToBounds="True">
-                        <DataGrid ItemsSource="{Binding GrabberItems}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                        <DataGrid AutomationProperties.Name="Files found on the page" ItemsSource="{Binding GrabberItems}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                   HeadersVisibility="Column" GridLinesVisibility="None" BorderThickness="0" Background="Transparent"
                                   SelectionMode="Single" RowHeight="34" VerticalScrollBarVisibility="Auto" CanUserSortColumns="False">
                             <DataGrid.Columns>
@@ -861,7 +861,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Address" Foreground="{DynamicResource ThemeTextMuted}" VerticalAlignment="Top"/>
-                    <TextBox Grid.Column="1" Text="{Binding PropertiesItem.Url, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" Padding="8,6"/>
+                    <TextBox AutomationProperties.Name="Download address" Grid.Column="1" Text="{Binding PropertiesItem.Url, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" Padding="8,6"/>
                 </Grid>
                     <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
@@ -890,7 +890,7 @@
                                 Foreground="{DynamicResource ThemeAccent}" FontSize="12" Click="OnExtractBatchClipboardClick"/>
                         <TextBlock Text="One address per line" FontSize="12" FontWeight="Medium" Foreground="{DynamicResource ThemeTextSecondary}" Margin="0"/>
                     </DockPanel>
-                    <TextBox x:Name="BatchBox" Text="{Binding BatchUrlsText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                    <TextBox AutomationProperties.Name="Addresses, one per line" x:Name="BatchBox" Text="{Binding BatchUrlsText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
                              VerticalScrollBarVisibility="Auto" Height="170" FontFamily="Cascadia Mono, Consolas, monospace" FontSize="12"
                              VerticalContentAlignment="Top" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto"/>
                     <TextBlock Text="{Binding BatchUrlCount, StringFormat='{}{0} valid addresses'}" FontSize="12" FontWeight="SemiBold"
@@ -901,7 +901,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox Text="{Binding NewDownloadDir, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox AutomationProperties.Name="Save to folder" Text="{Binding NewDownloadDir, UpdateSourceTrigger=PropertyChanged}"/>
                         <Button Grid.Column="1" Content="Browse" Margin="8,0,0,0" Style="{StaticResource BtnSecondary}" MinWidth="80" Click="OnBrowseFolderClick"/>
                     </Grid>
                 </StackPanel>

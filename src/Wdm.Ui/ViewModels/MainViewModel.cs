@@ -228,7 +228,7 @@ public partial class MainViewModel : INotifyPropertyChanged
             }
         }
     }
-    public string QueueStatusText => IsQueueActive ? "● Queue Active" : "Queue Idle";
+    public string QueueStatusText => IsQueueActive ? "Queue Active" : "Queue Idle";
 
     // Scheduler Modal Properties
     private bool _isSchedulerModalOpen;
