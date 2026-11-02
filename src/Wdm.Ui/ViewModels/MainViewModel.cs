@@ -230,6 +230,27 @@ public partial class MainViewModel : INotifyPropertyChanged
     }
     public string QueueStatusText => IsQueueActive ? "Queue Active" : "Queue Idle";
 
+    // Shown in the status bar when the disk refused a write (full disk, read-only folder, antivirus lock).
+    private bool _listSaveFailed, _settingsSaveFailed;
+    public string SaveWarningText => (_listSaveFailed, _settingsSaveFailed) switch
+    {
+        (true, true) => "Could not save your download list or settings",
+        (true, false) => "Could not save your download list",
+        (false, true) => "Could not save your settings",
+        _ => string.Empty,
+    };
+    public bool HasSaveWarning => SaveWarningText.Length > 0;
+
+    private void PersistSettings() => ReportSave(ref _settingsSaveFailed, Settings.Save());
+
+    private void ReportSave(ref bool failedFlag, bool ok)
+    {
+        if (failedFlag == !ok) return;
+        failedFlag = !ok;
+        OnPropertyChanged(nameof(SaveWarningText));
+        OnPropertyChanged(nameof(HasSaveWarning));
+    }
+
     // Scheduler Modal Properties
     private bool _isSchedulerModalOpen;
     public bool IsSchedulerModalOpen
@@ -389,7 +410,7 @@ public partial class MainViewModel : INotifyPropertyChanged
             if (Settings.IsDarkMode != value)
             {
                 Settings.IsDarkMode = value;
-                Settings.Save();
+                PersistSettings();
                 OnPropertyChanged();
                 OnThemeChanged?.Invoke(value);
             }
@@ -481,7 +502,7 @@ public partial class MainViewModel : INotifyPropertyChanged
         SaveNow();
     }
 
-    public void SaveNow() => _store.Save(AllDownloads.Select(d => d.ToRecord()).ToList());
+    public void SaveNow() => ReportSave(ref _listSaveFailed, _store.Save(AllDownloads.Select(d => d.ToRecord()).ToList()));
 
     /// <summary>Pauses every running download and flushes the list to disk. Call on application exit.</summary>
     public void Shutdown()
@@ -515,7 +536,7 @@ public partial class MainViewModel : INotifyPropertyChanged
     /// <summary>Quick toggles (toolbar, menu) save at once; inside the settings dialog Save/Cancel decides.</summary>
     private void PersistOutsideSettingsDialog()
     {
-        if (!IsSettingsModalOpen) Settings.Save();
+        if (!IsSettingsModalOpen) PersistSettings();
     }
 
     /// <summary>Marshals an engine/worker-thread update onto the UI thread without blocking the caller.</summary>

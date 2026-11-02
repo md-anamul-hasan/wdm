@@ -16,6 +16,17 @@ public class AuditPersistenceTests : IDisposable
     }
 
     [Fact]
+    public void Save_ReportsFailure_WhenTheDiskRefuses_AndSuccessOtherwise()
+    {
+        Assert.True(new DownloadStore(Path.Combine(_dir, "ok.json")).Save(new List<DownloadRecord>()));
+
+        // The "folder" is a file, so the directory cannot be created: Save must say so instead of staying silent (AUD-031).
+        string blocker = Path.Combine(_dir, "blocker");
+        File.WriteAllText(blocker, "x");
+        Assert.False(new DownloadStore(Path.Combine(blocker, "d.json")).Save(new List<DownloadRecord>()));
+    }
+
+    [Fact]
     public async Task CorruptCheckpoint_LoadsAsNull_AndIsNeverDeleted()
     {
         string target = Path.Combine(_dir, "a.bin");

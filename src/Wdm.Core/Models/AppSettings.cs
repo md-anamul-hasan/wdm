@@ -97,7 +97,8 @@ public class AppSettings
         return copy;
     }
 
-    public void Save()
+    /// <summary>Writes the settings atomically. Returns false when the disk refused it, so the caller can tell the user.</summary>
+    public bool Save()
     {
         try
         {
@@ -112,7 +113,8 @@ public class AppSettings
             var temp = path + ".tmp";
             File.WriteAllText(temp, json);
             File.Move(temp, path, overwrite: true);
+            return true;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
 }

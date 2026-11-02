@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- The status bar now says "Could not save your download list" (or settings) when the disk refuses a write, instead of failing silently (AUD-031).
+- Keyboard focus is visible on the sidebar items, filter chips and check boxes (AUD-027).
+
+### Changed
+- Audit register: AUD-018 accepted, AUD-021 verified, AUD-028 deferred to the tray feature (roadmap #5).
+
 ## 2.0.2 - 2026-11-02
 
 ### Fixed

@@ -68,7 +68,8 @@ public class DownloadStore
         return new();
     }
 
-    public void Save(IEnumerable<DownloadRecord> records)
+    /// <summary>Writes the list atomically. Returns false when the disk refused it, so the caller can tell the user.</summary>
+    public bool Save(IEnumerable<DownloadRecord> records)
     {
         lock (_lock)
         {
@@ -80,8 +81,9 @@ public class DownloadStore
                 var temp = _path + ".tmp";
                 File.WriteAllText(temp, JsonSerializer.Serialize(records.Select(r => r.ForStorage()).ToList(), JsonOptions));
                 File.Move(temp, _path, overwrite: true);
+                return true;
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
         }
     }
 }

@@ -49,7 +49,7 @@ public partial class MainViewModel
         Settings.SchedulerStartTime = SchedulerStartTime;
         Settings.SchedulerStopTime = SchedulerStopTime;
         Settings.SchedulerShutdownOnComplete = SchedulerShutdownOnComplete;
-        Settings.Save();
+        PersistSettings();
         IsSchedulerModalOpen = false;
     }
 

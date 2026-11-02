@@ -45,7 +45,7 @@ public partial class MainViewModel
     public void SaveSettings()
     {
         Settings.Normalize();
-        Settings.Save();
+        PersistSettings();
         _settingsSnapshot = null;
         SyncFromSettings();
         RebuildSemaphore();

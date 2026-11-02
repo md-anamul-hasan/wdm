@@ -190,6 +190,7 @@
                         <TextBlock Text="{Binding ActiveDownloadsCount, StringFormat='{}{0} active'}"/>
                         <TextBlock Text="  |  "/>
                         <TextBlock Text="{Binding QueueStatusText}"/>
+                        <TextBlock Text="{Binding SaveWarningText, StringFormat='  |  {0}'}" Foreground="{DynamicResource ThemeDanger}" FontWeight="SemiBold" Visibility="{Binding HasSaveWarning, Converter={StaticResource BoolToVis}}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" TextElement.FontSize="11.5">
                         <Path Data="{StaticResource GeoDownload}" Style="{StaticResource Ico}" Width="13" Height="13" StrokeThickness="2" TextElement.Foreground="{DynamicResource ThemeAccent}"/>
