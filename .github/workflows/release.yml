@@ -29,7 +29,7 @@ jobs:
         run: node --test "tests/extension/*.test.mjs"
 
       - name: Install Inno Setup
-        run: choco install innosetup --no-progress -y
+        run: choco install innosetup --version 6.7.1 --no-progress -y
 
       - name: Publish binaries
         run: ./scripts/build-installer.ps1 -PublishOnly

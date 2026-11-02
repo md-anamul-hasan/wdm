@@ -1,13 +1,15 @@
 # Changelog
 
-## Unreleased
+## 2.0.3 - 2026-11-02
 
 ### Fixed
 - The status bar now says "Could not save your download list" (or settings) when the disk refuses a write, instead of failing silently (AUD-031).
 - Keyboard focus is visible on the sidebar items, filter chips and check boxes (AUD-027).
 
 ### Changed
-- Audit register: AUD-018 accepted, AUD-021 verified, AUD-028 deferred to the tray feature (roadmap #5).
+- Release workflow installs Inno Setup 6.7.1 explicitly (AUD-020).
+- Audit register: AUD-015, 018 and 025 accepted, AUD-021 verified, AUD-028 deferred to the tray feature (roadmap #5), AUD-020 closed.
+- Extension 2.0.3: same code as 2.0.1; the version only matches the app.
 
 ## 2.0.2 - 2026-11-02
 
