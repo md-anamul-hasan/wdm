@@ -69,7 +69,7 @@ src/Wdm.Ui          WPF app (MVVM): MainWindow, MainViewModel, DownloadItemViewM
 src/Wdm.Cli         terminal downloader
 src/Wdm.NativeHost  browser <-> WDM bridge + registration
 extension/          MV3 browser extension (Chrome/Edge/Brave; Firefox id included)
-tests/Wdm.Tests     xUnit (147 tests): segmentation, storage/resume, end-to-end and unknown-length downloads, speed limiter,
+tests/Wdm.Tests     xUnit (148 tests): segmentation, storage/resume, end-to-end and unknown-length downloads, speed limiter,
                     file-name handling, cookie/credential scoping, IPC, settings
 scripts/            publish.ps1 (publish + register), build-installer.ps1 (Inno Setup installer),
                     fetch-tools.ps1 (downloads yt-dlp + ffmpeg for both)
