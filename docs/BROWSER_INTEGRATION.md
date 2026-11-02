@@ -24,7 +24,7 @@ The button at the top of the section excludes (or re-includes) the site you are 
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Popup says "WDM not found" | Store extension not allowed by the host (WDM 1.0.1 or older), or host not registered | Install WDM 2.0.0 (or run `Wdm.NativeHost.exe --register`), restart the browser |
+| Popup says "WDM not found" | Store extension not allowed by the host (WDM 1.0.1 or older), or host not registered | Install WDM 2.0.2 (or run `Wdm.NativeHost.exe --register`), restart the browser |
 | Extension works only after you start WDM | Normal: the host starts WDM; if that fails `--diagnose` shows `Wdm.Ui.exe` is missing | Reinstall WDM |
 | A download is taken over although it should not be | Site/type not in your rules | Add it under Takeover rules |
 | A download stays paused in the browser | Rare: the browser suspended the extension mid-hand-off | It resumes by itself when the extension restarts (extension 1.0.1 and newer); otherwise resume it in the browser's download list |
