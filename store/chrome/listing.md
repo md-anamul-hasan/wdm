@@ -93,8 +93,8 @@ Longer reviewer notes (not for the dashboard): the app installs the native messa
 
 ## After the first upload
 
-The store assigned the ID `flnbghmpkajibfdfhbcfhkcjkhlokfgi`. It is built into `NativeHostManifest.StoreChromeExtensionId`
-(`src/Wdm.Core/Ipc/NativeHostManifest.cs`), so `Wdm.NativeHost.exe --register` authorizes it by default.
+The store assigned the ID `flnbghmpkajibfdfhbcfhkcjkhlokfgi`. It is built into `NativeHostManifest::STORE_CHROME_EXTENSION_ID`
+(`crates/wdm-core/src/ipc/manifest.rs`), so `wdm-nativehost.exe --register` (and `Wdm.NativeHost.exe --register`) authorizes it by default.
 Other IDs (for example an Edge Add-ons listing) can be added with `--register --extension-id <id>`.
 
 ## Updating later

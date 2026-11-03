@@ -28,4 +28,7 @@ wdm https://example.com/big.iso --sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e
 ```
 
 ## Launching the desktop app
-`Wdm.Ui.exe /d <url> [/p <folder>] [/f <name>] [/sha256 <hex>] [/n] [/a]` hands a download to the running WDM window (`/n` start without asking, `/a` add to the queue without starting).
+```
+wdm-desktop.exe /d <url> [/p <folder>] [/f <name>] [/sha256 <hex>] [/n] [/a]
+```
+Hands a download to the running WDM window (`/n` start without asking, `/a` add to the queue without starting). Backwards-compatible `Wdm.Ui.exe` alias is also provided.
