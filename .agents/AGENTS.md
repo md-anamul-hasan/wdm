@@ -33,7 +33,7 @@ The solution is built on a **Modern Native Stack (Rust + Tauri v2 + React / Type
 9. **Capabilities.** `crates/wdm-desktop/capabilities/default.json` grants the window only what it uses. Without it the window gets no events. Add a permission there when the UI starts using a new plugin.
 10. **Embedded UI.** `custom-protocol` stays a default feature of `wdm-desktop`, and `src-ui` is built before any cargo step (CI, release). A binary without it opens a blank window.
 11. **Names from outside** (browser, pipe, command line) go through `sanitize_file_name` before they become a path.
-12. **QA of the window** means driving the release exe (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`, Playwright `connectOverCDP`) against a local range server, not the Vite page with a mocked `invoke`.
+12. **QA of the window** means driving the release exe (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`, Playwright `connectOverCDP`) against a local range server, not the Vite page with a mocked `invoke`. The scripts are in `scripts/qa/` (`e2e.mjs`: 24 window checks, `host.mjs`: native-messaging checks, `capture-app-screens.mjs`: the docs screenshots; `rangeserve.py` is their local server). Build the release exe first.
 
 ## Build and test
 
