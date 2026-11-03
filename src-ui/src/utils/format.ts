@@ -60,3 +60,4 @@ export function getCategoryFromFileName(fileName: string): string {
   if (imgExts.includes(ext)) return 'Images';
   return 'Other';
 }
+

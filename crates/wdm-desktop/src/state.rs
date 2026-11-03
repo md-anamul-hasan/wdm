@@ -18,6 +18,7 @@ pub struct AppState {
     pub active_engines: Mutex<HashMap<String, Arc<DownloadEngine>>>,
     pub cancellations: Mutex<HashMap<String, CancellationToken>>,
     pub is_first_hide: AtomicBool,
+    pub pipe_stop_tx: Mutex<Option<tokio::sync::watch::Sender<bool>>>,
 }
 
 impl AppState {
@@ -40,6 +41,7 @@ impl AppState {
             active_engines: Mutex::new(HashMap::new()),
             cancellations: Mutex::new(HashMap::new()),
             is_first_hide: AtomicBool::new(true),
+            pipe_stop_tx: Mutex::new(None),
         }
     }
 
@@ -186,7 +188,7 @@ impl AppState {
         let dest_dir = Path::new(&record.target_file_path).parent().map(Path::to_path_buf);
         let options = record.options.clone();
 
-        tokio::spawn(async move {
+        tauri::async_runtime::spawn(async move {
             let res = engine
                 .start(&url, dest_dir.as_deref(), connections, ct, options)
                 .await;

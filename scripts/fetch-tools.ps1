@@ -21,7 +21,18 @@ function Get-Verified([string]$Url, [string]$Expected, [string]$Destination) {
     $partial = "$Destination.download"
     Remove-Item $partial -Force -ErrorAction SilentlyContinue
     try {
-        Invoke-WebRequest $Url -OutFile $partial -MaximumRetryCount 3 -RetryIntervalSec 5
+        $attempts = 0
+        $success = $false
+        while ($attempts -lt 3 -and -not $success) {
+            $attempts++
+            try {
+                Invoke-WebRequest $Url -OutFile $partial -UseBasicParsing
+                $success = $true
+            } catch {
+                if ($attempts -ge 3) { throw }
+                Start-Sleep -Seconds 5
+            }
+        }
         $actual = (Get-FileHash $partial -Algorithm SHA256).Hash
         if ($actual -ine $Expected) {
             throw "SHA-256 mismatch for $Url`n  expected $Expected`n  actual   $actual"

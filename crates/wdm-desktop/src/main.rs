@@ -29,8 +29,11 @@ fn main() {
 
             // Background Named Pipe Listener (WDM.Ipc.<User>)
             let pipe_handle = handle.clone();
-            let (_stop_tx, stop_rx) = tokio::sync::watch::channel(false);
-            tokio::spawn(async move {
+            let (stop_tx, stop_rx) = tokio::sync::watch::channel(false);
+            if let Some(state) = handle.try_state::<AppState>() {
+                *state.pipe_stop_tx.lock().unwrap() = Some(stop_tx);
+            }
+            tauri::async_runtime::spawn(async move {
                 WdmPipe::listen(
                     move |req| {
                         let h = pipe_handle.clone();
@@ -59,7 +62,7 @@ fn main() {
 
             // Background Scheduler Loop
             let sched_handle = handle.clone();
-            tokio::spawn(async move {
+            tauri::async_runtime::spawn(async move {
                 let mut previous_time = Local::now();
                 loop {
                     tokio::time::sleep(Duration::from_secs(10)).await;

@@ -163,6 +163,7 @@ export const DownloadTable: React.FC<DownloadTableProps> = ({
             return (
               <div
                 key={d.Id}
+                className="download-row"
                 onClick={() => onSelect(d.Id)}
                 onDoubleClick={() => onOpenFile(d.TargetFilePath)}
                 onContextMenu={(e) => handleContextMenu(e, d)}
@@ -374,3 +375,4 @@ export const DownloadTable: React.FC<DownloadTableProps> = ({
     </div>
   );
 };
+

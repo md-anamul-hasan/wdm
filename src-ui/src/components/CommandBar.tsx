@@ -258,3 +258,4 @@ export const CommandBar: React.FC<CommandBarProps> = ({
     </header>
   );
 };
+

@@ -33,3 +33,4 @@ async fn grab_links_empty_url_returns_empty_list() {
 
     assert!(results.is_empty());
 }
+

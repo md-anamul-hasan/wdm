@@ -185,7 +185,11 @@ async fn deliver_request(request: ExternalDownloadRequest) -> String {
         }));
     };
 
-    if let Err(e) = std::process::Command::new(&ui_path).spawn() {
+    let mut cmd = std::process::Command::new(&ui_path);
+    if let Some(parent) = ui_path.parent() {
+        cmd.current_dir(parent);
+    }
+    if let Err(e) = cmd.spawn() {
         return reply(json!({
             "status": "error",
             "message": format!("Failed to start WDM: {e}")
@@ -212,17 +216,15 @@ fn find_wdm_ui() -> Option<PathBuf> {
         base_dir.join("wdm-desktop.exe"),
         base_dir.join("WDM.exe"),
         base_dir.join("Wdm.Ui.exe"),
+        base_dir.join("../../target/debug/wdm-desktop.exe"),
+        base_dir.join("../../target/release/wdm-desktop.exe"),
         base_dir.join("../../../target/debug/wdm-desktop.exe"),
         base_dir.join("../../../target/release/wdm-desktop.exe"),
-        base_dir.join("../../../../src/Wdm.Ui/bin/Debug/net10.0-windows/Wdm.Ui.exe"),
-        base_dir.join("../../../../src/Wdm.Ui/bin/Release/net10.0-windows/Wdm.Ui.exe"),
     ];
 
     for c in &candidates {
-        if let Ok(canon) = c.canonicalize() {
-            if canon.is_file() {
-                return Some(canon);
-            }
+        if c.is_file() {
+            return Some(c.clone());
         }
     }
     None

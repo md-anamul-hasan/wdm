@@ -100,7 +100,11 @@ mod windows_impl {
                         warn!("Failed to create named pipe server instance: {e}");
                         tokio::select! {
                             _ = tokio::time::sleep(Duration::from_millis(100)) => {},
-                            _ = stop_rx.changed() => break,
+                            res = stop_rx.changed() => {
+                                if res.is_ok() && *stop_rx.borrow() {
+                                    break;
+                                }
+                            }
                         }
                         continue;
                     }
@@ -116,7 +120,11 @@ mod windows_impl {
                             continue;
                         }
                     }
-                    _ = stop_rx.changed() => break,
+                    res = stop_rx.changed() => {
+                        if res.is_ok() && *stop_rx.borrow() {
+                            break;
+                        }
+                    }
                 }
 
                 // Read client payload with client_timeout

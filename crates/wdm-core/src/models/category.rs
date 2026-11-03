@@ -130,3 +130,4 @@ mod tests {
         assert!(!FileCategories::is_known_extension(Some(".bin")));
     }
 }
+
