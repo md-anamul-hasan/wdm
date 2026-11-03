@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Setup checks for the Microsoft Edge WebView2 Runtime (the window needs it) and says where to get it when it is missing.
+
 ## 2.5.0 - 2026-11-03
 
 Native stack: Rust engine, native-messaging host and CLI; Tauri v2 + React window. Data formats (`downloads.json`, `settings.json`, `.wdm-state`, DPAPI secrets, pipe `WDM.Ipc.<user>`, native-messaging frames) are unchanged, so 2.0.x profiles load as they are.

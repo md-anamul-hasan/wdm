@@ -76,3 +76,24 @@ Filename: "{app}\wdm-nativehost.exe"; Parameters: "--unregister"; Flags: runhidd
 
 [Messages]
 FinishedLabel=WDM is installed.%n%nTo finish browser integration, install "WDM Download Manager Integration" from the Chrome Web Store (works in Chrome, Edge and Brave).%n%nOffline alternative: open chrome://extensions, turn on Developer mode, choose "Load unpacked" and select:%n%n{app}\extension
+
+[Code]
+// WDM's window is drawn by the Microsoft Edge WebView2 Runtime (included with Windows 11 and current Windows 10)
+function WebView2Installed: Boolean;
+var
+  Version: String;
+begin
+  Result :=
+    RegQueryStringValue(HKLM32, 'SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}', 'pv', Version) or
+    RegQueryStringValue(HKCU, 'Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}', 'pv', Version);
+  Result := Result and (Version <> '') and (Version <> '0.0.0.0');
+end;
+
+function InitializeSetup: Boolean;
+begin
+  Result := True;
+  if (not WebView2Installed) and (not WizardSilent) then
+    Result := MsgBox('WDM needs the Microsoft Edge WebView2 Runtime, which was not found on this PC.' + #13#10#13#10 +
+      'Install it from https://developer.microsoft.com/microsoft-edge/webview2/ (Evergreen Runtime) after setup, or WDM will not open.' + #13#10#13#10 +
+      'Continue with the installation?', mbConfirmation, MB_YESNO) = IDYES;
+end;
