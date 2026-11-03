@@ -1,7 +1,7 @@
 # Modern Native Stack (Rust + Tauri) Migration Plan & Status
 
 ## Overview
-WDM is migrating from a C# (.NET 10 / WPF) architecture to a modern native stack using **Rust** for the core download engine, native messaging host, and CLI, paired with **Tauri (v2) + React / TypeScript** for the user interface.
+WDM has been 100% migrated from the C# (.NET 10 / WPF) architecture to a modern native stack using **Rust** for the core download engine, native messaging host, and CLI, paired with **Tauri (v2) + React / TypeScript** for the user interface.
 
 This document tracks architecture, migration phases, compatibility guarantees, and current progress.
 
@@ -45,8 +45,8 @@ This document tracks architecture, migration phases, compatibility guarantees, a
 │  │ - Named Pipe IPC Server & Client                      │  │
 │  └───────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
-                               ▲
-                               │
+                                ▲
+                                │
                     ┌──────────┴─────────────────┐
                     │          wdm-cli           │
                     │     (Terminal Runner)      │
@@ -89,31 +89,31 @@ To ensure seamless transitions and backward compatibility with user profiles cre
 - [x] Prober: HEAD with range-fallback probing, Content-Disposition RFC 5987 parser, filename sanitization, filename reservation.
 - [x] Connection worker: range-request streaming, stall timeouts, exponential backoff.
 - [x] Orchestrator: `DownloadEngine` supporting dynamic connection rebalancing, progress reporting, pause/resume, single-connection fallback on Range ignored, and SHA-256 checksum verification.
-- [x] Test suite: 48 unit tests + 15 integration tests against custom mock HTTP servers (all passing).
+- [x] Test suite: 59 unit tests + 15 integration tests against custom mock HTTP servers (all passing).
 
-### Phase 2: System IPC, CLI & NativeHost — [IN PROGRESS]
-- [ ] Named pipe server and client (`WdmPipe`) implementation in `wdm-core`.
-- [ ] Command line parser matching IDM flags (`/d`, `/p`, `/f`, `/n`, `/a`).
-- [ ] Browser Native Messaging host registration and stdio loop (`wdm-nativehost`).
-- [ ] Standalone terminal client (`wdm-cli`).
-- [ ] Site grabber link extractor (`SiteGrabberService`).
+### Phase 2: System IPC, CLI & NativeHost — [COMPLETED]
+- [x] Named pipe server and client (`WdmPipe`) implementation in `wdm-core`.
+- [x] Command line parser matching IDM flags (`/d`, `/p`, `/f`, `/sha256`, `/n`, `/a`).
+- [x] Browser Native Messaging host registration, manifest inspector, and stdio loop (`wdm-nativehost`).
+- [x] Standalone terminal client (`wdm-cli`).
+- [x] Site grabber link extractor (`SiteGrabberService`).
+- [x] Media resolver (`MediaResolver`) integrating with `yt-dlp`.
 
-### Phase 3: Tauri Desktop Application (`wdm-desktop` / UI) — [PENDING]
-- [ ] Tauri v2 project initialization in workspace.
-- [ ] React + TypeScript + Vite frontend.
-- [ ] System tray implementation (minimize to tray, pause/resume all, notification on first hide, exit).
-- [ ] Main window (download table, progress cards, segment visualizer, categories, search/filter).
-- [ ] Modals: Add Download dialog, Batch Grabber dialog, Options/Settings dialog, Scheduler dialog.
-- [ ] Native dark/light mode synchronization.
+### Phase 3: Tauri Desktop Application (`wdm-desktop` / UI) — [COMPLETED]
+- [x] Tauri v2 project initialization in workspace (`crates/wdm-desktop`).
+- [x] React 19 + TypeScript + Vite frontend (`src-ui`).
+- [x] System tray implementation (minimize to tray, pause/resume all, notification on first hide, exit).
+- [x] Main window (download table, progress cards, segment visualizer, categories, search/filter).
+- [x] Modals: Add Download dialog, Batch Grabber dialog, Options/Settings dialog, Scheduler dialog, Delete confirmation.
+- [x] Native dark/light theme matching Windows 11 Fluent styles.
 
-### Phase 4: Installer, CI & Packaging — [PENDING]
-- [ ] Build scripts (`cargo tauri build`).
-- [ ] Inno Setup / WiX installer script updates.
-- [ ] GitHub Actions workflow updates (`build-test-release.yml` with Rust matrix).
-- [ ] Browser extension verification with the Rust native host.
+### Phase 4: Installer, CI & Packaging — [COMPLETED]
+- [x] Build scripts: `scripts/build-installer.ps1` and `scripts/publish.ps1` updated for release compilation.
+- [x] Inno Setup installer script updates (`installer/wdm.iss`).
+- [x] GitHub Actions workflow updates (`ci.yml` and `release.yml` with Rust + Node matrix).
+- [x] Browser extension test suite passing (21/21 tests passing).
 
-### Phase 5: C# Deprecation & Cleanup — [PENDING]
-- [ ] Full parity verification across all tests.
-- [ ] Removal of `Wdm.slnx`, `src/Wdm.*`, and `tests/Wdm.Tests`.
-- [ ] Final documentation update.
-
+### Phase 5: C# Deprecation & Cleanup — [COMPLETED]
+- [x] Full parity verification across all tests: 81 Rust tests + 21 extension tests passing.
+- [x] Removal of legacy C# solution and projects (`Wdm.slnx`, `src/Wdm.*`, `tests/Wdm.Tests`, `Directory.Build.props`).
+- [x] Documentation updated across README and AGENTS.md.

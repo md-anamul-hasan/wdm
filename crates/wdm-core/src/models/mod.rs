@@ -1,16 +1,20 @@
+pub mod category;
 pub mod checksum;
 pub mod metadata;
 pub mod options;
 pub mod progress;
+pub mod schedule;
 pub mod secret;
 pub mod segment;
 pub mod settings;
 pub mod status;
 
+pub use category::{FileCategories, FileCategory, GrabMediaItem};
 pub use checksum::Sha256Checksum;
 pub use metadata::DownloadMetadata;
 pub use options::DownloadRequestOptions;
 pub use progress::DownloadProgress;
+pub use schedule::ScheduleTrigger;
 pub use segment::{DownloadSegment, Segment};
 pub use settings::AppSettings;
 pub use status::{DownloadStatus, SegmentState};

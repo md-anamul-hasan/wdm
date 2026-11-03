@@ -1,0 +1,213 @@
+:root {
+  --font-family: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  
+  /* Light Theme */
+  --bg-window: #f3f3f3;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f8f9fa;
+  --bg-surface-hover: #eaeaea;
+  --bg-surface-selected: #e0eef9;
+  --border: #e2e4e8;
+  --border-focus: #0067c0;
+  
+  --text-primary: #1c1c1c;
+  --text-secondary: #5c5c5c;
+  --text-muted: #8c8c8c;
+  
+  --accent: #0067c0;
+  --accent-hover: #1975c5;
+  --accent-pressed: #005fb8;
+  --on-accent: #ffffff;
+  
+  --status-downloading: #107c41;
+  --status-downloading-bg: #e6f4ea;
+  --status-paused: #c44000;
+  --status-paused-bg: #fce8e6;
+  --status-completed: #0078d4;
+  --status-completed-bg: #e1f0fe;
+  --status-queued: #6264a7;
+  --status-queued-bg: #f0f0fa;
+  --status-error: #a80000;
+  --status-error-bg: #fde7e9;
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.18);
+  
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+}
+
+[data-theme="dark"] {
+  --bg-window: #1e1e1e;
+  --bg-surface: #252526;
+  --bg-surface-alt: #2d2d30;
+  --bg-surface-hover: #333337;
+  --bg-surface-selected: #264f78;
+  --border: #3e3e42;
+  --border-focus: #60cdff;
+  
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-muted: #888888;
+  
+  --accent: #60cdff;
+  --accent-hover: #72d4ff;
+  --accent-pressed: #4cbbe8;
+  --on-accent: #000000;
+  
+  --status-downloading: #4ec9b0;
+  --status-downloading-bg: #1e3a34;
+  --status-paused: #ce9178;
+  --status-paused-bg: #3c2a22;
+  --status-completed: #60cdff;
+  --status-completed-bg: #1c3b52;
+  --status-queued: #c586c0;
+  --status-queued-bg: #392837;
+  --status-error: #f14c4c;
+  --status-error-bg: #3e1b1b;
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.6);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: 13px;
+  color: var(--text-primary);
+  background-color: var(--bg-window);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Buttons */
+button {
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  transition: all 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.btn-primary:active:not(:disabled) {
+  background: var(--accent-pressed);
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+}
+
+.btn-icon {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 6px;
+  border-radius: var(--radius-md);
+}
+.btn-icon:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Inputs */
+input, select, textarea {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--border-focus);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-width: 540px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-pop {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

@@ -1,0 +1,22 @@
+[package]
+name = "wdm-nativehost"
+description = "WDM Browser Native Messaging Host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "wdm-nativehost"
+path = "src/main.rs"
+
+[dependencies]
+wdm-core = { path = "../wdm-core" }
+tokio.workspace = true
+tokio-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = ["Win32_System_Registry"] }

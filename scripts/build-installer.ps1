@@ -1,5 +1,5 @@
 <#
-.SYNOPSIS  Builds a self-contained WDM and packages it as dist\installer\WDM-Setup-<version>.exe (needs Inno Setup 6).
+.SYNOPSIS  Builds the Modern Native Stack (Rust + Tauri) WDM and packages it as dist\installer\WDM-Setup-<version>.exe (needs Inno Setup 6).
 #>
 param(
     [string]$Version,
@@ -9,7 +9,15 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-if (-not $Version) { $Version = ([xml](Get-Content (Join-Path $root 'Directory.Build.props'))).Project.PropertyGroup.Version }
+if (-not $Version) {
+    # Extract version from root Cargo.toml
+    $cargoToml = Get-Content (Join-Path $root 'Cargo.toml') -Raw
+    if ($cargoToml -match 'version\s*=\s*"([^"]+)"') {
+        $Version = $matches[1]
+    } else {
+        $Version = "2.0.3"
+    }
+}
 $stage = Join-Path $root 'dist\stage'
 
 if ($PublishOnly -and $SkipPublish) { throw '-PublishOnly and -SkipPublish cannot be combined' }
@@ -20,16 +28,40 @@ if (-not $iscc -and -not $PublishOnly) { throw 'Inno Setup 6 not found. Install 
 
 if (-not $SkipPublish) {
     if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
-    # Self-contained so the installed app needs no separate .NET runtime
-    foreach ($project in 'Wdm.Ui', 'Wdm.Cli', 'Wdm.NativeHost') {
-        dotnet publish (Join-Path $root "src\$project\$project.csproj") -c Release -r win-x64 --self-contained true -o $stage --nologo
-        if ($LASTEXITCODE -ne 0) { throw "Publish failed for $project" }
+    # 1. Build frontend bundle
+    Write-Host "[WDM] Building React + TypeScript frontend bundle..." -ForegroundColor Cyan
+    Push-Location (Join-Path $root 'src-ui')
+    try {
+        if (-not (Test-Path 'node_modules')) { npm install }
+        npm run build
+        if ($LASTEXITCODE -ne 0) { throw "Frontend build failed" }
+    } finally {
+        Pop-Location
     }
 
-    # yt-dlp + ffmpeg power video-platform downloads (YouTube etc.)
-    & (Join-Path $PSScriptRoot 'fetch-tools.ps1') -Directory $stage
+    # 2. Build Rust workspace binaries in Release mode
+    Write-Host "[WDM] Building native Rust binaries (Release)..." -ForegroundColor Cyan
+    cargo build --workspace --release
+    if ($LASTEXITCODE -ne 0) { throw "Cargo build failed" }
 
+    $targetRelease = Join-Path $root 'target\release'
+
+    # 3. Copy binaries to stage
+    Copy-Item (Join-Path $targetRelease 'wdm-desktop.exe') (Join-Path $stage 'wdm-desktop.exe')
+    Copy-Item (Join-Path $targetRelease 'wdm.exe') (Join-Path $stage 'wdm.exe')
+    Copy-Item (Join-Path $targetRelease 'wdm-nativehost.exe') (Join-Path $stage 'wdm-nativehost.exe')
+
+    # Backwards compatibility aliases for existing shortcuts, shell hooks, and registry keys
+    Copy-Item (Join-Path $stage 'wdm-desktop.exe') (Join-Path $stage 'Wdm.Ui.exe')
+    Copy-Item (Join-Path $stage 'wdm.exe') (Join-Path $stage 'Wdm.Cli.exe')
+    Copy-Item (Join-Path $stage 'wdm-nativehost.exe') (Join-Path $stage 'Wdm.NativeHost.exe')
+
+    # 4. yt-dlp + ffmpeg power video-platform downloads (YouTube etc.)
+    if (Test-Path (Join-Path $PSScriptRoot 'fetch-tools.ps1')) {
+        & (Join-Path $PSScriptRoot 'fetch-tools.ps1') -Directory $stage
+    }
 }
 
 if ($PublishOnly) { return }

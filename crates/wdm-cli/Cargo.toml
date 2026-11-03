@@ -1,0 +1,18 @@
+[package]
+name = "wdm-cli"
+description = "WDM standalone terminal downloader"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "wdm"
+path = "src/main.rs"
+
+[dependencies]
+wdm-core = { path = "../wdm-core" }
+tokio.workspace = true
+tokio-util.workspace = true
+chrono.workspace = true
+url.workspace = true

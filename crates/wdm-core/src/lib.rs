@@ -5,7 +5,7 @@
 
 pub mod engine;
 pub mod error;
+pub mod ipc;
 pub mod models;
 
 pub use error::{Error, Result};
-

@@ -6,7 +6,14 @@ param([string]$Version)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-if (-not $Version) { $Version = ([xml](Get-Content (Join-Path $root 'Directory.Build.props'))).Project.PropertyGroup.Version }
+if (-not $Version) {
+    $cargoToml = Get-Content (Join-Path $root 'Cargo.toml') -Raw
+    if ($cargoToml -match 'version\s*=\s*"([^"]+)"') {
+        $Version = $matches[1]
+    } else {
+        $Version = "2.0.3"
+    }
+}
 $release = Join-Path $root 'dist\release'
 
 & (Join-Path $PSScriptRoot 'build-installer.ps1') -Version $Version | Out-Null
