@@ -147,8 +147,9 @@ export const BatchGrabberModal: React.FC<BatchGrabberModalProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               paddingTop: '6px',
+              gap: '8px',
             }}>
-              <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {categories.map((cat) => (
                   <button
                     key={cat}
