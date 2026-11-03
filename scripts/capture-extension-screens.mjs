@@ -24,8 +24,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const popupUrl = pathToFileURL(path.join(root, "extension", "popup.html")).href;
 const outDir = path.join(root, "docs", "media", "screenshots");
 const fs = await import("node:fs");
-const version = JSON.parse(fs.readFileSync(path.join(root, "extension", "manifest.json"), "utf8")).version; // extension version ("Version x" in the footer)
-const hostVersion = /<Version>([^<]+)<\/Version>/.exec(fs.readFileSync(path.join(root, "Directory.Build.props"), "utf8"))[1]; // app version ("Connected vx")
+// Universal version string ("2.0.X") allows generated media to remain valid across 2.0.x patch releases.
+const version = process.env.MEDIA_VERSION || "2.0.X"; // extension version ("Version x" in the footer)
+const hostVersion = process.env.MEDIA_HOST_VERSION || "2.0.X"; // app version ("Connected vx")
 
 // What the popup should look like in each shot
 const scenes = {
