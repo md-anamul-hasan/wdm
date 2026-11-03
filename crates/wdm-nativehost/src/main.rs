@@ -102,35 +102,13 @@ async fn handle_message(bytes: &[u8]) -> String {
         }
 
         "batch" => {
-            let urls_val = val.get("urls").and_then(|v| v.as_array());
-            let mut urls = Vec::new();
-            if let Some(arr) = urls_val {
-                for u in arr {
-                    if let Some(s) = u.as_str() {
-                        let trimmed = s.trim();
-                        if ExternalDownloadRequest::is_http_url(trimmed) && !urls.contains(&trimmed.to_string()) {
-                            urls.push(trimmed.to_string());
-                        }
-                    }
-                }
-            }
-
-            let mut request = build_request(&val, None);
-            request.urls = urls;
-
+            let request = build_batch_request(&val);
             if request.is_empty() {
                 return reply(json!({
                     "status": "error",
                     "message": "No valid http(s) URLs"
                 }));
             }
-
-            if request.cookies.is_some() {
-                if let Ok(u) = Url::parse(&request.urls[0]) {
-                    request.cookie_host = u.host_str().map(|h| h.to_string());
-                }
-            }
-
             deliver_request(request).await
         }
 
@@ -139,6 +117,23 @@ async fn handle_message(bytes: &[u8]) -> String {
             "action": other
         })),
     }
+}
+
+/// Request for a "batch" message: valid http(s) addresses only, without duplicates. One file name cannot
+/// apply to many files, so it is dropped.
+fn build_batch_request(val: &Value) -> ExternalDownloadRequest {
+    let mut request = build_request(val, None);
+    request.file_name = None;
+    for u in val.get("urls").and_then(|v| v.as_array()).into_iter().flatten() {
+        let trimmed = u.as_str().unwrap_or_default().trim();
+        if ExternalDownloadRequest::is_http_url(trimmed) && !request.urls.iter().any(|x| x == trimmed) {
+            request.urls.push(trimmed.to_string());
+        }
+    }
+    if request.cookies.is_some() {
+        request.cookie_host = request.urls.first().and_then(|u| Url::parse(u).ok()).and_then(|u| u.host_str().map(str::to_string));
+    }
+    request
 }
 
 fn build_request(val: &Value, url_opt: Option<&str>) -> ExternalDownloadRequest {
@@ -212,15 +207,14 @@ async fn deliver_request(request: ExternalDownloadRequest) -> String {
 fn find_wdm_ui() -> Option<PathBuf> {
     let current_exe = std::env::current_exe().ok()?;
     let base_dir = current_exe.parent()?;
-    let candidates = [
-        base_dir.join("wdm-desktop.exe"),
-        base_dir.join("WDM.exe"),
-        base_dir.join("Wdm.Ui.exe"),
+    #[allow(unused_mut)]
+    let mut candidates = vec![base_dir.join("wdm-desktop.exe"), base_dir.join("Wdm.Ui.exe")];
+    // Developer builds only: a release host must never start a program from outside its own folder
+    #[cfg(debug_assertions)]
+    candidates.extend([
         base_dir.join("../../target/debug/wdm-desktop.exe"),
         base_dir.join("../../target/release/wdm-desktop.exe"),
-        base_dir.join("../../../target/debug/wdm-desktop.exe"),
-        base_dir.join("../../../target/release/wdm-desktop.exe"),
-    ];
+    ]);
 
     for c in &candidates {
         if c.is_file() {
@@ -511,4 +505,58 @@ fn delete_registry_key(subkey: &str) -> io::Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(s: &str) -> Value {
+        serde_json::from_str(s).unwrap()
+    }
+
+    #[tokio::test]
+    async fn ping_returns_pong_and_version() {
+        let r = parse(&handle_message(br#"{"action":"ping"}"#).await);
+        assert_eq!(r["status"], "ok");
+        assert_eq!(r["message"], "pong");
+        assert_eq!(r["version"], VERSION);
+    }
+
+    #[tokio::test]
+    async fn bad_input_gets_an_error_reply_not_a_crash() {
+        assert_eq!(parse(&handle_message(b"not json").await)["status"], "error");
+        assert_eq!(parse(&handle_message(br#"{"action":"Frobnicate"}"#).await)["status"], "unknown_action");
+        // no usable address: refused before anything is sent to WDM
+        assert_eq!(parse(&handle_message(br#"{"action":"download","url":"file:///c:/x.exe"}"#).await)["status"], "error");
+        assert_eq!(parse(&handle_message(br#"{"action":"download","url":"javascript:alert(1)"}"#).await)["status"], "error");
+        assert_eq!(parse(&handle_message(br#"{"action":"batch","urls":["ftp://a/b","x"]}"#).await)["status"], "error");
+    }
+
+    #[test]
+    fn single_download_carries_browser_context() {
+        let v = json!({"url":" https://example.com/a.zip ","referer":"https://example.com/","cookies":"s=1","userAgent":"UA","fileName":"a.zip"});
+        let r = build_request(&v, v["url"].as_str());
+        assert_eq!(r.urls, ["https://example.com/a.zip"]);
+        assert_eq!(r.cookie_host.as_deref(), Some("example.com"));
+        assert_eq!(r.referer.as_deref(), Some("https://example.com/"));
+        assert_eq!(r.user_agent.as_deref(), Some("UA"));
+        assert_eq!(r.file_name.as_deref(), Some("a.zip"));
+    }
+
+    #[test]
+    fn empty_context_fields_are_dropped() {
+        let v = json!({"url":"https://e.com/a","referer":"  ","cookies":""});
+        let r = build_request(&v, v["url"].as_str());
+        assert!(r.referer.is_none() && r.cookies.is_none() && r.cookie_host.is_none());
+    }
+
+    #[test]
+    fn batch_keeps_valid_unique_addresses_and_sets_cookie_host() {
+        let v = json!({"urls":["https://a.com/1"," https://a.com/1","ftp://a.com/2","https://b.com/3",7],"cookies":"s=1","fileName":"x.zip"});
+        let r = build_batch_request(&v);
+        assert_eq!(r.urls, ["https://a.com/1", "https://b.com/3"]);
+        assert_eq!(r.cookie_host.as_deref(), Some("a.com"));
+        assert!(r.file_name.is_none());
+    }
 }

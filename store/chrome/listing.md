@@ -111,3 +111,4 @@ Bump `version` in `extension/manifest.json` (must be higher than the published o
 | 2.0.1 | Popup layout fix (long site names wrap). Same permissions and features as 2.0.0. **Upload this instead of 2.0.0 if 2.0.0 is not already live.** New screenshot set (takeover rules added, batch dropped). | Package; screenshots |
 | 2.0.2 | Version aligned with WDM 2.0.2. No code, permission or listing change from 2.0.1. | Package |
 | 2.0.3 | Version aligned with WDM 2.0.3. No code, permission or listing change from 2.0.1. | Package |
+| 2.5.0 | Version aligned with WDM 2.5.0 (native Rust + Tauri app). No code, permission or listing change from 2.0.1; description and screenshots show the new window. | Package; screenshots |

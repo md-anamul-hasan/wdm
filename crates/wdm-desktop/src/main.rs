@@ -11,10 +11,78 @@ use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 
-use wdm_core::ipc::WdmPipe;
+use wdm_core::ipc::{ExternalDownloadRequest, LaunchArguments, WdmPipe};
 use crate::state::AppState;
 
+/// One WDM per Windows user, as before: a later launch hands its request (or just "come forward")
+/// to the running one and quits. Returns false in that case. The mutex lives until the process ends.
+#[cfg(windows)]
+fn claim_single_instance() -> bool {
+    use windows::core::PCWSTR;
+    use windows::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS};
+    use windows::Win32::System::Threading::CreateMutexW;
+
+    let user = std::env::var("USERNAME").unwrap_or_default();
+    let name: Vec<u16> = format!(r"Local\WDM.SingleInstance.{user}").encode_utf16().chain(Some(0)).collect();
+    // SAFETY: `name` is a NUL-terminated UTF-16 string that outlives the call.
+    let created = unsafe { CreateMutexW(None, true, PCWSTR(name.as_ptr())) };
+    // SAFETY: reads the thread's last error right after the call above.
+    let exists = unsafe { GetLastError() } == ERROR_ALREADY_EXISTS;
+    match created {
+        Ok(handle) if !exists => {
+            let _ = handle; // never closed: the mutex lives as long as the process
+            true
+        }
+        Ok(_) => false,
+        Err(_) => true, // cannot tell: better a second window than no window
+    }
+}
+
+#[cfg(not(windows))]
+fn claim_single_instance() -> bool {
+    true
+}
+
+/// A request from the browser, the command line or a second launch.
+fn handle_external(h: &AppHandle, mut req: ExternalDownloadRequest) {
+    if let Some(win) = h.get_webview_window("main") {
+        let _ = win.show();
+        let _ = win.unminimize();
+        let _ = win.set_focus();
+    }
+    if req.activate_only || req.is_empty() {
+        return;
+    }
+    let Some(state) = h.try_state::<AppState>() else { return };
+
+    // Several addresses cannot share one "add download" dialog: list them (queued) or start them
+    let show_dialog = state.get_settings().show_start_download_dialog;
+    let many = req.urls.len() > 1;
+    if many && !req.silent && show_dialog {
+        req.queue_only = true;
+    }
+
+    if req.silent || req.queue_only || !show_dialog {
+        let urls = std::mem::take(&mut req.urls);
+        for url in urls {
+            let one = ExternalDownloadRequest { urls: vec![url], file_name: if many { None } else { req.file_name.clone() }, sha256: if many { None } else { req.sha256.clone() }, ..req.clone() };
+            let _ = state.add_download(one, h);
+        }
+        let _ = h.emit("downloads-changed", ());
+    } else {
+        // One address: let the user confirm in the dialog first
+        let _ = h.emit("external-download", &req);
+    }
+}
+
 fn main() {
+    let request = LaunchArguments::parse(std::env::args().skip(1));
+    if !claim_single_instance() {
+        let hand_over = if request.is_empty() { ExternalDownloadRequest { activate_only: true, ..Default::default() } } else { request };
+        tauri::async_runtime::block_on(WdmPipe::try_send(&hand_over, Duration::from_secs(3), None));
+        return;
+    }
+
     let app_state = AppState::new();
 
     tauri::Builder::default()
@@ -33,26 +101,12 @@ fn main() {
             if let Some(state) = handle.try_state::<AppState>() {
                 *state.pipe_stop_tx.lock().unwrap() = Some(stop_tx);
             }
+            if !request.is_empty() {
+                handle_external(&handle, request);
+            }
             tauri::async_runtime::spawn(async move {
                 WdmPipe::listen(
-                    move |req| {
-                        let h = pipe_handle.clone();
-                        // Focus main window
-                        if let Some(win) = h.get_webview_window("main") {
-                            let _ = win.show();
-                            let _ = win.set_focus();
-                        }
-
-                        // Emit event to frontend
-                        let _ = h.emit("external-download", &req);
-
-                        // If silent or queue only, add directly
-                        if req.silent || req.queue_only {
-                            if let Some(state) = h.try_state::<AppState>() {
-                                let _ = state.add_download(req, &h);
-                            }
-                        }
-                    },
+                    move |req| handle_external(&pipe_handle, req),
                     stop_rx,
                     Some(Duration::from_secs(5)),
                     None,
@@ -69,6 +123,7 @@ fn main() {
                     let now = Local::now();
                     if let Some(state) = sched_handle.try_state::<AppState>() {
                         state.check_scheduler(previous_time, now, &sched_handle);
+                        state.retry_failed(&sched_handle);
                     }
                     previous_time = now;
                 }
@@ -135,7 +190,7 @@ fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             }
             "pause_all" => {
                 if let Some(state) = app.try_state::<AppState>() {
-                    state.pause_all();
+                    state.pause_all(app);
                 }
             }
             "resume_all" => {
@@ -145,7 +200,7 @@ fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             }
             "exit" => {
                 if let Some(state) = app.try_state::<AppState>() {
-                    state.pause_all();
+                    state.pause_all(app);
                 }
                 app.exit(0);
             }

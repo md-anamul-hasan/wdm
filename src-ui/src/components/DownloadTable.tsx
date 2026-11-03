@@ -10,6 +10,7 @@ interface DownloadTableProps {
   downloads: DownloadRecord[];
   selectedId: string | null;
   activeProgress: Record<string, DownloadProgress>;
+  errors: Record<string, string>;
   onSelect: (id: string) => void;
   onResume: (id: string) => void;
   onPause: (id: string) => void;
@@ -22,6 +23,7 @@ export const DownloadTable: React.FC<DownloadTableProps> = ({
   downloads,
   selectedId,
   activeProgress,
+  errors,
   onSelect,
   onResume,
   onPause,
@@ -164,6 +166,15 @@ export const DownloadTable: React.FC<DownloadTableProps> = ({
               <div
                 key={d.Id}
                 className="download-row"
+                role="row"
+                tabIndex={0}
+                aria-selected={isSelected}
+                onKeyDown={(e) => {
+                  if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    onSelect(d.Id);
+                  }
+                }}
                 onClick={() => onSelect(d.Id)}
                 onDoubleClick={() => onOpenFile(d.TargetFilePath)}
                 onContextMenu={(e) => handleContextMenu(e, d)}
@@ -204,6 +215,16 @@ export const DownloadTable: React.FC<DownloadTableProps> = ({
                   }} title={d.FileName}>
                     {d.FileName}
                   </span>
+                  {d.Status === 'Error' && errors[d.Id] && (
+                    <span style={{
+                      color: 'var(--status-error)',
+                      fontSize: '11px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }} title={errors[d.Id]}>
+                      {errors[d.Id]}
+                    </span>
+                  )}
                 </div>
 
                 {/* Size */}
@@ -231,7 +252,7 @@ export const DownloadTable: React.FC<DownloadTableProps> = ({
                       <span>{formatBytes(downloaded)} / {formatBytes(total)}</span>
                     )}
                   </div>
-                  <div style={{
+                  <div role="progressbar" aria-label={`Progress of ${d.FileName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percentage)} style={{
                     width: '100%',
                     height: '5px',
                     background: 'var(--border)',

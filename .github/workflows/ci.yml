@@ -28,17 +28,19 @@ jobs:
         with:
           node-version: 22
 
+      # The desktop crate embeds src-ui/dist at compile time, so the UI must exist before any cargo step
+      - name: Build frontend
+        shell: pwsh
+        run: |
+          cd src-ui
+          npm ci
+          npm run build
+
       - name: Rust workspace tests
         run: cargo test --workspace --verbose
 
       - name: Rust clippy linter
         run: cargo clippy --workspace --all-targets -- -D warnings
-
-      - name: Frontend build
-        run: |
-          cd src-ui
-          npm ci
-          npm run build
 
       - name: Extension tests
         run: node --test "tests/extension/*.test.mjs"

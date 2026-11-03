@@ -15,7 +15,7 @@ if (-not $Version) {
     if ($cargoToml -match 'version\s*=\s*"([^"]+)"') {
         $Version = $matches[1]
     } else {
-        $Version = "2.0.3"
+        $Version = "2.5.0"
     }
 }
 $stage = Join-Path $root 'dist\stage'

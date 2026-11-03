@@ -37,7 +37,7 @@ export const SchedulerModal: React.FC<SchedulerModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: '460px' }}>
+      <div className="modal-card" role="dialog" aria-modal="true" aria-label="Scheduler" onClick={(e) => e.stopPropagation()} style={{ width: '460px' }}>
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -50,7 +50,7 @@ export const SchedulerModal: React.FC<SchedulerModalProps> = ({
             <Clock size={18} color="var(--accent)" />
             <span>Download Scheduler</span>
           </div>
-          <button className="btn-icon" onClick={onClose}>
+          <button className="btn-icon" onClick={onClose} aria-label="Close" title="Close">
             <X size={16} />
           </button>
         </div>
@@ -94,7 +94,7 @@ export const SchedulerModal: React.FC<SchedulerModalProps> = ({
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
                 Start Download Queue
               </label>
-              <input
+              <input aria-label="Start Download Queue"
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
@@ -106,7 +106,7 @@ export const SchedulerModal: React.FC<SchedulerModalProps> = ({
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
                 Stop Download Queue
               </label>
-              <input
+              <input aria-label="Stop Download Queue"
                 type="time"
                 value={stopTime}
                 onChange={(e) => setStopTime(e.target.value)}

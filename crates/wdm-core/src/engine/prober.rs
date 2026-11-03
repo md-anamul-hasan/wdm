@@ -101,15 +101,15 @@ fn extract_file_name(headers: &HeaderMap, url: &str) -> String {
     if let Some(name) = headers.get(CONTENT_DISPOSITION).and_then(|v| v.to_str().ok()).and_then(parse_content_disposition) {
         return sanitize_file_name(&name);
     }
-    if let Ok(parsed) = url::Url::parse(url) {
-        if let Some(last) = parsed.path_segments().and_then(|mut s| s.next_back()).filter(|s| !s.is_empty()) {
-            let decoded = percent_decode_str(last).decode_utf8_lossy();
-            if !decoded.trim().is_empty() {
-                return sanitize_file_name(&decoded);
-            }
-        }
-    }
-    format!("download_{}.dat", Utc::now().format("%Y%m%d_%H%M%S"))
+    file_name_from_url(url).unwrap_or_else(|| format!("download_{}.dat", Utc::now().format("%Y%m%d_%H%M%S")))
+}
+
+/// Last path segment of the URL, percent-decoded and sanitised; `None` when the path has no usable name.
+pub fn file_name_from_url(url: &str) -> Option<String> {
+    let parsed = url::Url::parse(url).ok()?;
+    let last = parsed.path_segments().and_then(|mut s| s.next_back()).filter(|s| !s.is_empty())?;
+    let decoded = percent_decode_str(last).decode_utf8_lossy();
+    (!decoded.trim().is_empty()).then(|| sanitize_file_name(&decoded))
 }
 
 fn header_str(h: &HeaderMap, name: reqwest::header::HeaderName) -> Option<&str> {

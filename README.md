@@ -29,7 +29,7 @@ Get the installer from the [latest release](https://github.com/md-anamul-hasan/w
 | Queue & scheduler | Start/stop queue, daily start/stop times, 30 s auto-retry of failed items, optional shutdown when the queue finishes |
 | Single instance | Later launches (browser, command line) hand their download to the running window over a per-user named pipe (`WDM.Ipc.<username>`) |
 | Browser integration | MV3 extension + `wdm-nativehost` (stdio native messaging). The extension takes over matching downloads **only after WDM confirms**; otherwise the browser download resumes untouched |
-| System tray | Full tray lifecycle: minimize to tray, balloon notification on first hide, tray menu (Open WDM, Pause All, Resume All, Exit with state persistence) |
+| System tray | Full tray lifecycle: minimize to tray, tray menu (Open WDM, Pause All, Resume All, Exit) |
 | Other | Speed limiter (token-bucket with debt handling), unknown-length (chunked) downloads, batch download, site grabber, stream visualizer, YouTube-style pages via bundled `yt-dlp`, dark/light Fluent theme |
 
 ### Command line (`wdm.exe` / `wdm-desktop.exe`)
@@ -51,7 +51,7 @@ Prerequisites:
 # Build workspace binaries (Debug or Release)
 cargo build --workspace
 
-# Run complete test suite (81 tests)
+# Run complete test suite (93 tests)
 cargo test --workspace
 
 # Run browser extension tests (21 tests)

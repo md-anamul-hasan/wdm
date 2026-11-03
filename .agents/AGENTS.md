@@ -27,6 +27,14 @@ The solution is built on a **Modern Native Stack (Rust + Tauri v2 + React / Type
 6. **No new dependencies** without stating why in the commit message / PR description.
 7. **Never commit** secrets, signing material, or user data paths.
 
+## Desktop app rules (found the hard way in 2.5.0)
+
+8. **UI contract.** Events and commands send the UI names and plain numbers (see `progress_json` in `crates/wdm-desktop/src/state.rs`), never the on-disk serde forms (`DownloadStatus` is a number there, segment state is skipped).
+9. **Capabilities.** `crates/wdm-desktop/capabilities/default.json` grants the window only what it uses. Without it the window gets no events. Add a permission there when the UI starts using a new plugin.
+10. **Embedded UI.** `custom-protocol` stays a default feature of `wdm-desktop`, and `src-ui` is built before any cargo step (CI, release). A binary without it opens a blank window.
+11. **Names from outside** (browser, pipe, command line) go through `sanitize_file_name` before they become a path.
+12. **QA of the window** means driving the release exe (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`, Playwright `connectOverCDP`) against a local range server, not the Vite page with a mocked `invoke`.
+
 ## Build and test
 
 ```bash

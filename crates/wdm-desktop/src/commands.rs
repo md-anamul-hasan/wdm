@@ -26,8 +26,10 @@ pub fn save_settings(state: State<'_, AppState>, settings: AppSettings) {
 pub fn add_download(
     state: State<'_, AppState>,
     app_handle: AppHandle,
-    request: ExternalDownloadRequest,
+    mut request: ExternalDownloadRequest,
 ) -> Result<DownloadRecord, String> {
+    // The user already confirmed in the UI: start now unless the request says queue-only
+    request.silent = true;
     state.add_download(request, &app_handle)
 }
 
@@ -37,21 +39,24 @@ pub fn start_download(
     app_handle: AppHandle,
     id: String,
 ) -> Result<(), String> {
-    state.start_download(&id, &app_handle)
+    state.start_download_by_user(&id, &app_handle)
 }
 
 #[tauri::command]
-pub fn pause_download(state: State<'_, AppState>, id: String) -> Result<(), String> {
-    state.pause_download(&id)
+pub fn pause_download(state: State<'_, AppState>, app_handle: AppHandle, id: String) -> Result<(), String> {
+    state.pause_download(&id, &app_handle)?;
+    state.process_queue(&app_handle); // the freed slot goes to the next queued download
+    Ok(())
 }
 
 #[tauri::command]
 pub fn delete_download(
     state: State<'_, AppState>,
+    app_handle: AppHandle,
     id: String,
     delete_file: bool,
 ) -> Result<(), String> {
-    state.delete_download(&id, delete_file)
+    state.delete_download(&id, delete_file, &app_handle)
 }
 
 #[tauri::command]
@@ -61,8 +66,8 @@ pub fn start_all(state: State<'_, AppState>, app_handle: AppHandle) -> Result<()
 }
 
 #[tauri::command]
-pub fn pause_all(state: State<'_, AppState>) -> Result<(), String> {
-    state.pause_all();
+pub fn pause_all(state: State<'_, AppState>, app_handle: AppHandle) -> Result<(), String> {
+    state.pause_all(&app_handle);
     Ok(())
 }
 
@@ -99,12 +104,18 @@ pub fn add_batch_downloads(
 }
 
 #[tauri::command]
-pub fn open_file(path: String) -> Result<(), String> {
+pub fn open_file(state: State<'_, AppState>, path: String) -> Result<(), String> {
+    if !state.is_listed_path(&path) {
+        return Err("Only downloaded files can be opened".into());
+    }
     open::that(&path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn open_folder(path: String) -> Result<(), String> {
+pub fn open_folder(state: State<'_, AppState>, path: String) -> Result<(), String> {
+    if !state.is_listed_path(&path) {
+        return Err("Only the folders of downloads can be opened".into());
+    }
     let p = Path::new(&path);
     let target = if p.is_file() {
         p.parent().unwrap_or(p)

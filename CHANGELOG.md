@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.5.0 - 2026-11-03
+
+Native stack: Rust engine, native-messaging host and CLI; Tauri v2 + React window. Data formats (`downloads.json`, `settings.json`, `.wdm-state`, DPAPI secrets, pipe `WDM.Ipc.<user>`, native-messaging frames) are unchanged, so 2.0.x profiles load as they are.
+
+### Added
+- Connections per download from the Add dialog (`Connections` in the request and, optionally, in the stored options; absent in files that do not set it).
+- Auto-retry of network and disk failures (5 attempts, 30 s apart) and the failure reason in the row.
+- Shutdown-when-finished fires when the queue drains, with an abortable 60 s prompt.
+- Single-instance guard (`Local\WDM.SingleInstance.<user>`); a second launch forwards its request.
+- `crates/wdm-desktop/capabilities/default.json` (events and folder picker only), a content security policy, and 12 new tests (desktop state, native host).
+- Installer removes the .NET 2.0.x files (`[InstallDelete]`).
+
+### Fixed (found by QA of the migrated build, driven through the real app)
+- Release builds opened an empty window: `custom-protocol` was not enabled, so the binary tried the Vite dev server.
+- No capability file: the window never received status or progress events.
+- Add dialog downloads were listed but never started with the default settings.
+- Status and segment data reached the UI as numbers or missing fields (`DownloadStatus` serializes as the legacy number, segment state is `serde(skip)`): the UI now gets names, speed and byte counts through `progress_json`.
+- Path traversal: the destination folder was derived from an unsanitised file name (`..\..\x.exe`).
+- Batch requests kept only the first address; the "external download" event was emitted before the download was added.
+- Same-URL requests created duplicates and orphaned a running engine; pause/resume could race on the engine map and mark a restarted download Paused.
+- Interrupted downloads loaded as Connecting/Downloading with no engine and could not be resumed.
+- Start queue ignored the concurrency limit; settings (dynamic split, timeout, user agent) were not applied; the completion time was the creation time.
+- The Add dialog kept the previous address and ignored the connection count; `open_file`/`open_folder` accepted any path; the native host could start a program outside its folder in release builds.
+- CI and release compiled the desktop crate before the UI existed.
+
+### Changed
+- Extension 2.5.0: same code as 2.0.3; the version only matches the app.
+- README test counts and tray notes corrected.
+
 ## 2.0.3 - 2026-11-02
 
 ### Fixed

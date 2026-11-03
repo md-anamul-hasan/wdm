@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Folder, Download } from 'lucide-react';
 import { ExternalDownloadRequest } from '../types';
 
@@ -27,6 +27,17 @@ export const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
   const [connections, setConnections] = useState(defaultConnections);
   const [sha256, setSha256] = useState('');
 
+  // Each opening starts from the current defaults and the address that was passed in
+  useEffect(() => {
+    if (isOpen) {
+      setUrl(initialUrl);
+      setDirectory(defaultDirectory);
+      setFileName('');
+      setConnections(defaultConnections);
+      setSha256('');
+    }
+  }, [isOpen, initialUrl, defaultDirectory, defaultConnections]);
+
   if (!isOpen) return null;
 
   const handleBrowse = async () => {
@@ -43,6 +54,7 @@ export const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
       DestinationDirectory: directory.trim() || undefined,
       FileName: fileName.trim() || undefined,
       Sha256: sha256.trim() || undefined,
+      Connections: connections,
       QueueOnly: queueOnly,
       Silent: false,
     });
@@ -51,7 +63,7 @@ export const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: '500px' }}>
+      <div className="modal-card" role="dialog" aria-modal="true" aria-label="Add download" onClick={(e) => e.stopPropagation()} style={{ width: '500px' }}>
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -64,7 +76,7 @@ export const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
             <Download size={18} color="var(--accent)" />
             <span>Add Download</span>
           </div>
-          <button className="btn-icon" onClick={onClose}>
+          <button className="btn-icon" onClick={onClose} aria-label="Close" title="Close">
             <X size={16} />
           </button>
         </div>
@@ -75,7 +87,7 @@ export const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
               URL Address *
             </label>
-            <input
+            <input aria-label="URL Address"
               type="text"
               placeholder="https://example.com/file.zip"
               value={url}
@@ -90,7 +102,7 @@ export const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
               Save To
             </label>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <input
+              <input aria-label="Save To"
                 type="text"
                 value={directory}
                 onChange={(e) => setDirectory(e.target.value)}
@@ -108,7 +120,7 @@ export const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
                 File Name (Optional)
               </label>
-              <input
+              <input aria-label="File Name (Optional)"
                 type="text"
                 placeholder="Auto-detected from server"
                 value={fileName}
@@ -121,7 +133,7 @@ export const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
                 Connections
               </label>
-              <select
+              <select aria-label="Connections"
                 value={connections}
                 onChange={(e) => setConnections(Number(e.target.value))}
                 style={{ width: '100%' }}
@@ -137,7 +149,7 @@ export const AddDownloadModal: React.FC<AddDownloadModalProps> = ({
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
               Expected SHA-256 (Optional Verification)
             </label>
-            <input
+            <input aria-label="Expected SHA-256 (Optional Verification)"
               type="text"
               placeholder="64-character hexadecimal checksum"
               value={sha256}

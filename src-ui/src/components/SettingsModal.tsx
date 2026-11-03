@@ -59,7 +59,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: '560px' }}>
+      <div className="modal-card" role="dialog" aria-modal="true" aria-label="Settings" onClick={(e) => e.stopPropagation()} style={{ width: '560px' }}>
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -72,7 +72,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <Settings size={18} color="var(--accent)" />
             <span>Options & Preferences</span>
           </div>
-          <button className="btn-icon" onClick={onClose}>
+          <button className="btn-icon" onClick={onClose} aria-label="Close" title="Close">
             <X size={16} />
           </button>
         </div>
@@ -137,7 +137,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   Default Download Directory
                 </label>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
+                  <input aria-label="Default Download Directory"
                     type="text"
                     value={dir}
                     onChange={(e) => setDir(e.target.value)}
@@ -155,7 +155,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
                     Default Connections per Download
                   </label>
-                  <select
+                  <select aria-label="Default Connections per Download"
                     value={connections}
                     onChange={(e) => setConnections(Number(e.target.value))}
                     style={{ width: '100%' }}
@@ -170,7 +170,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
                     Maximum Concurrent Downloads
                   </label>
-                  <select
+                  <select aria-label="Maximum Concurrent Downloads"
                     value={maxConcurrent}
                     onChange={(e) => setMaxConcurrent(Number(e.target.value))}
                     style={{ width: '100%' }}
@@ -247,7 +247,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   Maximum Bandwidth Limit (KB/s)
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <input
+                  <input aria-label="Maximum Bandwidth Limit (KB/s)"
                     type="number"
                     min={128}
                     step={128}
@@ -296,7 +296,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
                   HTTP User-Agent Header
                 </label>
-                <input
+                <input aria-label="HTTP User-Agent Header"
                   type="text"
                   value={userAgent}
                   onChange={(e) => setUserAgent(e.target.value)}

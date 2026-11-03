@@ -21,7 +21,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: '420px' }}>
+      <div className="modal-card" role="dialog" aria-modal="true" aria-label="Remove download" onClick={(e) => e.stopPropagation()} style={{ width: '420px' }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -33,7 +33,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
             <AlertTriangle size={18} color="#d83b01" />
             <span>Remove Download</span>
           </div>
-          <button className="btn-icon" onClick={onClose}>
+          <button className="btn-icon" onClick={onClose} aria-label="Close" title="Close">
             <X size={16} />
           </button>
         </div>

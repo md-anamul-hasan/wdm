@@ -139,6 +139,7 @@ export const CommandBar: React.FC<CommandBarProps> = ({
         />
         <input
           type="text"
+          aria-label="Search downloads"
           placeholder="Search downloads..."
           value={searchText}
           onChange={(e) => onSearchChange(e.target.value)}

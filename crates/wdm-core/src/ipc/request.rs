@@ -22,6 +22,9 @@ pub struct ExternalDownloadRequest {
     pub queue_only: bool,
     #[serde(default)]
     pub activate_only: bool,
+    /// Connections for this download (the add dialog's choice); the setting's default when absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connections: Option<i32>,
 }
 
 impl ExternalDownloadRequest {
@@ -38,6 +41,7 @@ impl ExternalDownloadRequest {
             user_agent: self.user_agent.clone(),
             file_name: if single { self.file_name.clone() } else { None },
             expected_sha256: if single { self.sha256.clone() } else { None },
+            connections: self.connections,
             ..Default::default()
         }
     }
@@ -69,12 +73,15 @@ mod tests {
             silent: true,
             queue_only: false,
             activate_only: false,
+            connections: Some(4),
         };
 
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("\"Urls\":[\"https://example.com/file.zip\"]"));
         assert!(json.contains("\"Silent\":true"));
         assert!(json.contains("\"CookieHost\":\"example.com\""));
+        assert!(json.contains("\"Connections\":4"));
+        assert!(!serde_json::to_string(&ExternalDownloadRequest::default()).unwrap().contains("Connections"));
 
         let deserialized: ExternalDownloadRequest = serde_json::from_str(&json).unwrap();
         assert_eq!(req, deserialized);

@@ -22,6 +22,8 @@ export const App: React.FC = () => {
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [activeProgress, setActiveProgress] = useState<Record<string, DownloadProgress>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [notice, setNotice] = useState<string | null>(null);
   
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
@@ -57,16 +59,35 @@ export const App: React.FC = () => {
           ...prev,
           [event.payload.id]: event.payload.progress,
         }));
+        // Data is flowing, so "Connecting" is over even if its own status event was overtaken
+        setDownloads((prev) =>
+          prev.map((d) => (d.Id === event.payload.id && d.Status === 'Connecting' ? { ...d, Status: 'Downloading' } : d))
+        );
       }
     );
 
-    const unlistenStatus = listen<{ id: string; status: string }>(
+    const unlistenStatus = listen<{ id: string; status: string; message?: string | null }>(
       'download-status',
       (event) => {
-        setDownloads((prev) =>
-          prev.map((d) => (d.Id === event.payload.id ? { ...d, Status: event.payload.status } : d))
-        );
-        if (event.payload.status === 'Completed' || event.payload.status === 'Paused') {
+        setDownloads((prev) => {
+          if (!prev.some((d) => d.Id === event.payload.id)) {
+            // A row the window has not loaded yet (added by the browser or a second launch)
+            invoke<DownloadRecord[]>('get_downloads').then(setDownloads);
+            return prev;
+          }
+          return prev.map((d) => (d.Id === event.payload.id ? { ...d, Status: event.payload.status } : d));
+        });
+        setErrors((prev) => {
+          const next = { ...prev };
+          if (event.payload.status === 'Error' && event.payload.message) next[event.payload.id] = event.payload.message;
+          else delete next[event.payload.id];
+          return next;
+        });
+        // The backend fills in name, size and finish time when a download ends
+        if (event.payload.status === 'Completed') {
+          invoke<DownloadRecord[]>('get_downloads').then(setDownloads);
+        }
+        if (['Completed', 'Paused', 'Error', 'Queued'].includes(event.payload.status)) {
           setActiveProgress((prev) => {
             const next = { ...prev };
             delete next[event.payload.id];
@@ -79,23 +100,25 @@ export const App: React.FC = () => {
     const unlistenExternal = listen<ExternalDownloadRequest>(
       'external-download',
       (event) => {
+        // A single address that needs the user's confirmation
         const req = event.payload;
-        if (!req.Silent && !req.QueueOnly) {
-          if (req.Urls && req.Urls.length > 0) {
-            setAddInitialUrl(req.Urls[0]);
-            setIsAddOpen(true);
-          }
-        } else {
-          // Reload downloads
-          invoke<DownloadRecord[]>('get_downloads').then(setDownloads);
+        if (req.Urls && req.Urls.length > 0) {
+          setAddInitialUrl(req.Urls[0]);
+          setIsAddOpen(true);
         }
       }
     );
+
+    // Downloads were added by the browser or the command line
+    const unlistenChanged = listen('downloads-changed', () => {
+      invoke<DownloadRecord[]>('get_downloads').then(setDownloads);
+    });
 
     return () => {
       unlistenProgress.then((f) => f());
       unlistenStatus.then((f) => f());
       unlistenExternal.then((f) => f());
+      unlistenChanged.then((f) => f());
     };
   }, []);
 
@@ -124,10 +147,12 @@ export const App: React.FC = () => {
   const handleAddSubmit = async (req: ExternalDownloadRequest) => {
     try {
       const record = await invoke<DownloadRecord>('add_download', { request: req });
-      setDownloads((prev) => [record, ...prev.filter((d) => d.Url !== record.Url)]);
+      // The returned row is a snapshot from before the download started; status events may have
+      // arrived since, so show the backend's current list
+      setDownloads(await invoke<DownloadRecord[]>('get_downloads'));
       setSelectedId(record.Id);
     } catch (err) {
-      console.error('Failed to add download:', err);
+      setNotice(`Could not add the download: ${err}`);
     }
   };
 
@@ -138,7 +163,7 @@ export const App: React.FC = () => {
         prev.map((d) => (d.Id === id ? { ...d, Status: 'Connecting' } : d))
       );
     } catch (err) {
-      console.error('Failed to start download:', err);
+      setNotice(`Could not start the download: ${err}`);
     }
   };
 
@@ -149,7 +174,7 @@ export const App: React.FC = () => {
         prev.map((d) => (d.Id === id ? { ...d, Status: 'Paused' } : d))
       );
     } catch (err) {
-      console.error('Failed to pause download:', err);
+      setNotice(`Could not pause the download: ${err}`);
     }
   };
 
@@ -169,7 +194,7 @@ export const App: React.FC = () => {
       setDownloads((prev) => prev.filter((d) => d.Id !== id));
       if (selectedId === id) setSelectedId(null);
     } catch (err) {
-      console.error('Failed to delete download:', err);
+      setNotice(`Could not remove the download: ${err}`);
     }
   };
 
@@ -217,7 +242,7 @@ export const App: React.FC = () => {
         .filter((u) => u.startsWith('http://') || u.startsWith('https://'));
 
       if (urls.length === 0) {
-        alert('No URLs found on the clipboard.');
+        setNotice('No web addresses found on the clipboard.');
         return;
       }
 
@@ -232,7 +257,7 @@ export const App: React.FC = () => {
       }
       invoke<DownloadRecord[]>('get_downloads').then(setDownloads);
     } catch {
-      alert('Unable to read clipboard.');
+      setNotice('Could not read the clipboard.');
     }
   };
 
@@ -312,12 +337,13 @@ export const App: React.FC = () => {
             downloads={filteredDownloads}
             selectedId={selectedId}
             activeProgress={activeProgress}
+            errors={errors}
             onSelect={setSelectedId}
             onResume={handleResume}
             onPause={handlePause}
             onDelete={handleDelete}
-            onOpenFile={(path) => invoke('open_file', { path })}
-            onOpenFolder={(path) => invoke('open_folder', { path })}
+            onOpenFile={(path) => invoke('open_file', { path }).catch(() => setNotice('That file is not available yet.'))}
+            onOpenFolder={(path) => invoke('open_folder', { path }).catch((err) => setNotice(`${err}`))}
           />
 
           {/* Bottom Stream Visualizer for Active Selected Download */}
@@ -329,6 +355,13 @@ export const App: React.FC = () => {
           )}
         </div>
       </div>
+
+      {notice && (
+        <div role="status" style={{ position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 2000, display: 'flex', gap: 12, alignItems: 'center', padding: '10px 14px', background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', boxShadow: '0 6px 24px rgba(0,0,0,.25)', fontSize: 12.5 }}>
+          <span>{notice}</span>
+          <button className="btn-secondary" onClick={() => setNotice(null)}>Dismiss</button>
+        </div>
+      )}
 
       {/* Modals */}
       {settings && (

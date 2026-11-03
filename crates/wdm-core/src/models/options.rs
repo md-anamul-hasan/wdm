@@ -21,6 +21,9 @@ pub struct DownloadRequestOptions {
     pub file_name: Option<String>,
     /// Optional SHA-256 the finished file must match. Not a secret.
     pub expected_sha256: Option<String>,
+    /// Connections for this download; the setting's default applies when absent. Left out of the file when unset.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connections: Option<i32>,
 }
 
 impl DownloadRequestOptions {
@@ -32,6 +35,7 @@ impl DownloadRequestOptions {
             user_agent: self.user_agent.clone(),
             file_name: self.file_name.clone(),
             expected_sha256: self.expected_sha256.clone(),
+            connections: self.connections,
             ..Default::default()
         }
     }

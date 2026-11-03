@@ -4314,7 +4314,7 @@ dependencies = [
 
 [[package]]
 name = "wdm-cli"
-version = "2.0.3"
+version = "2.5.0"
 dependencies = [
  "chrono",
  "tokio",
@@ -4325,7 +4325,7 @@ dependencies = [
 
 [[package]]
 name = "wdm-core"
-version = "2.0.3"
+version = "2.5.0"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -4350,7 +4350,7 @@ dependencies = [
 
 [[package]]
 name = "wdm-desktop"
-version = "2.0.3"
+version = "2.5.0"
 dependencies = [
  "chrono",
  "open",
@@ -4371,7 +4371,7 @@ dependencies = [
 
 [[package]]
 name = "wdm-nativehost"
-version = "2.0.3"
+version = "2.5.0"
 dependencies = [
  "serde",
  "serde_json",

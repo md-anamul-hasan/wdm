@@ -77,7 +77,7 @@ export const BatchGrabberModal: React.FC<BatchGrabberModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: '700px', maxHeight: '88vh' }}>
+      <div className="modal-card" role="dialog" aria-modal="true" aria-label="Batch downloader" onClick={(e) => e.stopPropagation()} style={{ width: '700px', maxHeight: '88vh' }}>
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -90,7 +90,7 @@ export const BatchGrabberModal: React.FC<BatchGrabberModalProps> = ({
             <Globe size={18} color="var(--accent)" />
             <span>Site & Media Grabber</span>
           </div>
-          <button className="btn-icon" onClick={onClose}>
+          <button className="btn-icon" onClick={onClose} aria-label="Close" title="Close">
             <X size={16} />
           </button>
         </div>
@@ -100,6 +100,7 @@ export const BatchGrabberModal: React.FC<BatchGrabberModalProps> = ({
           <div style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
+              aria-label="Web page address to crawl"
               placeholder="Enter web page URL to crawl (e.g. https://archive.org/details/...)"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -117,6 +118,7 @@ export const BatchGrabberModal: React.FC<BatchGrabberModalProps> = ({
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Save To:</span>
             <input
               type="text"
+              aria-label="Save to folder"
               value={directory}
               onChange={(e) => setDirectory(e.target.value)}
               style={{ flex: 1, height: '28px' }}
@@ -202,6 +204,7 @@ export const BatchGrabberModal: React.FC<BatchGrabberModalProps> = ({
               >
                 <input
                   type="checkbox"
+                  aria-label={`Select ${item.FileName}`}
                   checked={item.IsSelected}
                   onChange={() => toggleSelect(idx)}
                   onClick={(e) => e.stopPropagation()}

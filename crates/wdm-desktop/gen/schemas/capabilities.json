@@ -1,1 +1,1 @@
-{}
+{"default":{"identifier":"default","description":"Permissions of the main window: app events (progress and status updates) and the folder picker.","local":true,"windows":["main"],"permissions":["core:default","dialog:default"]}}

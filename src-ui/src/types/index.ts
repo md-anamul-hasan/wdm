@@ -27,7 +27,7 @@ export interface DownloadSegment {
   StartOffset: number;
   CurrentOffset: number;
   EndOffset?: number;
-  State: 'Idle' | 'Connecting' | 'Downloading' | 'Completed' | 'Failed';
+  State: 'Idle' | 'Connecting' | 'Downloading' | 'Completed' | 'Error';
   SpeedBytesPerSecond: number;
   DownloadedBytes: number;
   TotalBytes: number;
@@ -82,6 +82,7 @@ export interface ExternalDownloadRequest {
   Silent?: boolean;
   QueueOnly?: boolean;
   ActivateOnly?: boolean;
+  Connections?: number;
 }
 
 export type CategoryFilter = 

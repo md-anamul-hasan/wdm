@@ -114,6 +114,6 @@ To ensure seamless transitions and backward compatibility with user profiles cre
 - [x] Browser extension test suite passing (21/21 tests passing).
 
 ### Phase 5: C# Deprecation & Cleanup — [COMPLETED]
-- [x] Full parity verification across all tests: 81 Rust tests + 21 extension tests passing.
+- [x] Full parity verification across all tests: 93 Rust tests + 21 extension tests passing (2.5.0).
 - [x] Removal of legacy C# solution and projects (`Wdm.slnx`, `src/Wdm.*`, `tests/Wdm.Tests`, `Directory.Build.props`).
 - [x] Documentation updated across README and AGENTS.md.
