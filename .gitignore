@@ -26,3 +26,8 @@ desktop.ini
 
 ## Release output (publish.ps1 / build-installer.ps1) and downloaded third-party tools - never commit
 dist/
+
+## Rust
+/target/
+**/node_modules/
+

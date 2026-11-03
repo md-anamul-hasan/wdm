@@ -1,8 +1,12 @@
-# WDM — Windows Download Manager
+﻿# WDM â€” Windows Download Manager
 
 A multi-connection download manager for Windows built on **.NET 10 / WPF**, with Chrome/Edge/Brave/Firefox integration.
 WDM is an independent implementation: its behaviour was modelled on what IDM does (observed from its documented
 options, settings keys and native-messaging layout), but it shares no code, assets or branding with it.
+
+> **Architecture Migration:** WDM is transitioning to a **Modern Native Stack (Rust + Tauri + React/TS)**.
+> Phase 1 (Rust Core Engine) is complete. For details and progress, see [docs/RUST_TAURI_MIGRATION.md](docs/RUST_TAURI_MIGRATION.md).
+
 
 ![WDM main window, dark theme](docs/media/screenshot-dark.png)
 
@@ -23,7 +27,7 @@ Get the installer from the [latest release](https://github.com/md-anamul-hasan/w
 | Segmentation | Splits a file across up to 32 connections; idle connections split the largest active segment (`DynamicSegmenter`) |
 | Storage | Zero-merge: workers write straight into their offset of a pre-allocated file (`StorageWriter`) |
 | Resume | `.wdm-state` checkpoints every 500 ms with ETag/Last-Modified validation; ranges are verified (a server that ignores `Range` fails the segment instead of corrupting the file) |
-| Request context | Referer, cookies, user agent and basic auth travel with every request; cookies are only sent to the host they were captured for and credentials to the original host, never across a redirect to another host or over an https→http downgrade |
+| Request context | Referer, cookies, user agent and basic auth travel with every request; cookies are only sent to the host they were captured for and credentials to the original host, never across a redirect to another host or over an httpsâ†’http downgrade |
 | Download list | Persisted in `%APPDATA%\WDM\downloads.json`; interrupted downloads come back paused and resumable |
 | Queue & scheduler | Start/stop queue, start/stop times, 30 s auto-retry of failed items (5 attempts), optional shutdown when the queue finishes (60 s abort window) |
 | Single instance | Later launches (browser, command line) hand their download to the running window over a per-user named pipe |
@@ -35,7 +39,7 @@ Get the installer from the [latest release](https://github.com/md-anamul-hasan/w
 ```
 Wdm.Ui.exe /d <url> [/p <folder>] [/f <filename>] [/n] [/a]
 ```
-`/n` start silently without the dialog · `/a` add to the queue without starting · a bare URL also works.
+`/n` start silently without the dialog Â· `/a` add to the queue without starting Â· a bare URL also works.
 
 `Wdm.Cli.exe <url> [-o dir] [-c connections] [-l KB/s]` is a standalone terminal downloader.
 
@@ -55,7 +59,7 @@ Release for a website: `.\scripts\package-release.ps1` writes `dist\release\` wi
 
 Chrome Web Store submission: `.\scripts\package-extension.ps1` builds the store zip, and `store/chrome/listing.md` has the listing text, permission justifications and reviewer instructions.
 
-Install the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/wdm-download-manager-inte/flnbghmpkajibfdfhbcfhkcjkhlokfgi) ("WDM Download Manager Integration"; Chrome, Edge, Brave), or load it manually: `chrome://extensions` → Developer mode → **Load unpacked** → select `extension\`.
+Install the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/wdm-download-manager-inte/flnbghmpkajibfdfhbcfhkcjkhlokfgi) ("WDM Download Manager Integration"; Chrome, Edge, Brave), or load it manually: `chrome://extensions` â†’ Developer mode â†’ **Load unpacked** â†’ select `extension\`.
 `Wdm.NativeHost --register` authorizes both the store extension (`flnbghmpkajibfdfhbcfhkcjkhlokfgi`) and the sideloaded one (`kdjgcdbahccolkkagbckkchfpcchcfne`, pinned by the manifest key).
 Use `Wdm.NativeHost --unregister` to remove the registration.
 
@@ -104,7 +108,7 @@ Full policy: [docs/PRIVACY.md](docs/PRIVACY.md).
 WDM sends no telemetry and has no update check. It connects only to the servers you download from (and, for video-site pages, to whatever `yt-dlp` contacts for that site). Settings and the download list stay in `%APPDATA%\WDM` on your machine.
 
 ## Command line
-`wdm <url> [-o <dir>] [-c <connections 1-32>] [-l <KB/s>] [--sha256 <hex>]` — full reference: [docs/CLI.md](docs/CLI.md)
+`wdm <url> [-o <dir>] [-c <connections 1-32>] [-l <KB/s>] [--sha256 <hex>]` â€” full reference: [docs/CLI.md](docs/CLI.md)
 
 | Exit code | Meaning |
 |---|---|
