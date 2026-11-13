@@ -4,8 +4,10 @@
 
 - Setup checks for the Microsoft Edge WebView2 Runtime (the window needs it) and says where to get it when it is missing.
 
+- Packaging no longer ships the duplicate `Wdm.Ui.exe`, `Wdm.Cli.exe` and `Wdm.NativeHost.exe` copies (about 24 MB unpacked); setup deletes the old ones and, with browser integration selected, re-registers the host at `wdm-nativehost.exe`.
+- Formatting: `cargo fmt --check` is clean.
+
 ### Planned for 2.5.1
-- Drop the duplicate `Wdm.Ui.exe`, `Wdm.Cli.exe` and `Wdm.NativeHost.exe` copies (about 24 MB unpacked, little after compression); setup re-registers the browser host so old registrations keep working.
 - Owner decision pending: fetch `yt-dlp` and `ffmpeg` on first use instead of bundling them (installer about 65 MB to about 10 MB; video-site downloads then need internet and a first-use download, which ends "nothing else to install").
 
 ## 2.5.0 - 2026-11-03

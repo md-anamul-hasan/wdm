@@ -44,10 +44,6 @@ Copy-Item (Join-Path $binDir 'wdm-desktop.exe') (Join-Path $out 'wdm-desktop.exe
 Copy-Item (Join-Path $binDir 'wdm.exe') (Join-Path $out 'wdm.exe')
 Copy-Item (Join-Path $binDir 'wdm-nativehost.exe') (Join-Path $out 'wdm-nativehost.exe')
 
-# Backwards compatibility aliases
-Copy-Item (Join-Path $out 'wdm-desktop.exe') (Join-Path $out 'Wdm.Ui.exe')
-Copy-Item (Join-Path $out 'wdm.exe') (Join-Path $out 'Wdm.Cli.exe')
-Copy-Item (Join-Path $out 'wdm-nativehost.exe') (Join-Path $out 'Wdm.NativeHost.exe')
 
 # 4. yt-dlp + ffmpeg power video-platform downloads (YouTube etc.)
 & (Join-Path $PSScriptRoot 'fetch-tools.ps1') -Directory $out

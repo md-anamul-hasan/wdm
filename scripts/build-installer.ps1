@@ -53,10 +53,6 @@ if (-not $SkipPublish) {
     Copy-Item (Join-Path $targetRelease 'wdm.exe') (Join-Path $stage 'wdm.exe')
     Copy-Item (Join-Path $targetRelease 'wdm-nativehost.exe') (Join-Path $stage 'wdm-nativehost.exe')
 
-    # Backwards compatibility aliases for existing shortcuts, shell hooks, and registry keys
-    Copy-Item (Join-Path $stage 'wdm-desktop.exe') (Join-Path $stage 'Wdm.Ui.exe')
-    Copy-Item (Join-Path $stage 'wdm.exe') (Join-Path $stage 'Wdm.Cli.exe')
-    Copy-Item (Join-Path $stage 'wdm-nativehost.exe') (Join-Path $stage 'Wdm.NativeHost.exe')
 
     # 4. yt-dlp + ffmpeg power video-platform downloads (YouTube etc.)
     if (Test-Path (Join-Path $PSScriptRoot 'fetch-tools.ps1')) {
