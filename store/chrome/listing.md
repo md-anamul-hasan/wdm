@@ -19,7 +19,7 @@ Send downloads from Chrome to WDM, the free and open-source download manager for
 
 WDM splits a file across up to 32 connections, resumes interrupted downloads, and keeps a queue with a scheduler and a speed limit. This extension is the bridge between your browser and the WDM desktop app.
 
-REQUIRES THE WDM DESKTOP APP, VERSION 1.0.2 OR NEWER - 2.0 RECOMMENDED (Windows 10/11). Install it first from https://github.com/md-anamul-hasan/wdm/releases/latest - the extension does nothing on its own. Older WDM versions cannot connect to this extension.
+REQUIRES THE WDM DESKTOP APP, VERSION 1.0.2 OR NEWER - 2.5 RECOMMENDED (Windows 10/11). Install it first from https://github.com/md-anamul-hasan/wdm/releases/latest - the extension does nothing on its own. Older WDM versions cannot connect to this extension.
 
 WHAT IT DOES
 • Right-click any link, video or audio and choose "Download with WDM".
@@ -83,10 +83,10 @@ Certify all three: no sale to third parties, no use unrelated to the single purp
 
 ## Test instructions tab (for reviewers)
 
-The dashboard limits "Additional instructions" to **500 characters** (the username and password fields stay empty: no login is needed). Paste exactly this (494 characters):
+The dashboard limits "Additional instructions" to **500 characters** (the username and password fields stay empty: no login is needed). Paste exactly this (466 characters):
 
 ```
-Needs the free Windows app WDM 1.0.2+: github.com/md-anamul-hasan/wdm/releases/latest (WDM-Setup; keep "Enable browser integration" ticked). Then install the extension, right-click any file link > "Download with WDM": WDM opens and downloads it. Or paste a URL in the toolbar popup > "Send to WDM". Optional: popup > "Allow access" enables takeover of large downloads and the Takeover rules. Without WDM the popup says it cannot connect and browser downloads continue normally. No login needed.
+Needs the free Windows app WDM 1.0.2+ (2.5.5 recommended): github.com/md-anamul-hasan/wdm/releases/latest (WDM-Setup; keep "Enable browser integration" ticked). Then install the extension, right-click any file link > "Download with WDM": WDM opens and downloads it. Or paste a URL in the toolbar popup > "Send to WDM". Optional: popup > "Allow access" enables large-download takeover and Takeover rules. Without WDM the popup says it cannot connect. No login needed.
 ```
 
 Longer reviewer notes (not for the dashboard): the app installs the native messaging host `com.wdm.download`; without it the extension reports "WDM not found" and never touches the browser's own downloads. With "all sites" access on, a large or archive download is paused, offered to WDM, and cancelled in the browser only after WDM confirms.
