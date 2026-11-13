@@ -12,7 +12,7 @@ Maintenance release; the app and the browser extension are both 2.5.5. Versions 
 
 ### Added
 - Docs: CycloneDX SBOM in `docs/sbom/`, `docs/BENCHMARKS.md`.
-- Build and QA: `scripts/sign.ps1` (local Authenticode signing), `scripts/make-sbom.ps1`, `scripts/qa/browsers.mjs` (extension and native host through Edge; Chrome and Brave registration), an engine throughput benchmark, and a local hash-verified cache for ffmpeg. The pinned upstream ffmpeg download now returns 404, so `tools.lock.json` points at a mirror of the same build (release `tools-ffmpeg-n8.1.3`); the `ffmpeg.exe` SHA-256 is unchanged.
+- Build and QA: `scripts/sign.ps1` (local Authenticode signing), `scripts/make-sbom.ps1`, `scripts/qa/browsers.mjs` (loads the extension in Chrome, Edge and Brave and pings the native host through each; 9/9 pass), an engine throughput benchmark, and a local hash-verified cache for ffmpeg. The pinned upstream ffmpeg download now returns 404, so `tools.lock.json` points at a mirror of the same build (release `tools-ffmpeg-n8.1.3`); the `ffmpeg.exe` SHA-256 is unchanged.
 
 ### Still open
 - Builds are not code-signed until a certificate or SignPath approval exists.
