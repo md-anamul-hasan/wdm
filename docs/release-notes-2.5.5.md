@@ -12,7 +12,7 @@ Maintenance release for the native (Rust + Tauri) edition. The app and the brows
 Same behaviour and permissions as 2.5.0; the version matches the app. It works with this and older WDM versions.
 
 ### Checked before release
-Rust format, lint (warnings as errors) and the full test suite; a real-app end-to-end run (24 checks); native-host checks (7); the extension and host in Microsoft Edge; install, update over an existing install and uninstall of the installer. Not tested: Brave (not installed on the test PC) and loading the extension into current Google Chrome by automation (Chrome 157 blocks it; registration was checked).
+Rust format, lint (warnings as errors) and the full test suite; a real-app end-to-end run (24 checks); native-host checks (7); the real extension loaded in Chrome 157, Microsoft Edge and Brave, each pinging the native host through the browser; install, update over an existing install and uninstall of the installer. Not tested: Firefox, and code signing (the builds are unsigned).
 
 ### Files
 | File | Purpose |
