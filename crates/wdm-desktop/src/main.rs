@@ -4,15 +4,15 @@
 mod commands;
 mod state;
 
+use chrono::Local;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
-use chrono::Local;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 
-use wdm_core::ipc::{ExternalDownloadRequest, LaunchArguments, WdmPipe};
 use crate::state::AppState;
+use wdm_core::ipc::{ExternalDownloadRequest, LaunchArguments, WdmPipe};
 
 /// One WDM per Windows user, as before: a later launch hands its request (or just "come forward")
 /// to the running one and quits. Returns false in that case. The mutex lives until the process ends.
@@ -23,7 +23,10 @@ fn claim_single_instance() -> bool {
     use windows::Win32::System::Threading::CreateMutexW;
 
     let user = std::env::var("USERNAME").unwrap_or_default();
-    let name: Vec<u16> = format!(r"Local\WDM.SingleInstance.{user}").encode_utf16().chain(Some(0)).collect();
+    let name: Vec<u16> = format!(r"Local\WDM.SingleInstance.{user}")
+        .encode_utf16()
+        .chain(Some(0))
+        .collect();
     // SAFETY: `name` is a NUL-terminated UTF-16 string that outlives the call.
     let created = unsafe { CreateMutexW(None, true, PCWSTR(name.as_ptr())) };
     // SAFETY: reads the thread's last error right after the call above.
@@ -53,7 +56,9 @@ fn handle_external(h: &AppHandle, mut req: ExternalDownloadRequest) {
     if req.activate_only || req.is_empty() {
         return;
     }
-    let Some(state) = h.try_state::<AppState>() else { return };
+    let Some(state) = h.try_state::<AppState>() else {
+        return;
+    };
 
     // Several addresses cannot share one "add download" dialog: list them (queued) or start them
     let show_dialog = state.get_settings().show_start_download_dialog;
@@ -65,7 +70,12 @@ fn handle_external(h: &AppHandle, mut req: ExternalDownloadRequest) {
     if req.silent || req.queue_only || !show_dialog {
         let urls = std::mem::take(&mut req.urls);
         for url in urls {
-            let one = ExternalDownloadRequest { urls: vec![url], file_name: if many { None } else { req.file_name.clone() }, sha256: if many { None } else { req.sha256.clone() }, ..req.clone() };
+            let one = ExternalDownloadRequest {
+                urls: vec![url],
+                file_name: if many { None } else { req.file_name.clone() },
+                sha256: if many { None } else { req.sha256.clone() },
+                ..req.clone()
+            };
             let _ = state.add_download(one, h);
         }
         let _ = h.emit("downloads-changed", ());
@@ -78,7 +88,14 @@ fn handle_external(h: &AppHandle, mut req: ExternalDownloadRequest) {
 fn main() {
     let request = LaunchArguments::parse(std::env::args().skip(1));
     if !claim_single_instance() {
-        let hand_over = if request.is_empty() { ExternalDownloadRequest { activate_only: true, ..Default::default() } } else { request };
+        let hand_over = if request.is_empty() {
+            ExternalDownloadRequest {
+                activate_only: true,
+                ..Default::default()
+            }
+        } else {
+            request
+        };
         tauri::async_runtime::block_on(WdmPipe::try_send(&hand_over, Duration::from_secs(3), None));
         return;
     }
@@ -170,12 +187,7 @@ fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let resume_all_i = MenuItem::with_id(app, "resume_all", "Resume All", true, None::<&str>)?;
     let exit_i = MenuItem::with_id(app, "exit", "Exit", true, None::<&str>)?;
 
-    let menu = Menu::with_items(app, &[
-        &open_i,
-        &pause_all_i,
-        &resume_all_i,
-        &exit_i,
-    ])?;
+    let menu = Menu::with_items(app, &[&open_i, &pause_all_i, &resume_all_i, &exit_i])?;
 
     let _tray = TrayIconBuilder::new()
         .menu(&menu)

@@ -24,7 +24,8 @@ impl LaunchArguments {
                 Self::add_url(&mut request, &list[i]);
             } else if (key == "/p" || key == "-p" || key == "--path") && has_value {
                 i += 1;
-                request.destination_directory = Some(Self::resolve_directory(list[i].trim_matches('"')));
+                request.destination_directory =
+                    Some(Self::resolve_directory(list[i].trim_matches('"')));
             } else if (key == "/f" || key == "-f" || key == "--file") && has_value {
                 i += 1;
                 request.file_name = Some(list[i].trim_matches('"').to_string());
@@ -67,17 +68,24 @@ mod tests {
     #[test]
     fn test_parse_arguments() {
         let args = vec![
-            "/d", "https://example.com/test.bin",
-            "/p", "C:\\temp",
-            "/f", "custom.bin",
-            "/sha256", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "/d",
+            "https://example.com/test.bin",
+            "/p",
+            "C:\\temp",
+            "/f",
+            "custom.bin",
+            "/sha256",
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "/n",
         ];
 
         let req = LaunchArguments::parse(args);
         assert_eq!(req.urls, vec!["https://example.com/test.bin"]);
         assert_eq!(req.file_name, Some("custom.bin".into()));
-        assert_eq!(req.sha256, Some("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855".into()));
+        assert_eq!(
+            req.sha256,
+            Some("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855".into())
+        );
         assert!(req.silent);
         assert!(!req.queue_only);
     }
@@ -90,4 +98,3 @@ mod tests {
         assert!(req.queue_only);
     }
 }
-

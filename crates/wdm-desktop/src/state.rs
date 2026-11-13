@@ -38,21 +38,35 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 
 /// File name and full path a request downloads to. A name supplied by the browser or the command
 /// line is sanitised, so it cannot move the download out of the chosen folder.
-pub fn resolve_target(dir: Option<&str>, default_dir: &str, url: &str, file_name: Option<&str>) -> (String, String) {
+pub fn resolve_target(
+    dir: Option<&str>,
+    default_dir: &str,
+    url: &str,
+    file_name: Option<&str>,
+) -> (String, String) {
     let name = file_name
         .map(str::trim)
         .filter(|n| !n.is_empty())
         .map(sanitize_file_name)
         .or_else(|| file_name_from_url(url))
         .unwrap_or_else(|| "download.dat".into());
-    let dir = dir.map(str::trim).filter(|d| !d.is_empty()).unwrap_or(default_dir);
-    let path = PathBuf::from(dir).join(&name).to_string_lossy().into_owned();
+    let dir = dir
+        .map(str::trim)
+        .filter(|d| !d.is_empty())
+        .unwrap_or(default_dir);
+    let path = PathBuf::from(dir)
+        .join(&name)
+        .to_string_lossy()
+        .into_owned();
     (name, path)
 }
 
 /// A download that was running when WDM stopped has no engine behind it any more: show it as paused.
 pub fn reset_interrupted(records: &mut [DownloadRecord]) {
-    for r in records.iter_mut().filter(|r| matches!(r.status.as_str(), "Connecting" | "Downloading")) {
+    for r in records
+        .iter_mut()
+        .filter(|r| matches!(r.status.as_str(), "Connecting" | "Downloading"))
+    {
         r.status = "Paused".into();
     }
 }
@@ -67,12 +81,17 @@ pub fn is_retryable(e: &wdm_core::Error) -> bool {
 
 /// An unfinished download of the same address, which a new request reuses instead of adding a row.
 pub fn find_unfinished(records: &[DownloadRecord], url: &str) -> Option<usize> {
-    records.iter().position(|r| r.status != "Completed" && r.url.eq_ignore_ascii_case(url))
+    records
+        .iter()
+        .position(|r| r.status != "Completed" && r.url.eq_ignore_ascii_case(url))
 }
 
 /// True when nothing is running or waiting: every row is finished, paused or failed.
 pub fn queue_drained(records: &[DownloadRecord], active: usize) -> bool {
-    active == 0 && !records.iter().any(|r| matches!(r.status.as_str(), "Queued" | "Connecting" | "Downloading"))
+    active == 0
+        && !records
+            .iter()
+            .any(|r| matches!(r.status.as_str(), "Queued" | "Connecting" | "Downloading"))
 }
 
 /// Progress as the UI reads it: the status as a name (the engine's own serde form is the legacy number)
@@ -159,7 +178,9 @@ impl AppState {
     /// True when `path` is the target of a listed download: the only files the UI may open.
     pub fn is_listed_path(&self, path: &str) -> bool {
         let want = Path::new(path);
-        lock(&self.records).iter().any(|r| Path::new(&r.target_file_path) == want)
+        lock(&self.records)
+            .iter()
+            .any(|r| Path::new(&r.target_file_path) == want)
     }
 
     pub fn save_settings(&self, new_settings: AppSettings) {
@@ -168,7 +189,8 @@ impl AppState {
         let _ = s.save();
 
         if s.is_speed_limiter_enabled {
-            self.speed_limiter.set_max_bytes_per_second(s.default_speed_limit_kb as i64 * 1024);
+            self.speed_limiter
+                .set_max_bytes_per_second(s.default_speed_limit_kb as i64 * 1024);
         } else {
             self.speed_limiter.set_max_bytes_per_second(0);
         }
@@ -176,7 +198,11 @@ impl AppState {
         *lock(&self.settings) = s;
     }
 
-    pub fn add_download(&self, request: ExternalDownloadRequest, app_handle: &AppHandle) -> Result<DownloadRecord, String> {
+    pub fn add_download(
+        &self,
+        request: ExternalDownloadRequest,
+        app_handle: &AppHandle,
+    ) -> Result<DownloadRecord, String> {
         let Some(url) = request.urls.first().cloned() else {
             return Err("No URL provided".into());
         };
@@ -199,10 +225,15 @@ impl AppState {
             request.destination_directory.as_deref(),
             &settings.default_download_directory,
             &url,
-            if single { request.file_name.as_deref() } else { None },
+            if single {
+                request.file_name.as_deref()
+            } else {
+                None
+            },
         );
 
-        let busy = lock(&self.active_engines).len() >= settings.max_concurrent_downloads.max(1) as usize;
+        let busy =
+            lock(&self.active_engines).len() >= settings.max_concurrent_downloads.max(1) as usize;
         let queued = request.queue_only || busy;
 
         let record = DownloadRecord {
@@ -210,7 +241,11 @@ impl AppState {
             url,
             file_name,
             target_file_path: target_path,
-            status: if queued { "Queued".into() } else { "Connecting".into() },
+            status: if queued {
+                "Queued".into()
+            } else {
+                "Connecting".into()
+            },
             options: Some(request.to_options()),
             ..Default::default()
         };
@@ -250,7 +285,8 @@ impl AppState {
             } else {
                 0
             };
-            let engine = DownloadEngine::new(None, limit_bps, Some(self.speed_limiter.clone())).map_err(|e| e.to_string())?;
+            let engine = DownloadEngine::new(None, limit_bps, Some(self.speed_limiter.clone()))
+                .map_err(|e| e.to_string())?;
             engine.set_enable_dynamic_split(settings.enable_dynamic_middle_split);
             engine.set_network_timeout_seconds(settings.network_timeout_seconds.max(1) as u32);
             engines.insert(id.to_string(), engine.clone());
@@ -271,7 +307,10 @@ impl AppState {
         let (h, cb_id, cb_ct) = (app_handle.clone(), id.to_string(), ct.clone());
         engine.set_on_progress(move |prog| {
             if !cb_ct.is_cancelled() {
-                let _ = h.emit("download-progress", json!({ "id": cb_id, "progress": progress_json(&prog) }));
+                let _ = h.emit(
+                    "download-progress",
+                    json!({ "id": cb_id, "progress": progress_json(&prog) }),
+                );
             }
         });
         let (h, cb_id, cb_ct) = (app_handle.clone(), id.to_string(), ct.clone());
@@ -283,16 +322,27 @@ impl AppState {
 
         let settings = self.get_settings();
         let mut options = record.options.clone().unwrap_or_default();
-        if options.user_agent.as_deref().map_or(true, |u| u.trim().is_empty()) {
+        if options
+            .user_agent
+            .as_deref()
+            .map_or(true, |u| u.trim().is_empty())
+        {
             options.user_agent = Some(settings.user_agent.clone());
         }
-        let connections = options.connections.unwrap_or(settings.default_connections).clamp(1, 32);
+        let connections = options
+            .connections
+            .unwrap_or(settings.default_connections)
+            .clamp(1, 32);
         let url = record.url.clone();
-        let dest_dir = Path::new(&record.target_file_path).parent().map(Path::to_path_buf);
+        let dest_dir = Path::new(&record.target_file_path)
+            .parent()
+            .map(Path::to_path_buf);
         let (app, id_task, task_ct) = (app_handle.clone(), id.to_string(), ct.clone());
 
         tauri::async_runtime::spawn(async move {
-            let res = engine.start(&url, dest_dir.as_deref(), connections, ct, Some(options)).await;
+            let res = engine
+                .start(&url, dest_dir.as_deref(), connections, ct, Some(options))
+                .await;
             // Pause and delete cancel the token first: they already own the row and the maps
             let superseded = task_ct.is_cancelled();
 
@@ -303,7 +353,9 @@ impl AppState {
                 Err(e) => ("Error", Some(e.to_string())),
             };
 
-            let Some(state) = app.try_state::<AppState>() else { return };
+            let Some(state) = app.try_state::<AppState>() else {
+                return;
+            };
             if !superseded {
                 let mut retries = lock(&state.retries);
                 if retryable {
@@ -373,7 +425,9 @@ impl AppState {
             lock(&self.retries)
                 .iter()
                 .filter(|(id, (n, at))| {
-                    *n <= MAX_AUTO_RETRIES && at.elapsed() >= RETRY_AFTER && recs.iter().any(|r| &r.id == *id && r.status == "Error")
+                    *n <= MAX_AUTO_RETRIES
+                        && at.elapsed() >= RETRY_AFTER
+                        && recs.iter().any(|r| &r.id == *id && r.status == "Error")
                 })
                 .map(|(id, _)| id.clone())
                 .collect()
@@ -394,7 +448,11 @@ impl AppState {
 
         lock(&self.retries).remove(id);
         let mut recs = lock(&self.records);
-        if let Some(r) = recs.iter_mut().find(|r| r.id == id).filter(|r| r.status != "Completed") {
+        if let Some(r) = recs
+            .iter_mut()
+            .find(|r| r.id == id)
+            .filter(|r| r.status != "Completed")
+        {
             r.status = "Paused".into();
             emit_status(app_handle, id, "Paused", None);
         }
@@ -402,7 +460,12 @@ impl AppState {
         Ok(())
     }
 
-    pub fn delete_download(&self, id: &str, delete_file: bool, app_handle: &AppHandle) -> Result<(), String> {
+    pub fn delete_download(
+        &self,
+        id: &str,
+        delete_file: bool,
+        app_handle: &AppHandle,
+    ) -> Result<(), String> {
         let _ = self.pause_download(id, app_handle);
 
         let mut recs = lock(&self.records);
@@ -434,7 +497,10 @@ impl AppState {
         {
             let active: Vec<String> = lock(&self.active_engines).keys().cloned().collect();
             let mut recs = lock(&self.records);
-            for r in recs.iter_mut().filter(|r| r.status != "Completed" && !active.contains(&r.id)) {
+            for r in recs
+                .iter_mut()
+                .filter(|r| r.status != "Completed" && !active.contains(&r.id))
+            {
                 r.status = "Queued".into();
                 emit_status(app_handle, &r.id, "Queued", None);
             }
@@ -509,7 +575,12 @@ impl AppState {
         }
     }
 
-    pub fn check_scheduler(&self, previous_time: chrono::DateTime<Local>, now: chrono::DateTime<Local>, app_handle: &AppHandle) {
+    pub fn check_scheduler(
+        &self,
+        previous_time: chrono::DateTime<Local>,
+        now: chrono::DateTime<Local>,
+        app_handle: &AppHandle,
+    ) {
         let settings = self.get_settings();
         if !settings.scheduler_enabled {
             return;
@@ -528,7 +599,10 @@ impl AppState {
 }
 
 fn emit_status(app: &AppHandle, id: &str, status: &str, message: Option<&str>) {
-    let _ = app.emit("download-status", json!({ "id": id, "status": status, "message": message }));
+    let _ = app.emit(
+        "download-status",
+        json!({ "id": id, "status": status, "message": message }),
+    );
 }
 
 #[cfg(test)]
@@ -537,19 +611,33 @@ mod tests {
     use wdm_core::models::{DownloadSegment, DownloadStatus, SegmentState};
 
     fn rec(url: &str, status: &str) -> DownloadRecord {
-        DownloadRecord { url: url.into(), status: status.into(), ..Default::default() }
+        DownloadRecord {
+            url: url.into(),
+            status: status.into(),
+            ..Default::default()
+        }
     }
 
     #[test]
     fn target_name_cannot_leave_the_folder() {
-        let (name, path) = resolve_target(Some("C:\\Dl"), "C:\\Default", "https://e.com/a.zip", Some("..\\..\\evil.exe"));
+        let (name, path) = resolve_target(
+            Some("C:\\Dl"),
+            "C:\\Default",
+            "https://e.com/a.zip",
+            Some("..\\..\\evil.exe"),
+        );
         assert_eq!(name, "....evil.exe");
         assert_eq!(Path::new(&path).parent(), Some(Path::new("C:\\Dl")));
     }
 
     #[test]
     fn target_falls_back_to_url_name_and_default_folder() {
-        let (name, path) = resolve_target(None, "C:\\Default", "https://e.com/dir/My%20File.zip?x=1", None);
+        let (name, path) = resolve_target(
+            None,
+            "C:\\Default",
+            "https://e.com/dir/My%20File.zip?x=1",
+            None,
+        );
         assert_eq!(name, "My File.zip");
         assert_eq!(Path::new(&path), Path::new("C:\\Default\\My File.zip"));
 
@@ -559,7 +647,13 @@ mod tests {
 
     #[test]
     fn interrupted_downloads_load_as_paused() {
-        let mut v = vec![rec("a", "Downloading"), rec("b", "Connecting"), rec("c", "Queued"), rec("d", "Completed"), rec("e", "Error")];
+        let mut v = vec![
+            rec("a", "Downloading"),
+            rec("b", "Connecting"),
+            rec("c", "Queued"),
+            rec("d", "Completed"),
+            rec("e", "Error"),
+        ];
         reset_interrupted(&mut v);
         let s: Vec<_> = v.iter().map(|r| r.status.as_str()).collect();
         assert_eq!(s, ["Paused", "Paused", "Queued", "Completed", "Error"]);
@@ -567,7 +661,10 @@ mod tests {
 
     #[test]
     fn duplicate_url_reuses_only_unfinished_rows() {
-        let v = vec![rec("https://e.com/A.zip", "Completed"), rec("https://e.com/A.zip", "Paused")];
+        let v = vec![
+            rec("https://e.com/A.zip", "Completed"),
+            rec("https://e.com/A.zip", "Paused"),
+        ];
         assert_eq!(find_unfinished(&v, "https://E.com/a.zip"), Some(1));
         assert_eq!(find_unfinished(&v[..1], "https://e.com/A.zip"), None);
     }
@@ -578,13 +675,20 @@ mod tests {
         assert!(is_retryable(&Error::Http("reset".into())));
         assert!(is_retryable(&Error::Io(std::io::Error::other("disk"))));
         assert!(!is_retryable(&Error::NonRetryable("404".into())));
-        assert!(!is_retryable(&Error::ChecksumMismatch { expected: "a".into(), actual: "b".into(), kept_file: "f".into() }));
+        assert!(!is_retryable(&Error::ChecksumMismatch {
+            expected: "a".into(),
+            actual: "b".into(),
+            kept_file: "f".into()
+        }));
         assert!(!is_retryable(&Error::Canceled));
     }
 
     #[test]
     fn queue_is_drained_only_when_nothing_runs_or_waits() {
-        assert!(queue_drained(&[rec("a", "Completed"), rec("b", "Paused"), rec("c", "Error")], 0));
+        assert!(queue_drained(
+            &[rec("a", "Completed"), rec("b", "Paused"), rec("c", "Error")],
+            0
+        ));
         assert!(!queue_drained(&[rec("a", "Queued")], 0));
         assert!(!queue_drained(&[rec("a", "Completed")], 1));
         assert!(!queue_drained(&[rec("a", "Downloading")], 0));

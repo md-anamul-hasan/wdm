@@ -25,10 +25,14 @@ mod flex_datetime {
 
     pub mod opt {
         use super::*;
-        pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Option<DateTime<FixedOffset>>, D::Error> {
+        pub fn deserialize<'de, D: Deserializer<'de>>(
+            d: D,
+        ) -> Result<Option<DateTime<FixedOffset>>, D::Error> {
             match Option::<String>::deserialize(d)? {
                 None => Ok(None),
-                Some(s) => parse(&s).map(Some).ok_or_else(|| serde::de::Error::custom("invalid date")),
+                Some(s) => parse(&s)
+                    .map(Some)
+                    .ok_or_else(|| serde::de::Error::custom("invalid date")),
             }
         }
     }
@@ -124,7 +128,10 @@ pub struct DownloadStore {
 
 impl DownloadStore {
     pub fn new(path: Option<PathBuf>) -> Self {
-        Self { path: path.unwrap_or_else(|| AppSettings::data_directory().join("downloads.json")), lock: Mutex::new(()) }
+        Self {
+            path: path.unwrap_or_else(|| AppSettings::data_directory().join("downloads.json")),
+            lock: Mutex::new(()),
+        }
     }
 
     pub fn path(&self) -> &Path {
@@ -139,7 +146,10 @@ impl DownloadStore {
         match serde_json::from_str::<Vec<DownloadRecord>>(json.trim_start_matches('\u{feff}')) {
             Ok(records) => {
                 // Migrate: lists written by older versions hold cookies/passwords in clear (and secrets of finished downloads)
-                if records.iter().any(DownloadRecord::has_plaintext_or_finished_secrets) {
+                if records
+                    .iter()
+                    .any(DownloadRecord::has_plaintext_or_finished_secrets)
+                {
                     self.save(&records);
                 }
                 records
@@ -161,7 +171,8 @@ impl DownloadStore {
             if let Some(dir) = self.path.parent() {
                 std::fs::create_dir_all(dir)?;
             }
-            let stored: Vec<DownloadRecord> = records.iter().map(DownloadRecord::for_storage).collect();
+            let stored: Vec<DownloadRecord> =
+                records.iter().map(DownloadRecord::for_storage).collect();
             let json = serde_json::to_string_pretty(&stored).map_err(io::Error::other)?;
             let mut temp = self.path.as_os_str().to_owned();
             temp.push(".tmp");
@@ -249,9 +260,15 @@ mod tests {
         )
         .unwrap();
         let loaded = store.load();
-        assert_eq!(loaded[0].options.as_ref().unwrap().cookies.as_deref(), Some("plainsecret"));
+        assert_eq!(
+            loaded[0].options.as_ref().unwrap().cookies.as_deref(),
+            Some("plainsecret")
+        );
         let raw = std::fs::read_to_string(store.path()).unwrap();
-        assert!(!raw.contains("plainsecret"), "file should have been rewritten protected");
+        assert!(
+            !raw.contains("plainsecret"),
+            "file should have been rewritten protected"
+        );
     }
 
     #[test]
@@ -267,7 +284,8 @@ mod tests {
     #[test]
     fn missing_file_is_an_empty_list() {
         let dir = tempfile::tempdir().unwrap();
-        assert!(DownloadStore::new(Some(dir.path().join("nope.json"))).load().is_empty());
+        assert!(DownloadStore::new(Some(dir.path().join("nope.json")))
+            .load()
+            .is_empty());
     }
 }
-

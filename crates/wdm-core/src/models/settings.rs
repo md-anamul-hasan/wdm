@@ -13,7 +13,10 @@ fn user_profile() -> PathBuf {
 }
 
 fn default_download_dir() -> String {
-    user_profile().join("Downloads").to_string_lossy().into_owned()
+    user_profile()
+        .join("Downloads")
+        .to_string_lossy()
+        .into_owned()
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -119,7 +122,9 @@ impl AppSettings {
     pub fn normalize_time(value: Option<&str>, fallback: &str) -> String {
         let parsed = value.and_then(|v| {
             let (h, m) = v.trim().split_once(':')?;
-            let ok = |s: &str, max_len: usize| (1..=max_len).contains(&s.len()) && s.bytes().all(|b| b.is_ascii_digit());
+            let ok = |s: &str, max_len: usize| {
+                (1..=max_len).contains(&s.len()) && s.bytes().all(|b| b.is_ascii_digit())
+            };
             if !ok(h, 2) || m.len() != 2 || !ok(m, 2) {
                 return None;
             }
@@ -194,7 +199,11 @@ mod tests {
     fn round_trips_and_reads_partial_files() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("sub").join("settings.json");
-        let s = AppSettings { default_connections: 12, is_dark_mode: true, ..Default::default() };
+        let s = AppSettings {
+            default_connections: 12,
+            is_dark_mode: true,
+            ..Default::default()
+        };
         assert!(s.save_to(&path));
         assert_eq!(AppSettings::load_from(&path), s);
 
@@ -213,4 +222,3 @@ mod tests {
         assert_eq!(AppSettings::load_from(&path), AppSettings::default());
     }
 }
-

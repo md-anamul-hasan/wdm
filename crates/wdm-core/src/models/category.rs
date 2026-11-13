@@ -42,10 +42,16 @@ impl FileCategories {
                 }
             };
 
-            add(FileCategory::Video, "mp4 mkv avi webm mov m4v wmv flv mpg mpeg 3gp ogv m3u8 ts");
+            add(
+                FileCategory::Video,
+                "mp4 mkv avi webm mov m4v wmv flv mpg mpeg 3gp ogv m3u8 ts",
+            );
             add(FileCategory::Music, "mp3 wav flac aac ogg m4a wma");
             add(FileCategory::Compressed, "zip rar 7z tar gz bz2 xz iso");
-            add(FileCategory::Documents, "pdf doc docx txt rtf csv xls xlsx ppt pptx epub");
+            add(
+                FileCategory::Documents,
+                "pdf doc docx txt rtf csv xls xlsx ppt pptx epub",
+            );
             add(FileCategory::Programs, "exe msi apk bat cmd pkg");
             add(FileCategory::Images, "png jpg jpeg webp gif svg");
 
@@ -65,7 +71,10 @@ impl FileCategories {
             ext = stripped;
         }
         let lower = ext.to_ascii_lowercase();
-        Self::map().get(lower.as_str()).copied().unwrap_or(FileCategory::General)
+        Self::map()
+            .get(lower.as_str())
+            .copied()
+            .unwrap_or(FileCategory::General)
     }
 
     pub fn from_file_name(file_name: Option<&str>) -> FileCategory {
@@ -101,7 +110,12 @@ fn default_true() -> bool {
 }
 
 impl GrabMediaItem {
-    pub fn new(url: impl Into<String>, file_name: impl Into<String>, category: impl Into<String>, extension: impl Into<String>) -> Self {
+    pub fn new(
+        url: impl Into<String>,
+        file_name: impl Into<String>,
+        category: impl Into<String>,
+        extension: impl Into<String>,
+    ) -> Self {
         Self {
             url: url.into(),
             file_name: file_name.into(),
@@ -118,16 +132,36 @@ mod tests {
 
     #[test]
     fn test_category_lookup() {
-        assert_eq!(FileCategories::from_extension(Some("mp4")), FileCategory::Video);
-        assert_eq!(FileCategories::from_extension(Some(".MP4")), FileCategory::Video);
-        assert_eq!(FileCategories::from_extension(Some(".zip")), FileCategory::Compressed);
-        assert_eq!(FileCategories::from_extension(Some("exe")), FileCategory::Programs);
-        assert_eq!(FileCategories::from_extension(Some("pdf")), FileCategory::Documents);
-        assert_eq!(FileCategories::from_extension(Some("unknown")), FileCategory::General);
+        assert_eq!(
+            FileCategories::from_extension(Some("mp4")),
+            FileCategory::Video
+        );
+        assert_eq!(
+            FileCategories::from_extension(Some(".MP4")),
+            FileCategory::Video
+        );
+        assert_eq!(
+            FileCategories::from_extension(Some(".zip")),
+            FileCategory::Compressed
+        );
+        assert_eq!(
+            FileCategories::from_extension(Some("exe")),
+            FileCategory::Programs
+        );
+        assert_eq!(
+            FileCategories::from_extension(Some("pdf")),
+            FileCategory::Documents
+        );
+        assert_eq!(
+            FileCategories::from_extension(Some("unknown")),
+            FileCategory::General
+        );
         assert_eq!(FileCategories::from_extension(None), FileCategory::General);
-        assert_eq!(FileCategories::from_file_name(Some("video.mkv")), FileCategory::Video);
+        assert_eq!(
+            FileCategories::from_file_name(Some("video.mkv")),
+            FileCategory::Video
+        );
         assert!(FileCategories::is_known_extension(Some(".png")));
         assert!(!FileCategories::is_known_extension(Some(".bin")));
     }
 }
-

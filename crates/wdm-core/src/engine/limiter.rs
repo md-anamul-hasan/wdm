@@ -18,7 +18,13 @@ impl SpeedLimiter {
     /// `max_bytes_per_second` of 0 disables limiting.
     pub fn new(max_bytes_per_second: i64) -> Self {
         let rate = max_bytes_per_second.max(0);
-        Self { state: Mutex::new(State { bytes_per_second: rate, available: rate as f64, last_refill: Instant::now() }) }
+        Self {
+            state: Mutex::new(State {
+                bytes_per_second: rate,
+                available: rate as f64,
+                last_refill: Instant::now(),
+            }),
+        }
     }
 
     pub fn max_bytes_per_second(&self) -> i64 {
@@ -54,7 +60,9 @@ impl SpeedLimiter {
             s.available -= bytes as f64;
             return None;
         }
-        Some(Duration::from_secs_f64((-s.available / rate as f64).clamp(0.001, 1.0)))
+        Some(Duration::from_secs_f64(
+            (-s.available / rate as f64).clamp(0.001, 1.0),
+        ))
     }
 
     /// Consumes `bytes` of budget, waiting while the bucket is in debt. Cancel-safe: dropping the
@@ -88,7 +96,11 @@ mod tests {
         l.throttle(150 * 1024).await;
         let t = Instant::now();
         l.throttle(1).await;
-        assert!(t.elapsed() >= Duration::from_millis(300), "waited {:?}", t.elapsed());
+        assert!(
+            t.elapsed() >= Duration::from_millis(300),
+            "waited {:?}",
+            t.elapsed()
+        );
     }
 
     #[tokio::test]
@@ -99,7 +111,9 @@ mod tests {
         let waiter = tokio::spawn(async move { l2.throttle(1).await });
         tokio::time::sleep(Duration::from_millis(50)).await;
         l.set_max_bytes_per_second(0);
-        tokio::time::timeout(Duration::from_secs(3), waiter).await.unwrap().unwrap();
+        tokio::time::timeout(Duration::from_secs(3), waiter)
+            .await
+            .unwrap()
+            .unwrap();
     }
 }
-

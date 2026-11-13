@@ -1,8 +1,8 @@
+use regex::Regex;
 use std::collections::HashSet;
 use std::path::Path;
 use std::sync::OnceLock;
 use std::time::Duration;
-use regex::Regex;
 use url::Url;
 
 use crate::engine::http;
@@ -26,7 +26,10 @@ fn media_pattern() -> &'static Regex {
 pub struct SiteGrabberService;
 
 impl SiteGrabberService {
-    pub async fn grab_links(page_url: &str, user_agent: Option<&str>) -> Result<Vec<GrabMediaItem>> {
+    pub async fn grab_links(
+        page_url: &str,
+        user_agent: Option<&str>,
+    ) -> Result<Vec<GrabMediaItem>> {
         let mut results = Vec::new();
         let trimmed = page_url.trim();
         if trimmed.is_empty() {
@@ -48,7 +51,10 @@ impl SiteGrabberService {
 
         // Direct file URL check
         let path_str = base_url.path();
-        let direct_ext = Path::new(path_str).extension().and_then(|e| e.to_str()).unwrap_or("");
+        let direct_ext = Path::new(path_str)
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
         if FileCategories::is_known_extension(Some(direct_ext)) {
             results.push(Self::create_item(&base_url, direct_ext, results.len()));
             return Ok(results);
@@ -63,10 +69,22 @@ impl SiteGrabberService {
         let ct = tokio_util::sync::CancellationToken::new();
         let response = tokio::time::timeout(
             REQUEST_TIMEOUT,
-            http::send(&client, reqwest::Method::GET, base_url.as_str(), Some(&options), None, &ct),
+            http::send(
+                &client,
+                reqwest::Method::GET,
+                base_url.as_str(),
+                Some(&options),
+                None,
+                &ct,
+            ),
         )
         .await
-        .map_err(|_| Error::Http(format!("The page did not respond within {} seconds", REQUEST_TIMEOUT.as_secs())))??;
+        .map_err(|_| {
+            Error::Http(format!(
+                "The page did not respond within {} seconds",
+                REQUEST_TIMEOUT.as_secs()
+            ))
+        })??;
 
         let status = response.status();
         if !status.is_success() {
@@ -98,7 +116,11 @@ impl SiteGrabberService {
         let mut seen_urls = HashSet::new();
 
         for cap in pattern.captures_iter(&html) {
-            let raw = cap.name("url").or_else(|| cap.name("direct")).map(|m| m.as_str()).unwrap_or("");
+            let raw = cap
+                .name("url")
+                .or_else(|| cap.name("direct"))
+                .map(|m| m.as_str())
+                .unwrap_or("");
             if raw.is_empty() {
                 continue;
             }
@@ -132,8 +154,13 @@ impl SiteGrabberService {
 
     fn create_item(url: &Url, extension: &str, index: usize) -> GrabMediaItem {
         let path = url.path();
-        let file_name_raw = Path::new(path).file_name().and_then(|n| n.to_str()).unwrap_or("");
-        let unescaped = percent_encoding::percent_decode_str(file_name_raw).decode_utf8_lossy().into_owned();
+        let file_name_raw = Path::new(path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("");
+        let unescaped = percent_encoding::percent_decode_str(file_name_raw)
+            .decode_utf8_lossy()
+            .into_owned();
         let ext_with_dot = if extension.is_empty() || extension.starts_with('.') {
             extension.to_string()
         } else {

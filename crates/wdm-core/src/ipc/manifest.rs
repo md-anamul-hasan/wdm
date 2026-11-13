@@ -20,7 +20,10 @@ pub struct NativeHostManifest;
 impl NativeHostManifest {
     pub fn is_chrome_extension_id(id: &str) -> bool {
         let trimmed = id.trim();
-        trimmed.len() == 32 && trimmed.chars().all(|c| c.is_ascii_lowercase() && ('a'..='p').contains(&c))
+        trimmed.len() == 32
+            && trimmed
+                .chars()
+                .all(|c| c.is_ascii_lowercase() && ('a'..='p').contains(&c))
     }
 
     pub fn allowed_origins<I, S>(additional_ids: I) -> Vec<String>
@@ -64,13 +67,22 @@ pub struct DiagnosticFinding {
 
 impl DiagnosticFinding {
     pub fn ok(msg: impl Into<String>) -> Self {
-        Self { level: FindingLevel::Ok, message: msg.into() }
+        Self {
+            level: FindingLevel::Ok,
+            message: msg.into(),
+        }
     }
     pub fn warning(msg: impl Into<String>) -> Self {
-        Self { level: FindingLevel::Warning, message: msg.into() }
+        Self {
+            level: FindingLevel::Warning,
+            message: msg.into(),
+        }
     }
     pub fn failure(msg: impl Into<String>) -> Self {
-        Self { level: FindingLevel::Failure, message: msg.into() }
+        Self {
+            level: FindingLevel::Failure,
+            message: msg.into(),
+        }
     }
 }
 
@@ -105,7 +117,9 @@ impl NativeHostManifestInspector {
         let path_opt = value.get("path").and_then(|v| v.as_str());
         match path_opt {
             None | Some("") => {
-                findings.push(DiagnosticFinding::failure("Manifest has no 'path' to wdm-nativehost.exe."));
+                findings.push(DiagnosticFinding::failure(
+                    "Manifest has no 'path' to wdm-nativehost.exe.",
+                ));
             }
             Some(path) => {
                 if !file_exists(path) {
@@ -135,7 +149,9 @@ impl NativeHostManifestInspector {
         for (label, id) in checks {
             let target = format!("chrome-extension://{id}/");
             if origins.contains(&target) {
-                findings.push(DiagnosticFinding::ok(format!("Extension allowed: {label} ({id})")));
+                findings.push(DiagnosticFinding::ok(format!(
+                    "Extension allowed: {label} ({id})"
+                )));
             } else {
                 findings.push(DiagnosticFinding::warning(format!(
                     "The {label} extension ({id}) is NOT allowed. Re-run: wdm-nativehost --register --extension-id {id}"
@@ -157,7 +173,9 @@ impl NativeHostManifestInspector {
         let value: serde_json::Value = match serde_json::from_str(json) {
             Ok(v) => v,
             Err(e) => {
-                findings.push(DiagnosticFinding::failure(format!("The Firefox manifest is not valid JSON ({e}).")));
+                findings.push(DiagnosticFinding::failure(format!(
+                    "The Firefox manifest is not valid JSON ({e})."
+                )));
                 return findings;
             }
         };
@@ -172,7 +190,9 @@ impl NativeHostManifestInspector {
         }
 
         if ids.contains(FIREFOX_EXTENSION_ID) {
-            findings.push(DiagnosticFinding::ok(format!("Extension allowed: Firefox ({FIREFOX_EXTENSION_ID})")));
+            findings.push(DiagnosticFinding::ok(format!(
+                "Extension allowed: Firefox ({FIREFOX_EXTENSION_ID})"
+            )));
         } else {
             findings.push(DiagnosticFinding::failure(format!(
                 "Firefox extension '{FIREFOX_EXTENSION_ID}' is not allowed. Re-run: wdm-nativehost --register"
@@ -189,10 +209,16 @@ mod tests {
 
     #[test]
     fn test_is_chrome_extension_id() {
-        assert!(NativeHostManifest::is_chrome_extension_id(STORE_CHROME_EXTENSION_ID));
-        assert!(NativeHostManifest::is_chrome_extension_id(SIDELOADED_CHROME_EXTENSION_ID));
+        assert!(NativeHostManifest::is_chrome_extension_id(
+            STORE_CHROME_EXTENSION_ID
+        ));
+        assert!(NativeHostManifest::is_chrome_extension_id(
+            SIDELOADED_CHROME_EXTENSION_ID
+        ));
         assert!(!NativeHostManifest::is_chrome_extension_id("invalid-id"));
-        assert!(!NativeHostManifest::is_chrome_extension_id("flnbghmpkajibfdfhbcfhkcjkhlokfgZ")); // capital Z
+        assert!(!NativeHostManifest::is_chrome_extension_id(
+            "flnbghmpkajibfdfhbcfhkcjkhlokfgZ"
+        )); // capital Z
     }
 
     #[test]
@@ -210,7 +236,8 @@ mod tests {
             }}"#
         );
 
-        let findings = NativeHostManifestInspector::check_chromium(&json, |p| p.contains("wdm-nativehost"));
+        let findings =
+            NativeHostManifestInspector::check_chromium(&json, |p| p.contains("wdm-nativehost"));
         assert!(!findings.is_empty());
         assert!(findings.iter().all(|f| f.level != FindingLevel::Failure));
     }

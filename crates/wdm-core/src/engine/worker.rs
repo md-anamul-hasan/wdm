@@ -51,7 +51,12 @@ impl HttpConnectionWorker {
         }
     }
 
-    pub async fn download_segment(&self, url: &str, segment: &Arc<Segment>, ct: &CancellationToken) -> Result<()> {
+    pub async fn download_segment(
+        &self,
+        url: &str,
+        segment: &Arc<Segment>,
+        ct: &CancellationToken,
+    ) -> Result<()> {
         segment.set_state(SegmentState::Connecting);
         let mut retry = 0u32;
 
@@ -71,7 +76,10 @@ impl HttpConnectionWorker {
                 Ok(Attempt::Short) => {
                     retry += 1;
                     if retry > MAX_RETRIES {
-                        Err(Error::Io(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "Connection closed before the segment finished.")))
+                        Err(Error::Io(std::io::Error::new(
+                            std::io::ErrorKind::UnexpectedEof,
+                            "Connection closed before the segment finished.",
+                        )))
                     } else {
                         Ok(())
                     }
@@ -80,7 +88,10 @@ impl HttpConnectionWorker {
             };
 
             match outcome {
-                Ok(()) => self.sleep(self.backoff(retry), ct).await.inspect_err(|_| self.to_idle(segment))?,
+                Ok(()) => self
+                    .sleep(self.backoff(retry), ct)
+                    .await
+                    .inspect_err(|_| self.to_idle(segment))?,
                 Err(Error::Canceled) => {
                     self.to_idle(segment);
                     return Err(Error::Canceled);
@@ -95,7 +106,9 @@ impl HttpConnectionWorker {
                         self.to_error(segment);
                         return Err(e);
                     }
-                    self.sleep(self.backoff(retry), ct).await.inspect_err(|_| self.to_idle(segment))?;
+                    self.sleep(self.backoff(retry), ct)
+                        .await
+                        .inspect_err(|_| self.to_idle(segment))?;
                 }
             }
         }
@@ -115,22 +128,50 @@ impl HttpConnectionWorker {
         s.set_speed(0.0);
     }
 
-    async fn attempt(&self, url: &str, segment: &Arc<Segment>, ct: &CancellationToken, retry: &mut u32) -> Result<Attempt> {
+    async fn attempt(
+        &self,
+        url: &str,
+        segment: &Arc<Segment>,
+        ct: &CancellationToken,
+        retry: &mut u32,
+    ) -> Result<Attempt> {
         // Range request if the end offset is known, open-ended range when resuming a segment of unknown size
         let range = if !segment.is_open_ended() && segment.end() >= segment.current() {
-            Some(ByteRange { from: segment.current(), to: Some(segment.end()) })
+            Some(ByteRange {
+                from: segment.current(),
+                to: Some(segment.end()),
+            })
         } else if segment.current() > 0 {
-            Some(ByteRange { from: segment.current(), to: None })
+            Some(ByteRange {
+                from: segment.current(),
+                to: None,
+            })
         } else {
             None
         };
 
-        let mut response = http::send(&self.client, Method::GET, url, self.options.as_ref(), range, ct).await?;
+        let mut response = http::send(
+            &self.client,
+            Method::GET,
+            url,
+            self.options.as_ref(),
+            range,
+            ct,
+        )
+        .await?;
         let status = response.status();
 
         if status != StatusCode::PARTIAL_CONTENT && status != StatusCode::OK {
-            let message = format!("Server returned HTTP {} {}", status.as_u16(), status.canonical_reason().unwrap_or(""));
-            return Err(if is_permanent_client_error(status) { Error::NonRetryable(message) } else { Error::Http(message) });
+            let message = format!(
+                "Server returned HTTP {} {}",
+                status.as_u16(),
+                status.canonical_reason().unwrap_or("")
+            );
+            return Err(if is_permanent_client_error(status) {
+                Error::NonRetryable(message)
+            } else {
+                Error::Http(message)
+            });
         }
 
         // Bytes are written at an absolute offset, so a 206 that starts elsewhere than requested would corrupt the file
@@ -142,14 +183,19 @@ impl HttpConnectionWorker {
                 .and_then(parse_content_range)
                 .and_then(|c| c.from);
             if let Some(served) = served.filter(|&s| s != r.from) {
-                return Err(Error::NonRetryable(format!("The server answered with bytes {served}- instead of the requested {}-.", r.from)));
+                return Err(Error::NonRetryable(format!(
+                    "The server answered with bytes {served}- instead of the requested {}-.",
+                    r.from
+                )));
             }
         }
 
         // A 200 to a request for a non-zero offset means the server ignored the Range header;
         // writing that body at this offset would silently corrupt the file.
         if range.is_some() && status == StatusCode::OK && segment.current() > 0 {
-            return Err(Error::RangeIgnored("The server does not support resuming (ignored Range request).".into()));
+            return Err(Error::RangeIgnored(
+                "The server does not support resuming (ignored Range request).".into(),
+            ));
         }
 
         segment.set_state(SegmentState::Downloading);
@@ -197,7 +243,10 @@ impl HttpConnectionWorker {
             }
         }
 
-        Ok(if segment.remaining() <= 0 { Attempt::Done } else { Attempt::Short })
+        Ok(if segment.remaining() <= 0 {
+            Attempt::Done
+        } else {
+            Attempt::Short
+        })
     }
 }
-

@@ -23,9 +23,16 @@ pub fn part_path(target_file_path: &str) -> String {
 /// `flush_data` runs after the progress snapshot is taken and before it is written: the checkpoint
 /// may only claim bytes that have reached the disk, otherwise a power loss would resume over data
 /// that never landed.
-pub async fn save_checkpoint(metadata: &DownloadMetadata, flush_data: Option<&(dyn Fn() + Send + Sync)>) -> io::Result<()> {
+pub async fn save_checkpoint(
+    metadata: &DownloadMetadata,
+    flush_data: Option<&(dyn Fn() + Send + Sync)>,
+) -> io::Result<()> {
     let path = checkpoint_path(&metadata.target_file_path);
-    let temp = PathBuf::from(format!("{}.{}.tmp", path.display(), uuid::Uuid::new_v4().simple()));
+    let temp = PathBuf::from(format!(
+        "{}.{}.tmp",
+        path.display(),
+        uuid::Uuid::new_v4().simple()
+    ));
 
     let json = serde_json::to_string_pretty(metadata).map_err(io::Error::other)?;
     if let Some(flush) = flush_data {
@@ -37,7 +44,15 @@ pub async fn save_checkpoint(metadata: &DownloadMetadata, flush_data: Option<&(d
     loop {
         match tokio::fs::rename(&temp, &path).await {
             Ok(()) => return Ok(()),
-            Err(e) if retries > 0 && matches!(e.kind(), io::ErrorKind::PermissionDenied | io::ErrorKind::Other | io::ErrorKind::AlreadyExists) => {
+            Err(e)
+                if retries > 0
+                    && matches!(
+                        e.kind(),
+                        io::ErrorKind::PermissionDenied
+                            | io::ErrorKind::Other
+                            | io::ErrorKind::AlreadyExists
+                    ) =>
+            {
                 retries -= 1;
                 tokio::time::sleep(Duration::from_millis(25)).await;
             }
@@ -51,7 +66,9 @@ pub async fn save_checkpoint(metadata: &DownloadMetadata, flush_data: Option<&(d
 
 /// `None` when there is no checkpoint, or it is unreadable.
 pub async fn load_checkpoint(target_file_path: &str) -> Option<DownloadMetadata> {
-    let json = tokio::fs::read_to_string(checkpoint_path(target_file_path)).await.ok()?;
+    let json = tokio::fs::read_to_string(checkpoint_path(target_file_path))
+        .await
+        .ok()?;
     serde_json::from_str(json.trim_start_matches('\u{feff}')).ok()
 }
 
@@ -79,7 +96,10 @@ mod tests {
             total_bytes: 100,
             supports_ranges: true,
             etag: Some("\"abc\"".into()),
-            segments: vec![DownloadSegment::new(1, 0, 49), DownloadSegment::new(2, 50, 99)],
+            segments: vec![
+                DownloadSegment::new(1, 0, 49),
+                DownloadSegment::new(2, 50, 99),
+            ],
             status: DownloadStatus::Paused,
             ..Default::default()
         }
@@ -87,7 +107,10 @@ mod tests {
 
     #[test]
     fn path_naming() {
-        assert_eq!(checkpoint_path("C:\\d\\a.zip"), PathBuf::from("C:\\d\\a.zip.wdm-state"));
+        assert_eq!(
+            checkpoint_path("C:\\d\\a.zip"),
+            PathBuf::from("C:\\d\\a.zip.wdm-state")
+        );
         assert_eq!(part_path("C:\\d\\a.zip"), "C:\\d\\a.zip.wdm-part");
     }
 
@@ -163,4 +186,3 @@ mod tests {
         assert_eq!(m.options.unwrap().cookies.as_deref(), Some("c=1")); // legacy plaintext still readable
     }
 }
-

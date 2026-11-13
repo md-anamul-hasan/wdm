@@ -1,9 +1,9 @@
+use regex::Regex;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::OnceLock;
 use std::time::Duration;
-use regex::Regex;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
@@ -50,7 +50,10 @@ impl MediaResolver {
         Self::find_on_path_or_beside("yt-dlp.exe", None)
     }
 
-    pub fn find_on_path_or_beside(exe_name: &str, beside_executable: Option<&Path>) -> Option<PathBuf> {
+    pub fn find_on_path_or_beside(
+        exe_name: &str,
+        beside_executable: Option<&Path>,
+    ) -> Option<PathBuf> {
         let mut candidates = Vec::new();
 
         if let Ok(current_exe) = std::env::current_exe() {
@@ -87,8 +90,11 @@ impl MediaResolver {
         S: FnMut(DownloadStatus) + Send + 'static,
         M: FnMut(DownloadMetadata) + Send + 'static,
     {
-        let resolver = Self::find_resolver_executable()
-            .ok_or_else(|| Error::NonRetryable("The video resolver (yt-dlp.exe) was not found next to WDM or on PATH.".into()))?;
+        let resolver = Self::find_resolver_executable().ok_or_else(|| {
+            Error::NonRetryable(
+                "The video resolver (yt-dlp.exe) was not found next to WDM or on PATH.".into(),
+            )
+        })?;
 
         on_status_changed(DownloadStatus::Connecting);
 
@@ -114,23 +120,41 @@ impl MediaResolver {
             cmd.args(["-f", "b[ext=mp4]/b"]);
         }
 
-        let out_template = target_dir.join("%(title)s.%(ext)s").to_string_lossy().into_owned();
+        let out_template = target_dir
+            .join("%(title)s.%(ext)s")
+            .to_string_lossy()
+            .into_owned();
 
         cmd.args([
-            "--encoding", "utf-8",
-            "--no-warnings", "--no-playlist", "--newline", "--progress", "--no-simulate",
-            "--print", &format!("before_dl:{TITLE_PREFIX}%(title)s"),
-            "--print", &format!("after_move:{FILE_PREFIX}%(filepath)s"),
-            "-o", &out_template,
-            "--", video_url,
+            "--encoding",
+            "utf-8",
+            "--no-warnings",
+            "--no-playlist",
+            "--newline",
+            "--progress",
+            "--no-simulate",
+            "--print",
+            &format!("before_dl:{TITLE_PREFIX}%(title)s"),
+            "--print",
+            &format!("after_move:{FILE_PREFIX}%(filepath)s"),
+            "-o",
+            &out_template,
+            "--",
+            video_url,
         ]);
 
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
 
         let mut child = cmd.spawn().map_err(Error::Io)?;
-        let stdout = child.stdout.take().ok_or_else(|| Error::NonRetryable("Failed to open stdout".into()))?;
-        let stderr = child.stderr.take().ok_or_else(|| Error::NonRetryable("Failed to open stderr".into()))?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| Error::NonRetryable("Failed to open stdout".into()))?;
+        let stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| Error::NonRetryable("Failed to open stderr".into()))?;
 
         let mut reader = BufReader::new(stdout).lines();
         let mut err_reader = BufReader::new(stderr).lines();
@@ -242,11 +266,20 @@ fn parse_speed_bps(s: &str) -> f64 {
     if trimmed.is_empty() {
         return 0.0;
     }
-    if let Some(val) = trimmed.strip_suffix("KiB").or_else(|| trimmed.strip_suffix("K")) {
+    if let Some(val) = trimmed
+        .strip_suffix("KiB")
+        .or_else(|| trimmed.strip_suffix("K"))
+    {
         val.parse::<f64>().unwrap_or(0.0) * 1024.0
-    } else if let Some(val) = trimmed.strip_suffix("MiB").or_else(|| trimmed.strip_suffix("M")) {
+    } else if let Some(val) = trimmed
+        .strip_suffix("MiB")
+        .or_else(|| trimmed.strip_suffix("M"))
+    {
         val.parse::<f64>().unwrap_or(0.0) * 1024.0 * 1024.0
-    } else if let Some(val) = trimmed.strip_suffix("GiB").or_else(|| trimmed.strip_suffix("G")) {
+    } else if let Some(val) = trimmed
+        .strip_suffix("GiB")
+        .or_else(|| trimmed.strip_suffix("G"))
+    {
         val.parse::<f64>().unwrap_or(0.0) * 1024.0 * 1024.0 * 1024.0
     } else if let Some(val) = trimmed.strip_suffix("B") {
         val.parse::<f64>().unwrap_or(0.0)
@@ -279,9 +312,17 @@ mod tests {
 
     #[test]
     fn test_is_youtube_url() {
-        assert!(MediaResolver::is_youtube_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ"));
-        assert!(MediaResolver::is_youtube_url("https://youtu.be/dQw4w9WgXcQ"));
-        assert!(MediaResolver::is_youtube_url("https://youtube.com/shorts/dQw4w9WgXcQ"));
-        assert!(!MediaResolver::is_youtube_url("https://example.com/video.mp4"));
+        assert!(MediaResolver::is_youtube_url(
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        ));
+        assert!(MediaResolver::is_youtube_url(
+            "https://youtu.be/dQw4w9WgXcQ"
+        ));
+        assert!(MediaResolver::is_youtube_url(
+            "https://youtube.com/shorts/dQw4w9WgXcQ"
+        ));
+        assert!(!MediaResolver::is_youtube_url(
+            "https://example.com/video.mp4"
+        ));
     }
 }

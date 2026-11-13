@@ -46,9 +46,15 @@ mod tests {
     #[test]
     fn normalizes_prefix_case_and_spaces() {
         let messy = format!("  SHA256:{}  ", GOOD.to_uppercase());
-        assert_eq!(Sha256Checksum::try_normalize(Some(&messy)).as_deref(), Some(GOOD));
+        assert_eq!(
+            Sha256Checksum::try_normalize(Some(&messy)).as_deref(),
+            Some(GOOD)
+        );
         let spaced = format!("{} {}", &GOOD[..32], &GOOD[32..]);
-        assert_eq!(Sha256Checksum::try_normalize(Some(&spaced)).as_deref(), Some(GOOD));
+        assert_eq!(
+            Sha256Checksum::try_normalize(Some(&spaced)).as_deref(),
+            Some(GOOD)
+        );
     }
 
     #[test]
@@ -68,4 +74,3 @@ mod tests {
         assert_eq!(Sha256Checksum::compute_file(&p).await.unwrap(), GOOD);
     }
 }
-

@@ -42,12 +42,21 @@ impl StorageWriter {
             }
         }
 
-        let file = File::options().read(true).write(true).create(true).truncate(false).open(&path)?;
+        let file = File::options()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(&path)?;
         // Pre-allocate when the size is known to prevent fragmentation and reserve space upfront.
         // Unknown size: start from an empty file (unknown-length downloads cannot resume).
         file.set_len(total_bytes.max(0) as u64)?;
 
-        Ok(Self { path, total_bytes, file: Mutex::new(Some(Arc::new(file))) })
+        Ok(Self {
+            path,
+            total_bytes,
+            file: Mutex::new(Some(Arc::new(file))),
+        })
     }
 
     pub fn path(&self) -> &Path {
@@ -59,11 +68,9 @@ impl StorageWriter {
     }
 
     fn handle(&self) -> io::Result<Arc<File>> {
-        self.file
-            .lock()
-            .unwrap()
-            .clone()
-            .ok_or_else(|| io::Error::new(io::ErrorKind::BrokenPipe, "the storage writer is closed"))
+        self.file.lock().unwrap().clone().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::BrokenPipe, "the storage writer is closed")
+        })
     }
 
     /// Writes `data` at the absolute file offset. Safe for concurrent calls on non-overlapping ranges.
@@ -150,7 +157,9 @@ mod tests {
         for i in 0..8u8 {
             let w = w.clone();
             tasks.push(tokio::spawn(async move {
-                w.write_at(Bytes::from(vec![i; 1000]), i as i64 * 1000).await.unwrap();
+                w.write_at(Bytes::from(vec![i; 1000]), i as i64 * 1000)
+                    .await
+                    .unwrap();
             }));
         }
         for t in tasks {
@@ -163,4 +172,3 @@ mod tests {
         }
     }
 }
-

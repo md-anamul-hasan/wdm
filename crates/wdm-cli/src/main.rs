@@ -5,9 +5,7 @@ use tokio_util::sync::CancellationToken;
 
 use wdm_core::engine::{DownloadEngine, MediaResolver};
 use wdm_core::ipc::ExternalDownloadRequest;
-use wdm_core::models::{
-    DownloadProgress, DownloadRequestOptions, DownloadStatus, Sha256Checksum,
-};
+use wdm_core::models::{DownloadProgress, DownloadRequestOptions, DownloadStatus, Sha256Checksum};
 use wdm_core::Error;
 
 const EXIT_PAUSED: i32 = 130;
@@ -181,11 +179,18 @@ async fn run(args: Vec<String>) -> i32 {
         match result {
             Ok(()) => {
                 let meta = engine.metadata();
-                let path = meta.as_ref().map(|m| m.target_file_path.as_str()).unwrap_or("");
+                let path = meta
+                    .as_ref()
+                    .map(|m| m.target_file_path.as_str())
+                    .unwrap_or("");
                 println!("\n[WDM] Download 100% Complete! Saved to: {path}");
                 0
             }
-            Err(Error::ChecksumMismatch { expected, actual, kept_file }) => {
+            Err(Error::ChecksumMismatch {
+                expected,
+                actual,
+                kept_file,
+            }) => {
                 eprintln!("\n[WDM Error] SHA-256 mismatch: expected {expected}, got {actual}. Kept as '{kept_file}'");
                 EXIT_CHECKSUM_MISMATCH
             }

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use super::{DownloadSegment, DownloadStatus};
+use serde::{Deserialize, Serialize};
 
 /// Snapshot reported about twice a second while a download runs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,7 +66,10 @@ impl DownloadProgress {
         } else if self.speed_bytes_per_second < 1024.0 * 1024.0 {
             format!("{:.1} KB/s", self.speed_bytes_per_second / 1024.0)
         } else {
-            format!("{:.2} MB/s", self.speed_bytes_per_second / (1024.0 * 1024.0))
+            format!(
+                "{:.2} MB/s",
+                self.speed_bytes_per_second / (1024.0 * 1024.0)
+            )
         }
     }
 }

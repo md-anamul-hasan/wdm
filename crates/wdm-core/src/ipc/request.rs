@@ -81,7 +81,9 @@ mod tests {
         assert!(json.contains("\"Silent\":true"));
         assert!(json.contains("\"CookieHost\":\"example.com\""));
         assert!(json.contains("\"Connections\":4"));
-        assert!(!serde_json::to_string(&ExternalDownloadRequest::default()).unwrap().contains("Connections"));
+        assert!(!serde_json::to_string(&ExternalDownloadRequest::default())
+            .unwrap()
+            .contains("Connections"));
 
         let deserialized: ExternalDownloadRequest = serde_json::from_str(&json).unwrap();
         assert_eq!(req, deserialized);

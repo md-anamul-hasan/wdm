@@ -54,7 +54,8 @@ mod windows_impl {
             let path = normalize_pipe_name(pipe_name);
             let send_op = async {
                 let mut client = connect_client(&path, timeout_dur).await?;
-                let payload = serde_json::to_vec(request).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+                let payload = serde_json::to_vec(request)
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
                 client.write_all(&payload).await?;
                 client.flush().await?;
                 Ok::<(), io::Error>(())
@@ -68,7 +69,9 @@ mod windows_impl {
         pub async fn is_listening(timeout_dur: Duration, pipe_name: Option<&str>) -> bool {
             let path = normalize_pipe_name(pipe_name);
             for attempt in 0..2 {
-                if let Ok(Ok(_client)) = tokio::time::timeout(timeout_dur, connect_client(&path, timeout_dur)).await {
+                if let Ok(Ok(_client)) =
+                    tokio::time::timeout(timeout_dur, connect_client(&path, timeout_dur)).await
+                {
                     return true;
                 }
                 if attempt == 0 {
@@ -140,13 +143,19 @@ mod windows_impl {
                         }
                         buffer.extend_from_slice(&chunk[..n]);
                         if buffer.len() > MAX_MESSAGE_BYTES {
-                            return Err(io::Error::new(io::ErrorKind::InvalidData, "IPC message too large"));
+                            return Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                "IPC message too large",
+                            ));
                         }
                     }
                     Ok::<(), io::Error>(())
                 };
 
-                if tokio::time::timeout(client_timeout, read_fut).await.is_err() {
+                if tokio::time::timeout(client_timeout, read_fut)
+                    .await
+                    .is_err()
+                {
                     read_failed = true;
                 }
 
@@ -176,13 +185,23 @@ mod non_windows_impl {
     use super::*;
 
     impl WdmPipe {
-        pub async fn try_send(_req: &ExternalDownloadRequest, _t: Duration, _n: Option<&str>) -> bool {
+        pub async fn try_send(
+            _req: &ExternalDownloadRequest,
+            _t: Duration,
+            _n: Option<&str>,
+        ) -> bool {
             false
         }
         pub async fn is_listening(_t: Duration, _n: Option<&str>) -> bool {
             false
         }
-        pub async fn listen<F>(_f: F, _s: tokio::sync::watch::Receiver<bool>, _r: Option<Duration>, _p: Option<&str>) {}
+        pub async fn listen<F>(
+            _f: F,
+            _s: tokio::sync::watch::Receiver<bool>,
+            _r: Option<Duration>,
+            _p: Option<&str>,
+        ) {
+        }
     }
 }
 

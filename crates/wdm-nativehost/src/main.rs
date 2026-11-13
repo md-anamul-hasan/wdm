@@ -1,13 +1,12 @@
+use serde_json::{json, Value};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use serde_json::{json, Value};
 use url::Url;
 
 use wdm_core::ipc::{
-    ExternalDownloadRequest, FindingLevel, NativeHostManifest,
-    NativeHostManifestInspector, WdmPipe, CHROMIUM_REGISTRY_ROOTS, FIREFOX_EXTENSION_ID,
-    FIREFOX_REGISTRY_ROOT, HOST_NAME,
+    ExternalDownloadRequest, FindingLevel, NativeHostManifest, NativeHostManifestInspector,
+    WdmPipe, CHROMIUM_REGISTRY_ROOTS, FIREFOX_EXTENSION_ID, FIREFOX_REGISTRY_ROOT, HOST_NAME,
 };
 use wdm_core::models::AppSettings;
 
@@ -68,7 +67,10 @@ async fn run_host_loop() {
         let response_bytes = response_str.as_bytes();
         let resp_len = (response_bytes.len() as u32).to_ne_bytes();
 
-        if stdout.write_all(&resp_len).is_err() || stdout.write_all(response_bytes).is_err() || stdout.flush().is_err() {
+        if stdout.write_all(&resp_len).is_err()
+            || stdout.write_all(response_bytes).is_err()
+            || stdout.flush().is_err()
+        {
             break;
         }
     }
@@ -80,7 +82,11 @@ async fn handle_message(bytes: &[u8]) -> String {
         Err(e) => return reply(json!({ "status": "error", "message": e.to_string() })),
     };
 
-    let action = val.get("action").and_then(|v| v.as_str()).unwrap_or("").to_ascii_lowercase();
+    let action = val
+        .get("action")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
 
     match action.as_str() {
         "ping" => reply(json!({
@@ -124,14 +130,25 @@ async fn handle_message(bytes: &[u8]) -> String {
 fn build_batch_request(val: &Value) -> ExternalDownloadRequest {
     let mut request = build_request(val, None);
     request.file_name = None;
-    for u in val.get("urls").and_then(|v| v.as_array()).into_iter().flatten() {
+    for u in val
+        .get("urls")
+        .and_then(|v| v.as_array())
+        .into_iter()
+        .flatten()
+    {
         let trimmed = u.as_str().unwrap_or_default().trim();
-        if ExternalDownloadRequest::is_http_url(trimmed) && !request.urls.iter().any(|x| x == trimmed) {
+        if ExternalDownloadRequest::is_http_url(trimmed)
+            && !request.urls.iter().any(|x| x == trimmed)
+        {
             request.urls.push(trimmed.to_string());
         }
     }
     if request.cookies.is_some() {
-        request.cookie_host = request.urls.first().and_then(|u| Url::parse(u).ok()).and_then(|u| u.host_str().map(str::to_string));
+        request.cookie_host = request
+            .urls
+            .first()
+            .and_then(|u| Url::parse(u).ok())
+            .and_then(|u| u.host_str().map(str::to_string));
     }
     request
 }
@@ -208,7 +225,10 @@ fn find_wdm_ui() -> Option<PathBuf> {
     let current_exe = std::env::current_exe().ok()?;
     let base_dir = current_exe.parent()?;
     #[allow(unused_mut)]
-    let mut candidates = vec![base_dir.join("wdm-desktop.exe"), base_dir.join("Wdm.Ui.exe")];
+    let mut candidates = vec![
+        base_dir.join("wdm-desktop.exe"),
+        base_dir.join("Wdm.Ui.exe"),
+    ];
     // Developer builds only: a release host must never start a program from outside its own folder
     #[cfg(debug_assertions)]
     candidates.extend([
@@ -240,7 +260,9 @@ fn register(options: &[String]) -> i32 {
             i += 1;
             let id = options[i].trim().to_ascii_lowercase();
             if !NativeHostManifest::is_chrome_extension_id(&id) {
-                eprintln!("[WDM] --extension-id needs a 32-character Chrome extension ID (letters a-p).");
+                eprintln!(
+                    "[WDM] --extension-id needs a 32-character Chrome extension ID (letters a-p)."
+                );
                 return 2;
             }
             extension_ids.push(id);
@@ -273,12 +295,18 @@ fn register(options: &[String]) -> i32 {
         "allowed_extensions": [FIREFOX_EXTENSION_ID]
     });
 
-    if let Err(e) = std::fs::write(&chromium_manifest, serde_json::to_string_pretty(&chromium_json).unwrap()) {
+    if let Err(e) = std::fs::write(
+        &chromium_manifest,
+        serde_json::to_string_pretty(&chromium_json).unwrap(),
+    ) {
         eprintln!("[WDM] Failed to write Chromium manifest: {e}");
         return 1;
     }
 
-    if let Err(e) = std::fs::write(&firefox_manifest, serde_json::to_string_pretty(&firefox_json).unwrap()) {
+    if let Err(e) = std::fs::write(
+        &firefox_manifest,
+        serde_json::to_string_pretty(&firefox_json).unwrap(),
+    ) {
         eprintln!("[WDM] Failed to write Firefox manifest: {e}");
         return 1;
     }
@@ -287,14 +315,17 @@ fn register(options: &[String]) -> i32 {
     {
         for root in CHROMIUM_REGISTRY_ROOTS {
             let subkey = format!(r"{root}\{HOST_NAME}");
-            if let Err(e) = set_registry_default_value(&subkey, &chromium_manifest.to_string_lossy()) {
+            if let Err(e) =
+                set_registry_default_value(&subkey, &chromium_manifest.to_string_lossy())
+            {
                 eprintln!("[WDM] Registry write failed for {subkey}: {e}");
                 return 1;
             }
         }
 
         let ff_subkey = format!(r"{FIREFOX_REGISTRY_ROOT}\{HOST_NAME}");
-        if let Err(e) = set_registry_default_value(&ff_subkey, &firefox_manifest.to_string_lossy()) {
+        if let Err(e) = set_registry_default_value(&ff_subkey, &firefox_manifest.to_string_lossy())
+        {
             eprintln!("[WDM] Registry write failed for {ff_subkey}: {e}");
             return 1;
         }
@@ -411,15 +442,19 @@ async fn diagnose() -> i32 {
     }
 
     println!("\n{failures} problem(s), {warnings} warning(s).");
-    if failures == 0 { 0 } else { 1 }
+    if failures == 0 {
+        0
+    } else {
+        1
+    }
 }
 
 #[cfg(windows)]
 fn set_registry_default_value(subkey: &str, value: &str) -> io::Result<()> {
     use windows::core::{HSTRING, PCWSTR};
     use windows::Win32::System::Registry::{
-        RegCloseKey, RegCreateKeyExW, HKEY, HKEY_CURRENT_USER, KEY_WRITE,
-        REG_OPTION_NON_VOLATILE, REG_SZ,
+        RegCloseKey, RegCreateKeyExW, HKEY, HKEY_CURRENT_USER, KEY_WRITE, REG_OPTION_NON_VOLATILE,
+        REG_SZ,
     };
 
     let subkey_h = HSTRING::from(subkey);
@@ -451,7 +486,9 @@ fn set_registry_default_value(subkey: &str, value: &str) -> io::Result<()> {
         );
         let _ = RegCloseKey(hkey);
         if set_res.is_err() {
-            return Err(io::Error::other(format!("RegSetValueExW failed: {set_res:?}")));
+            return Err(io::Error::other(format!(
+                "RegSetValueExW failed: {set_res:?}"
+            )));
         }
     }
     Ok(())
@@ -467,7 +504,15 @@ fn get_registry_default_value(subkey: &str) -> Option<String> {
     let subkey_h = HSTRING::from(subkey);
     let mut hkey = HKEY::default();
     unsafe {
-        if RegOpenKeyExW(HKEY_CURRENT_USER, PCWSTR(subkey_h.as_ptr()), 0, KEY_READ, &mut hkey).is_err() {
+        if RegOpenKeyExW(
+            HKEY_CURRENT_USER,
+            PCWSTR(subkey_h.as_ptr()),
+            0,
+            KEY_READ,
+            &mut hkey,
+        )
+        .is_err()
+        {
             return None;
         }
 
@@ -526,11 +571,26 @@ mod tests {
     #[tokio::test]
     async fn bad_input_gets_an_error_reply_not_a_crash() {
         assert_eq!(parse(&handle_message(b"not json").await)["status"], "error");
-        assert_eq!(parse(&handle_message(br#"{"action":"Frobnicate"}"#).await)["status"], "unknown_action");
+        assert_eq!(
+            parse(&handle_message(br#"{"action":"Frobnicate"}"#).await)["status"],
+            "unknown_action"
+        );
         // no usable address: refused before anything is sent to WDM
-        assert_eq!(parse(&handle_message(br#"{"action":"download","url":"file:///c:/x.exe"}"#).await)["status"], "error");
-        assert_eq!(parse(&handle_message(br#"{"action":"download","url":"javascript:alert(1)"}"#).await)["status"], "error");
-        assert_eq!(parse(&handle_message(br#"{"action":"batch","urls":["ftp://a/b","x"]}"#).await)["status"], "error");
+        assert_eq!(
+            parse(&handle_message(br#"{"action":"download","url":"file:///c:/x.exe"}"#).await)
+                ["status"],
+            "error"
+        );
+        assert_eq!(
+            parse(&handle_message(br#"{"action":"download","url":"javascript:alert(1)"}"#).await)
+                ["status"],
+            "error"
+        );
+        assert_eq!(
+            parse(&handle_message(br#"{"action":"batch","urls":["ftp://a/b","x"]}"#).await)
+                ["status"],
+            "error"
+        );
     }
 
     #[test]

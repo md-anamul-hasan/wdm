@@ -54,4 +54,3 @@ impl Error {
         matches!(self, Error::Canceled)
     }
 }
-

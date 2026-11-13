@@ -142,7 +142,10 @@ mod tests {
         let c = DpapiCipher;
         let enc = c.protect(b"cookie=secret; other=1").unwrap();
         assert!(!String::from_utf8_lossy(&enc).contains("secret"));
-        assert_eq!(c.unprotect(&enc).as_deref(), Some(&b"cookie=secret; other=1"[..]));
+        assert_eq!(
+            c.unprotect(&enc).as_deref(),
+            Some(&b"cookie=secret; other=1"[..])
+        );
         assert!(c.unprotect(b"garbage").is_none());
     }
 

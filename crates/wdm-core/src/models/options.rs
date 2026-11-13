@@ -46,4 +46,3 @@ impl DownloadRequestOptions {
             .any(|v| v.as_deref().is_some_and(|s| !s.is_empty()))
     }
 }
-

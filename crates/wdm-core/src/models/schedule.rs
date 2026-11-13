@@ -74,6 +74,11 @@ mod tests {
         // 02:00 is 60 minutes ago, limit is 30 mins
         assert!(!ScheduleTrigger::crossed(t1, t2, "02:00", None));
         // With 70 mins lateness allowed:
-        assert!(ScheduleTrigger::crossed(t1, t2, "02:00", Some(Duration::minutes(70))));
+        assert!(ScheduleTrigger::crossed(
+            t1,
+            t2,
+            "02:00",
+            Some(Duration::minutes(70))
+        ));
     }
 }

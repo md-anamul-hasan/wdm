@@ -43,7 +43,11 @@ pub fn start_download(
 }
 
 #[tauri::command]
-pub fn pause_download(state: State<'_, AppState>, app_handle: AppHandle, id: String) -> Result<(), String> {
+pub fn pause_download(
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+    id: String,
+) -> Result<(), String> {
     state.pause_download(&id, &app_handle)?;
     state.process_queue(&app_handle); // the freed slot goes to the next queued download
     Ok(())

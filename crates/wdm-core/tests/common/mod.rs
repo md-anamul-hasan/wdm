@@ -64,25 +64,40 @@ pub async fn spawn(cfg: Cfg) -> Server {
     let (g, r) = (gets.clone(), ranged.clone());
     tokio::spawn(async move {
         loop {
-            let Ok((sock, _)) = listener.accept().await else { break };
+            let Ok((sock, _)) = listener.accept().await else {
+                break;
+            };
             let (cfg, g, r) = (cfg.clone(), g.clone(), r.clone());
             tokio::spawn(async move {
                 let _ = handle(sock, cfg, g, r).await;
             });
         }
     });
-    Server { addr, get_requests: gets, ranged_get_requests: ranged }
+    Server {
+        addr,
+        get_requests: gets,
+        ranged_get_requests: ranged,
+    }
 }
 
 fn parse_range(v: &str, len: usize) -> Option<(usize, usize)> {
     let spec = v.trim().strip_prefix("bytes=")?;
     let (a, b) = spec.split_once('-')?;
     let start: usize = a.parse().ok()?;
-    let end: usize = if b.is_empty() { len.checked_sub(1)? } else { b.parse::<usize>().ok()?.min(len.checked_sub(1)?) };
+    let end: usize = if b.is_empty() {
+        len.checked_sub(1)?
+    } else {
+        b.parse::<usize>().ok()?.min(len.checked_sub(1)?)
+    };
     (start <= end).then_some((start, end))
 }
 
-async fn handle(mut sock: TcpStream, cfg: Cfg, gets: Arc<AtomicUsize>, ranged: Arc<AtomicUsize>) -> std::io::Result<()> {
+async fn handle(
+    mut sock: TcpStream,
+    cfg: Cfg,
+    gets: Arc<AtomicUsize>,
+    ranged: Arc<AtomicUsize>,
+) -> std::io::Result<()> {
     let mut buf = Vec::new();
     let mut tmp = [0u8; 2048];
     while !buf.windows(4).any(|w| w == b"\r\n\r\n") {
@@ -94,8 +109,17 @@ async fn handle(mut sock: TcpStream, cfg: Cfg, gets: Arc<AtomicUsize>, ranged: A
     }
     let text = String::from_utf8_lossy(&buf).into_owned();
     let mut lines = text.split("\r\n");
-    let method = lines.next().unwrap_or("").split(' ').next().unwrap_or("").to_string();
-    let range_header = lines.filter_map(|l| l.split_once(':')).find(|(k, _)| k.eq_ignore_ascii_case("range")).map(|(_, v)| v.trim().to_string());
+    let method = lines
+        .next()
+        .unwrap_or("")
+        .split(' ')
+        .next()
+        .unwrap_or("")
+        .to_string();
+    let range_header = lines
+        .filter_map(|l| l.split_once(':'))
+        .find(|(k, _)| k.eq_ignore_ascii_case("range"))
+        .map(|(_, v)| v.trim().to_string());
 
     let is_head = method == "HEAD";
     if !is_head {
@@ -119,11 +143,19 @@ async fn handle(mut sock: TcpStream, cfg: Cfg, gets: Arc<AtomicUsize>, ranged: A
     }
 
     if let Some(code) = cfg.force_status {
-        sock.write_all(format!("HTTP/1.1 {code} Err\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").as_bytes()).await?;
+        sock.write_all(
+            format!("HTTP/1.1 {code} Err\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                .as_bytes(),
+        )
+        .await?;
         return sock.shutdown().await;
     }
 
-    let range = if cfg.serve_ranges && !is_head { range_header.as_deref().and_then(|v| parse_range(v, len)) } else { None };
+    let range = if cfg.serve_ranges && !is_head {
+        range_header.as_deref().and_then(|v| parse_range(v, len))
+    } else {
+        None
+    };
     let (status, start, end) = match range {
         Some((s, e)) => {
             headers.push_str(&format!("Content-Range: bytes {s}-{e}/{len}\r\n"));
@@ -134,7 +166,8 @@ async fn handle(mut sock: TcpStream, cfg: Cfg, gets: Arc<AtomicUsize>, ranged: A
     if !cfg.unknown_length {
         headers.push_str(&format!("Content-Length: {}\r\n", end - start));
     }
-    sock.write_all(format!("HTTP/1.1 {status}\r\n{headers}Connection: close\r\n\r\n").as_bytes()).await?;
+    sock.write_all(format!("HTTP/1.1 {status}\r\n{headers}Connection: close\r\n\r\n").as_bytes())
+        .await?;
 
     if !is_head {
         for chunk in cfg.data[start..end].chunks(16 * 1024) {
@@ -146,4 +179,3 @@ async fn handle(mut sock: TcpStream, cfg: Cfg, gets: Arc<AtomicUsize>, ranged: A
     }
     sock.shutdown().await
 }
-

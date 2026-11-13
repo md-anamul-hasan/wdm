@@ -25,7 +25,10 @@ impl Default for DynamicSegmenter {
 impl DynamicSegmenter {
     pub fn new() -> Self {
         Self {
-            inner: Mutex::new(Inner { segments: Vec::new(), next_id: 0 }),
+            inner: Mutex::new(Inner {
+                segments: Vec::new(),
+                next_id: 0,
+            }),
             min_split_threshold_bytes: 1024 * 1024,
         }
     }
@@ -40,7 +43,12 @@ impl DynamicSegmenter {
     }
 
     pub fn all_completed(&self) -> bool {
-        self.inner.lock().unwrap().segments.iter().all(|s| s.is_completed())
+        self.inner
+            .lock()
+            .unwrap()
+            .segments
+            .iter()
+            .all(|s| s.is_completed())
     }
 
     pub fn downloaded_bytes(&self) -> i64 {
@@ -48,7 +56,12 @@ impl DynamicSegmenter {
     }
 
     /// Initializes segments from scratch for a given total file size and connection count.
-    pub fn initialize(&self, total_bytes: i64, connection_count: i32, supports_ranges: bool) -> Vec<DownloadSegment> {
+    pub fn initialize(
+        &self,
+        total_bytes: i64,
+        connection_count: i32,
+        supports_ranges: bool,
+    ) -> Vec<DownloadSegment> {
         let mut g = self.inner.lock().unwrap();
         g.segments.clear();
         g.next_id = 1;
@@ -57,10 +70,12 @@ impl DynamicSegmenter {
             let id = g.next_id;
             g.next_id += 1;
             let end = if total_bytes > 0 { total_bytes - 1 } else { -1 };
-            g.segments.push(Arc::new(Segment::new(id, 0, end, total_bytes <= 0)));
+            g.segments
+                .push(Arc::new(Segment::new(id, 0, end, total_bytes <= 0)));
         } else {
             // Cap connection count so segments aren't smaller than the split threshold
-            let count = (total_bytes / self.min_split_threshold_bytes).clamp(1, connection_count as i64);
+            let count =
+                (total_bytes / self.min_split_threshold_bytes).clamp(1, connection_count as i64);
             let chunk = total_bytes / count;
             let remainder = total_bytes % count;
             let mut start = 0;
@@ -69,7 +84,8 @@ impl DynamicSegmenter {
                 let end = start + size - 1;
                 let id = g.next_id;
                 g.next_id += 1;
-                g.segments.push(Arc::new(Segment::new(id, start, end, false)));
+                g.segments
+                    .push(Arc::new(Segment::new(id, start, end, false)));
                 start = end + 1;
             }
         }
@@ -87,7 +103,11 @@ impl DynamicSegmenter {
 
         let mut expected_start = 0;
         for s in sorted {
-            if s.is_open_ended || s.start_offset != expected_start || s.end_offset < s.start_offset || s.end_offset >= total_bytes {
+            if s.is_open_ended
+                || s.start_offset != expected_start
+                || s.end_offset < s.start_offset
+                || s.end_offset >= total_bytes
+            {
                 return false;
             }
             if s.current_offset < s.start_offset || s.current_offset > s.end_offset + 1 {
@@ -101,8 +121,15 @@ impl DynamicSegmenter {
     /// Restores segments from an existing checkpoint.
     pub fn restore(&self, existing: &[DownloadSegment]) {
         let mut g = self.inner.lock().unwrap();
-        g.segments = existing.iter().map(|s| Arc::new(Segment::from_snapshot(s))).collect();
-        g.next_id = existing.iter().map(|s| s.segment_id).max().map_or(1, |m| m + 1);
+        g.segments = existing
+            .iter()
+            .map(|s| Arc::new(Segment::from_snapshot(s)))
+            .collect();
+        g.next_id = existing
+            .iter()
+            .map(|s| s.segment_id)
+            .max()
+            .map_or(1, |m| m + 1);
     }
 
     /// Dynamic middle-split: when a worker is idle, find the active segment with the largest
@@ -113,7 +140,10 @@ impl DynamicSegmenter {
         let mut candidate: Option<Arc<Segment>> = None;
         let mut max_remaining = 0;
         for seg in &g.segments {
-            if seg.state() == SegmentState::Downloading && !seg.is_completed() && !seg.is_open_ended() {
+            if seg.state() == SegmentState::Downloading
+                && !seg.is_completed()
+                && !seg.is_open_ended()
+            {
                 let remaining = seg.remaining();
                 if remaining > max_remaining {
                     max_remaining = remaining;
@@ -144,7 +174,10 @@ impl DynamicSegmenter {
     /// Gets the next available unstarted segment and atomically claims it.
     pub fn get_next_idle_segment(&self) -> Option<Arc<Segment>> {
         let g = self.inner.lock().unwrap();
-        let seg = g.segments.iter().find(|s| s.state() == SegmentState::Idle && !s.is_completed())?;
+        let seg = g
+            .segments
+            .iter()
+            .find(|s| s.state() == SegmentState::Idle && !s.is_completed())?;
         seg.set_state(SegmentState::Connecting);
         Some(seg.clone())
     }
@@ -177,7 +210,10 @@ mod tests {
     fn no_ranges_or_unknown_size_gives_single_segment() {
         let s = DynamicSegmenter::new();
         let one = s.initialize(50 * MB, 8, false);
-        assert_eq!((one.len(), one[0].end_offset, one[0].is_open_ended), (1, 50 * MB - 1, false));
+        assert_eq!(
+            (one.len(), one[0].end_offset, one[0].is_open_ended),
+            (1, 50 * MB - 1, false)
+        );
         let unknown = s.initialize(-1, 8, true);
         assert_eq!((unknown.len(), unknown[0].is_open_ended), (1, true));
         assert_eq!(unknown[0].remaining_bytes(), i64::MAX);
@@ -185,12 +221,18 @@ mod tests {
 
     #[test]
     fn consistency_rejects_gaps_overlaps_and_bad_progress() {
-        let ok = vec![DownloadSegment::new(1, 0, 9), DownloadSegment::new(2, 10, 19)];
+        let ok = vec![
+            DownloadSegment::new(1, 0, 9),
+            DownloadSegment::new(2, 10, 19),
+        ];
         assert!(DynamicSegmenter::is_consistent(&ok, 20));
         assert!(!DynamicSegmenter::is_consistent(&ok, 21)); // short
         assert!(!DynamicSegmenter::is_consistent(&ok, 19)); // overrun
         assert!(!DynamicSegmenter::is_consistent(&[], 20));
-        let gap = vec![DownloadSegment::new(1, 0, 9), DownloadSegment::new(2, 11, 19)];
+        let gap = vec![
+            DownloadSegment::new(1, 0, 9),
+            DownloadSegment::new(2, 11, 19),
+        ];
         assert!(!DynamicSegmenter::is_consistent(&gap, 20));
         let mut bad = ok.clone();
         bad[0].current_offset = 12;

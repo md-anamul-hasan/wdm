@@ -4,7 +4,10 @@
 use std::time::Duration;
 
 use base64::{engine::general_purpose::STANDARD, Engine};
-use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, AUTHORIZATION, COOKIE, LOCATION, RANGE, REFERER, USER_AGENT};
+use reqwest::header::{
+    HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, AUTHORIZATION, COOKIE, LOCATION, RANGE,
+    REFERER, USER_AGENT,
+};
 use reqwest::{redirect, Client, Method, Response, StatusCode};
 use tokio_util::sync::CancellationToken;
 use url::Url;
@@ -56,7 +59,12 @@ fn is_blank(s: Option<&str>) -> bool {
 }
 
 /// Request headers for one hop of a download. `origin` is the URL the user asked for, `current` the hop being requested.
-pub fn build_headers(options: Option<&DownloadRequestOptions>, range: Option<ByteRange>, origin: &Url, current: &Url) -> HeaderMap {
+pub fn build_headers(
+    options: Option<&DownloadRequestOptions>,
+    range: Option<ByteRange>,
+    origin: &Url,
+    current: &Url,
+) -> HeaderMap {
     let mut h = HeaderMap::new();
     let put = |h: &mut HeaderMap, name, value: &str| {
         if let Ok(v) = HeaderValue::from_str(value) {
@@ -65,7 +73,11 @@ pub fn build_headers(options: Option<&DownloadRequestOptions>, range: Option<Byt
     };
 
     let ua = options.and_then(|o| o.user_agent.as_deref());
-    let ua = if is_blank(ua) || has_control_characters(ua.unwrap()) { DEFAULT_USER_AGENT } else { ua.unwrap() };
+    let ua = if is_blank(ua) || has_control_characters(ua.unwrap()) {
+        DEFAULT_USER_AGENT
+    } else {
+        ua.unwrap()
+    };
     put(&mut h, USER_AGENT, ua);
     put(&mut h, ACCEPT, "*/*");
     put(&mut h, ACCEPT_ENCODING, "identity");
@@ -92,7 +104,10 @@ pub fn build_headers(options: Option<&DownloadRequestOptions>, range: Option<Byt
         _ => origin.host_str().unwrap_or_default().to_string(),
     };
     if let Some(cookies) = o.cookies.as_deref() {
-        if !cookies.trim().is_empty() && !has_control_characters(cookies) && same_host(current, &cookie_host) {
+        if !cookies.trim().is_empty()
+            && !has_control_characters(cookies)
+            && same_host(current, &cookie_host)
+        {
             put(&mut h, COOKIE, cookies);
         }
     }
@@ -107,10 +122,13 @@ pub fn build_headers(options: Option<&DownloadRequestOptions>, range: Option<Byt
 }
 
 pub fn parse_url(url: &str) -> Result<Url> {
-    let parsed = Url::parse(url.trim()).map_err(|e| Error::InvalidArgument(format!("Invalid URL '{url}': {e}")))?;
+    let parsed = Url::parse(url.trim())
+        .map_err(|e| Error::InvalidArgument(format!("Invalid URL '{url}': {e}")))?;
     match parsed.scheme() {
         "http" | "https" => Ok(parsed),
-        other => Err(Error::InvalidArgument(format!("Unsupported URL scheme '{other}'."))),
+        other => Err(Error::InvalidArgument(format!(
+            "Unsupported URL scheme '{other}'."
+        ))),
     }
 }
 
@@ -127,13 +145,19 @@ pub async fn send(
     let mut current = origin.clone();
 
     for hop in 0.. {
-        let request = client.request(method.clone(), current.clone()).headers(build_headers(options, range, &origin, &current));
+        let request = client
+            .request(method.clone(), current.clone())
+            .headers(build_headers(options, range, &origin, &current));
         let response = tokio::select! {
             _ = ct.cancelled() => return Err(Error::Canceled),
             r = request.send() => r?,
         };
 
-        let location = response.headers().get(LOCATION).and_then(|v| v.to_str().ok()).map(str::to_owned);
+        let location = response
+            .headers()
+            .get(LOCATION)
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_owned);
         let Some(location) = location.filter(|_| is_redirect(response.status())) else {
             return Ok(response);
         };
@@ -142,7 +166,9 @@ pub async fn send(
         if hop >= MAX_REDIRECTS {
             return Err(Error::Http("Too many redirects.".into()));
         }
-        current = current.join(&location).map_err(|e| Error::Http(format!("Bad redirect location '{location}': {e}")))?;
+        current = current
+            .join(&location)
+            .map_err(|e| Error::Http(format!("Bad redirect location '{location}': {e}")))?;
     }
     unreachable!()
 }
@@ -167,11 +193,24 @@ mod tests {
 
     #[test]
     fn defaults_and_range() {
-        let h = build_headers(None, Some(ByteRange { from: 5, to: Some(9) }), &u("http://a/"), &u("http://a/"));
+        let h = build_headers(
+            None,
+            Some(ByteRange {
+                from: 5,
+                to: Some(9),
+            }),
+            &u("http://a/"),
+            &u("http://a/"),
+        );
         assert_eq!(h[USER_AGENT], DEFAULT_USER_AGENT);
         assert_eq!(h[ACCEPT_ENCODING], "identity");
         assert_eq!(h[RANGE], "bytes=5-9");
-        let h = build_headers(None, Some(ByteRange { from: 5, to: None }), &u("http://a/"), &u("http://a/"));
+        let h = build_headers(
+            None,
+            Some(ByteRange { from: 5, to: None }),
+            &u("http://a/"),
+            &u("http://a/"),
+        );
         assert_eq!(h[RANGE], "bytes=5-");
     }
 
@@ -180,13 +219,21 @@ mod tests {
         let o = opts();
         let h = build_headers(Some(&o), None, &u("https://a.com/f"), &u("https://A.com/g"));
         assert_eq!(h[COOKIE], "sid=1");
-        assert_eq!(h[AUTHORIZATION], format!("Basic {}", STANDARD.encode("bob:pw")));
+        assert_eq!(
+            h[AUTHORIZATION],
+            format!("Basic {}", STANDARD.encode("bob:pw"))
+        );
         assert_eq!(h[REFERER], "https://ref/");
     }
 
     #[test]
     fn credentials_are_not_sent_to_other_hosts() {
-        let h = build_headers(Some(&opts()), None, &u("https://a.com/f"), &u("https://cdn.other.com/f"));
+        let h = build_headers(
+            Some(&opts()),
+            None,
+            &u("https://a.com/f"),
+            &u("https://cdn.other.com/f"),
+        );
         assert!(h.get(COOKIE).is_none() && h.get(AUTHORIZATION).is_none());
         assert!(h.get(REFERER).is_some(), "referer is not a credential");
     }
@@ -195,14 +242,27 @@ mod tests {
     fn cookie_host_override_is_honoured() {
         let mut o = opts();
         o.cookie_host = Some("cdn.other.com".into());
-        let h = build_headers(Some(&o), None, &u("https://a.com/f"), &u("https://cdn.other.com/f"));
+        let h = build_headers(
+            Some(&o),
+            None,
+            &u("https://a.com/f"),
+            &u("https://cdn.other.com/f"),
+        );
         assert_eq!(h[COOKIE], "sid=1");
-        assert!(h.get(AUTHORIZATION).is_none(), "basic auth never leaves the origin host");
+        assert!(
+            h.get(AUTHORIZATION).is_none(),
+            "basic auth never leaves the origin host"
+        );
     }
 
     #[test]
     fn https_to_http_downgrade_strips_credentials() {
-        let h = build_headers(Some(&opts()), None, &u("https://a.com/f"), &u("http://a.com/f"));
+        let h = build_headers(
+            Some(&opts()),
+            None,
+            &u("https://a.com/f"),
+            &u("http://a.com/f"),
+        );
         assert!(h.get(COOKIE).is_none() && h.get(AUTHORIZATION).is_none());
     }
 
@@ -221,8 +281,17 @@ mod tests {
     #[test]
     fn url_validation() {
         assert!(parse_url("https://a.com/x").is_ok());
-        assert!(matches!(parse_url("ftp://a.com/x"), Err(Error::InvalidArgument(_))));
-        assert!(matches!(parse_url("not a url"), Err(Error::InvalidArgument(_))));
-        assert!(matches!(parse_url("file:///c:/x"), Err(Error::InvalidArgument(_))));
+        assert!(matches!(
+            parse_url("ftp://a.com/x"),
+            Err(Error::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            parse_url("not a url"),
+            Err(Error::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            parse_url("file:///c:/x"),
+            Err(Error::InvalidArgument(_))
+        ));
     }
 }

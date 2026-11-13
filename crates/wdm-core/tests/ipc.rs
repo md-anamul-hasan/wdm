@@ -1,12 +1,17 @@
 use std::time::Duration;
-use wdm_core::ipc::{ExternalDownloadRequest, LaunchArguments, NativeHostManifestInspector, WdmPipe};
+use wdm_core::ipc::{
+    ExternalDownloadRequest, LaunchArguments, NativeHostManifestInspector, WdmPipe,
+};
 
 #[test]
 fn launch_arguments_parses_idm_style_switches() {
     let args = [
-        "/d", "https://example.com/a.zip",
-        "/p", r"C:\Temp",
-        "/f", "b.zip",
+        "/d",
+        "https://example.com/a.zip",
+        "/p",
+        r"C:\Temp",
+        "/f",
+        "b.zip",
         "/n",
     ];
 
@@ -86,7 +91,9 @@ fn native_host_manifest_inspects_chromium_and_firefox() {
 
     let findings = NativeHostManifestInspector::check_chromium(chromium_json, |_| true);
     assert!(!findings.is_empty());
-    assert!(findings.iter().all(|f| f.level != wdm_core::ipc::FindingLevel::Failure));
+    assert!(findings
+        .iter()
+        .all(|f| f.level != wdm_core::ipc::FindingLevel::Failure));
 
     let firefox_json = r#"{
         "name": "com.wdm.download",
@@ -98,5 +105,7 @@ fn native_host_manifest_inspects_chromium_and_firefox() {
 
     let ff_findings = NativeHostManifestInspector::check_firefox(firefox_json);
     assert!(!ff_findings.is_empty());
-    assert!(ff_findings.iter().all(|f| f.level != wdm_core::ipc::FindingLevel::Failure));
+    assert!(ff_findings
+        .iter()
+        .all(|f| f.level != wdm_core::ipc::FindingLevel::Failure));
 }
