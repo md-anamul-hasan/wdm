@@ -6,6 +6,9 @@
 
 - Packaging no longer ships the duplicate `Wdm.Ui.exe`, `Wdm.Cli.exe` and `Wdm.NativeHost.exe` copies (about 24 MB unpacked); setup deletes the old ones and, with browser integration selected, re-registers the host at `wdm-nativehost.exe`.
 - Formatting: `cargo fmt --check` is clean.
+- Build: the workspace is pinned to the MSVC toolchain (`rust-toolchain.toml`). The GNU build printed a linker warning ("multiple non-default manifests") and produced larger binaries (desktop 30.8 to 16.0 MB, native host 11.7 to 1.4 MB).
+- Build: `fetch-tools.ps1` reuses a hash-verified ffmpeg from `%LOCALAPPDATA%\WDM	ools-cache` because the pinned upstream autobuild URL now returns 404; the lock file still needs a new pinned ffmpeg release.
+- QA: `scripts/qa/browsers.mjs` registers the host, loads the extension in Edge and pings the host through the browser, and checks the Chrome and Brave registration (Chrome 157 ignores `--load-extension`; Brave is not installed on the test PC).
 
 ### Planned for 2.5.1
 - Owner decision pending: fetch `yt-dlp` and `ffmpeg` on first use instead of bundling them (installer about 65 MB to about 10 MB; video-site downloads then need internet and a first-use download, which ends "nothing else to install").

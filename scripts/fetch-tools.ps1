@@ -55,6 +55,15 @@ if (-not (Test-Hash $ytdlp $lock.'yt-dlp'.sha256)) {
 $ffmpeg = Join-Path $Directory 'ffmpeg.exe'
 $ffmpegLicense = Join-Path $Directory 'ffmpeg-LICENSE.txt'
 if (-not ((Test-Hash $ffmpeg $lock.ffmpeg.exeSha256) -and (Test-Path $ffmpegLicense))) {
+    # Upstream autobuilds are pruned, so a hash-verified copy from an earlier build is reused (and refreshed after a download)
+    $cacheDir = if ($env:WDM_TOOLS_CACHE) { $env:WDM_TOOLS_CACHE } else { Join-Path $env:LOCALAPPDATA 'WDM\tools-cache' }
+    $cached = Join-Path $cacheDir 'ffmpeg.exe'
+    $cachedLicense = Join-Path $cacheDir 'ffmpeg-LICENSE.txt'
+    if ((Test-Hash $cached $lock.ffmpeg.exeSha256) -and (Test-Path $cachedLicense)) {
+        Write-Host "Using cached ffmpeg $($lock.ffmpeg.version)"
+        Copy-Item $cached $ffmpeg -Force
+        Copy-Item $cachedLicense $ffmpegLicense -Force
+    } else {
     Write-Host "Fetching ffmpeg $($lock.ffmpeg.version)"
     $id = [guid]::NewGuid().ToString('N')
     $zip = Join-Path ([IO.Path]::GetTempPath()) "wdm-ffmpeg-$id.zip"
@@ -66,9 +75,13 @@ if (-not ((Test-Hash $ffmpeg $lock.ffmpeg.exeSha256) -and (Test-Path $ffmpegLice
         if (-not (Test-Hash $exe $lock.ffmpeg.exeSha256)) { throw "ffmpeg.exe inside the archive does not match the pinned SHA-256" }
         Copy-Item $exe $ffmpeg -Force
         Copy-Item (Join-Path $extract $lock.ffmpeg.licenseEntry) $ffmpegLicense -Force
+        New-Item -ItemType Directory -Force $cacheDir | Out-Null
+        Copy-Item $ffmpeg $cached -Force
+        Copy-Item $ffmpegLicense $cachedLicense -Force
     }
     finally {
         Remove-Item $zip, $extract -Recurse -Force -ErrorAction SilentlyContinue
+    }
     }
 }
 
