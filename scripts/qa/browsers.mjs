@@ -13,7 +13,7 @@ let pass = 0, total = 0;
 const check = (n, ok, x = '') => { total++; if (ok) pass++; console.log(`${ok ? 'PASS' : 'FAIL'}  ${n}${x ? '  -> ' + x : ''}`); };
 
 const BROWSERS = [
-  { name: 'Chrome', key: 'Google/Chrome', noLoad: true, exe: ['C:/Program Files/Google/Chrome/Application/chrome.exe'] },
+  { name: 'Chrome', key: 'Google/Chrome', exe: ['C:/Program Files/Google/Chrome/Application/chrome.exe'] },
   { name: 'Edge', key: 'Microsoft/Edge', exe: ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'] },
   { name: 'Brave', key: 'BraveSoftware/Brave-Browser', exe: ['C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe', (process.env.LOCALAPPDATA || '').replaceAll(String.fromCharCode(92), '/') +'/BraveSoftware/Brave-Browser/Application/brave.exe'] },
 ];
@@ -29,14 +29,17 @@ try {
     const m = mf && fs.existsSync(mf) ? JSON.parse(fs.readFileSync(mf, 'utf8')) : null;
     check(`${b.name}: registry points to a valid manifest`, !!m && path.resolve(m.path).toLowerCase() === HOST.toLowerCase()
       && m.allowed_origins.includes('chrome-extension://kdjgcdbahccolkkagbckkchfpcchcfne/'), mf);
-    if (b.noLoad) { console.log(`SKIP  ${b.name}: current branded Chrome ignores --load-extension, so the extension cannot be loaded by automation; host protocol is covered by host.mjs and the Edge run (same engine)`); continue; }
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), `wdm-${b.name}-`));
     const ext = path.resolve(REPO, 'extension');
+    // Branded Chrome 137+ ignores --load-extension; Extensions.loadUnpacked over CDP still works with this flag.
+    // Playwright adds --disable-extensions by default, which must be dropped or no extension runs.
     const ctx = await chromium.launchPersistentContext(profile, {
-      executablePath: exe, headless: false,
-      args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`, '--no-first-run', '--disable-features=DisableLoadExtensionCommandLineSwitch'],
+      executablePath: exe, headless: false, ignoreDefaultArgs: ['--disable-extensions'],
+      args: ['--enable-unsafe-extension-debugging', '--no-first-run'],
     });
     try {
+      const cdp = await ctx.browser().newBrowserCDPSession();
+      await cdp.send('Extensions.loadUnpacked', { path: ext });
       let sw = ctx.serviceWorkers()[0];
       if (!sw) sw = await ctx.waitForEvent('serviceworker', { timeout: 8000 }).catch(() => null);
       check(`${b.name}: extension service worker starts`, !!sw, sw?.url());
