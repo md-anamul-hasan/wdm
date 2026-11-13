@@ -2,9 +2,9 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
   "version": 1,
-  "serialNumber": "urn:uuid:893021fc-7f88-4385-9104-2edd898b7df9",
+  "serialNumber": "urn:uuid:59623acf-0ed2-4fc2-bbbd-7f98b76dfc50",
   "metadata": {
-    "timestamp": "2026-11-13T11:16:55.894111000Z",
+    "timestamp": "2026-11-13T11:44:17.398128600Z",
     "tools": [
       {
         "vendor": "CycloneDX",
@@ -14,9 +14,9 @@
     ],
     "component": {
       "type": "application",
-      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-nativehost#2.5.0",
+      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-nativehost#2.5.5",
       "name": "wdm-nativehost",
-      "version": "2.5.0",
+      "version": "2.5.5",
       "description": "WDM Browser Native Messaging Host",
       "scope": "required",
       "licenses": [
@@ -24,19 +24,19 @@
           "expression": "MIT"
         }
       ],
-      "purl": "pkg:cargo/wdm-nativehost@2.5.0?download_url=file://.",
+      "purl": "pkg:cargo/wdm-nativehost@2.5.5?download_url=file://.",
       "components": [
         {
           "type": "application",
-          "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-nativehost#2.5.0 bin-target-0",
+          "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-nativehost#2.5.5 bin-target-0",
           "name": "wdm-nativehost",
-          "version": "2.5.0",
+          "version": "2.5.5",
           "licenses": [
             {
               "expression": "MIT"
             }
           ],
-          "purl": "pkg:cargo/wdm-nativehost@2.5.0?download_url=file://.#src/main.rs"
+          "purl": "pkg:cargo/wdm-nativehost@2.5.5?download_url=file://.#src/main.rs"
         }
       ]
     },
@@ -50,9 +50,9 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.0",
+      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.5",
       "name": "wdm-core",
-      "version": "2.5.0",
+      "version": "2.5.5",
       "description": "WDM download engine: HTTP range segmentation, resume state, persistence. No UI references.",
       "scope": "required",
       "licenses": [
@@ -60,7 +60,7 @@
           "expression": "MIT"
         }
       ],
-      "purl": "pkg:cargo/wdm-core@2.5.0?download_url=file://..\\wdm-core"
+      "purl": "pkg:cargo/wdm-core@2.5.5?download_url=file://..\\wdm-core"
     },
     {
       "type": "library",
@@ -4359,7 +4359,7 @@
   ],
   "dependencies": [
     {
-      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.0",
+      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.5",
       "dependsOn": [
         "registry+https://github.com/rust-lang/crates.io-index#base64@0.22.1",
         "registry+https://github.com/rust-lang/crates.io-index#bytes@1.12.1",
@@ -4382,14 +4382,14 @@
       ]
     },
     {
-      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-nativehost#2.5.0",
+      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-nativehost#2.5.5",
       "dependsOn": [
         "registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229",
         "registry+https://github.com/rust-lang/crates.io-index#serde_json@1.0.154",
         "registry+https://github.com/rust-lang/crates.io-index#tokio@1.54.1",
         "registry+https://github.com/rust-lang/crates.io-index#tokio-util@0.7.20",
         "registry+https://github.com/rust-lang/crates.io-index#url@2.5.8",
-        "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.0",
+        "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.5",
         "registry+https://github.com/rust-lang/crates.io-index#windows@0.58.0"
       ]
     },

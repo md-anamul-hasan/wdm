@@ -169,7 +169,7 @@ function getMockSettings(isDark) {
     EnableDynamicMiddleSplit: true,
     ShowStartDownloadDialog: true,
     NetworkTimeoutSeconds: 30,
-    UserAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WDM/2.5.0',
+    UserAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WDM/2.5.5',
     SchedulerEnabled: true,
     SchedulerStartTime: '02:00',
     SchedulerStopTime: '06:00',

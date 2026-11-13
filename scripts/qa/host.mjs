@@ -7,6 +7,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+// product version comes from Cargo.toml so a bump cannot silently break this check
+const VERSION = fs.readFileSync(REPO + 'Cargo.toml', 'utf8').match(/^version\s*=\s*"([^"]+)"/m)[1];
 const HOST = process.argv[2] || REPO + 'target/release/wdm-nativehost.exe';
 const data = fs.mkdtempSync(path.join(os.tmpdir(), 'wdm-host-'));
 const env = { ...process.env, WDM_DATA_DIR: data };
@@ -37,7 +39,7 @@ function talk(msg) {
 
 try { execSync('taskkill /F /IM wdm-desktop.exe', { stdio: 'ignore' }); } catch {}
 let r = await talk({ action: 'ping' });
-check('ping -> pong with version, stdout is protocol only', r.reply.message === 'pong' && /^2\.5\.0$/.test(r.reply.version) && r.extra === 0, JSON.stringify(r.reply));
+check('ping -> pong with version, stdout is protocol only', r.reply.message === 'pong' && r.reply.version === VERSION && r.extra === 0, JSON.stringify(r.reply));
 r = await talk({ action: 'download', url: 'file:///c:/x.exe' });
 check('non-http url refused', r.reply.status === 'error', r.reply.message);
 

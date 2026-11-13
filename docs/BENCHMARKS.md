@@ -1,4 +1,4 @@
-# Benchmarks (WDM 2.5.0, Rust + Tauri)
+# Benchmarks (WDM 2.5.5, Rust + Tauri)
 
 Measured 2026-11-13 on the development PC (Windows 11 Pro, MSVC release build). Single machine, loopback only, small sample: treat as ±15 % and as a regression baseline, not a promise about real networks.
 

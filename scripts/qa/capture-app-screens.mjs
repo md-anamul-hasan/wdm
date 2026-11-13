@@ -1,4 +1,4 @@
-// Real screenshots of WDM 2.5.0: drives the release exe over CDP against a local range server, 1280x800, dark and light.
+// Real screenshots of WDM 2.5.5: drives the release exe over CDP against a local range server, 1280x800, dark and light.
 import { fileURLToPath } from 'node:url';
 const HERE = fileURLToPath(new URL('.', import.meta.url)).replace(/\\/g, '/');
 const REPO = HERE + '../../';

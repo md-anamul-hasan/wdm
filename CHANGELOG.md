@@ -1,17 +1,22 @@
 # Changelog
 
-## Unreleased
+## 2.5.5 - 2026-11-13
 
+Maintenance release; the app and the browser extension are both 2.5.5. Versions 2.5.1 to 2.5.4 were never published. No change to download behaviour, data formats, permissions or the native-messaging protocol.
+
+### Changed
 - Setup checks for the Microsoft Edge WebView2 Runtime (the window needs it) and says where to get it when it is missing.
+- Packaging no longer ships the duplicate `Wdm.Ui.exe`, `Wdm.Cli.exe` and `Wdm.NativeHost.exe` copies; setup deletes the old ones and, with browser integration selected, re-registers the host at `wdm-nativehost.exe`.
+- Built with the MSVC toolchain (`rust-toolchain.toml`): no linker warning, and smaller programs (window 29.2 to 15.3 MB, native host 11.2 to 1.4 MB, command line 11.9 to 6.1 MB).
+- `cargo fmt --check` is clean.
 
-- Packaging no longer ships the duplicate `Wdm.Ui.exe`, `Wdm.Cli.exe` and `Wdm.NativeHost.exe` copies (about 24 MB unpacked); setup deletes the old ones and, with browser integration selected, re-registers the host at `wdm-nativehost.exe`.
-- Formatting: `cargo fmt --check` is clean.
-- Build: the workspace is pinned to the MSVC toolchain (`rust-toolchain.toml`). The GNU build printed a linker warning ("multiple non-default manifests") and produced larger binaries (desktop 30.8 to 16.0 MB, native host 11.7 to 1.4 MB).
-- Build: `fetch-tools.ps1` reuses a hash-verified ffmpeg from `%LOCALAPPDATA%\WDM	ools-cache` because the pinned upstream autobuild URL now returns 404; the lock file still needs a new pinned ffmpeg release.
-- QA: `scripts/qa/browsers.mjs` registers the host, loads the extension in Edge and pings the host through the browser, and checks the Chrome and Brave registration (Chrome 157 ignores `--load-extension`; Brave is not installed on the test PC).
+### Added
+- Docs: CycloneDX SBOM in `docs/sbom/`, `docs/BENCHMARKS.md`.
+- Build and QA: `scripts/sign.ps1` (local Authenticode signing), `scripts/make-sbom.ps1`, `scripts/qa/browsers.mjs` (extension and native host through Edge; Chrome and Brave registration), an engine throughput benchmark, and a local hash-verified cache for ffmpeg (the pinned upstream download URL now returns 404, so the lock file needs a new ffmpeg release).
 
-### Planned for 2.5.1
-- Owner decision pending: fetch `yt-dlp` and `ffmpeg` on first use instead of bundling them (installer about 65 MB to about 10 MB; video-site downloads then need internet and a first-use download, which ends "nothing else to install").
+### Still open
+- Builds are not code-signed until a certificate or SignPath approval exists.
+- Owner decision pending: fetch `yt-dlp` and `ffmpeg` on first use instead of bundling them (installer about 65 MB to about 10 MB; video-site downloads would then need internet and a first-use download).
 
 ## 2.5.0 - 2026-11-03
 

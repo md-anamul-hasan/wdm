@@ -123,7 +123,7 @@ jobs:
         shell: pwsh
         run: |
           $cargoToml = Get-Content Cargo.toml -Raw
-          if ($cargoToml -match 'version\s*=\s*"([^"]+)"') { $v = $matches[1] } else { $v = "2.5.0" }
+          if ($cargoToml -match 'version\s*=\s*"([^"]+)"') { $v = $matches[1] } else { $v = "2.5.5" }
           New-Item -ItemType Directory -Force dist/release | Out-Null
           Copy-Item "dist/installer/WDM-Setup-$v.exe" dist/release
           Compress-Archive -Path extension/* -DestinationPath "dist/release/WDM-Extension-$v.zip"

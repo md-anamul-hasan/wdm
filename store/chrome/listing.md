@@ -112,3 +112,4 @@ Bump `version` in `extension/manifest.json` (must be higher than the published o
 | 2.0.2 | Version aligned with WDM 2.0.2. No code, permission or listing change from 2.0.1. | Package |
 | 2.0.3 | Version aligned with WDM 2.0.3. No code, permission or listing change from 2.0.1. | Package |
 | 2.5.0 | Version aligned with WDM 2.5.0 (native Rust + Tauri app). No code, permission or listing change from 2.0.1; description and screenshots show the new window. | Package; screenshots |
+| 2.5.5 | Version aligned with WDM 2.5.5. No code, permission or listing change from 2.5.0. | Package |

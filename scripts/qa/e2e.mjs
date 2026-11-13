@@ -1,4 +1,4 @@
-// WDM 2.5.0 end-to-end QA: drives the real release app (Tauri + WebView2) over CDP.
+// WDM 2.5.5 end-to-end QA: drives the real release app (Tauri + WebView2) over CDP.
 import { fileURLToPath } from 'node:url';
 const HERE = fileURLToPath(new URL('.', import.meta.url)).replace(/\\/g, '/');
 const REPO = HERE + '../../';

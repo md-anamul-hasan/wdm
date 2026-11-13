@@ -3,9 +3,9 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
   "version": 1,
-  "serialNumber": "urn:uuid:c1de129b-7b11-42a2-9d0c-0e5ba338e3ea",
+  "serialNumber": "urn:uuid:19943b9e-6454-4f27-86a3-89439b9beffd",
   "metadata": {
-    "timestamp": "2026-11-13T11:16:57.659Z",
+    "timestamp": "2026-11-13T11:44:21.436Z",
     "tools": {
       "components": [
         {
@@ -98,9 +98,9 @@
     "component": {
       "type": "application",
       "name": "wdm-ui",
-      "version": "2.5.0",
-      "bom-ref": "wdm-ui@2.5.0",
-      "purl": "pkg:npm/wdm-ui@2.5.0",
+      "version": "2.5.5",
+      "bom-ref": "wdm-ui@2.5.5",
+      "purl": "pkg:npm/wdm-ui@2.5.5",
       "properties": [
         {
           "name": "cdx:npm:package:private",
@@ -119,7 +119,7 @@
       "name": "api",
       "group": "@tauri-apps",
       "version": "2.12.4",
-      "bom-ref": "wdm-ui@2.5.0|@tauri-apps/api@2.12.4",
+      "bom-ref": "wdm-ui@2.5.5|@tauri-apps/api@2.12.4",
       "description": "Tauri API definitions",
       "licenses": [
         {
@@ -161,7 +161,7 @@
       "name": "plugin-dialog",
       "group": "@tauri-apps",
       "version": "2.8.4",
-      "bom-ref": "wdm-ui@2.5.0|@tauri-apps/plugin-dialog@2.8.4",
+      "bom-ref": "wdm-ui@2.5.5|@tauri-apps/plugin-dialog@2.8.4",
       "licenses": [
         {
           "expression": "MIT OR Apache-2.0"
@@ -202,7 +202,7 @@
       "name": "plugin-shell",
       "group": "@tauri-apps",
       "version": "2.6.0",
-      "bom-ref": "wdm-ui@2.5.0|@tauri-apps/plugin-shell@2.6.0",
+      "bom-ref": "wdm-ui@2.5.5|@tauri-apps/plugin-shell@2.6.0",
       "licenses": [
         {
           "expression": "MIT OR Apache-2.0"
@@ -242,7 +242,7 @@
       "type": "library",
       "name": "lucide-react",
       "version": "0.475.0",
-      "bom-ref": "wdm-ui@2.5.0|lucide-react@0.475.0",
+      "bom-ref": "wdm-ui@2.5.5|lucide-react@0.475.0",
       "author": "Eric Fennis",
       "description": "A Lucide icon library package for React applications",
       "licenses": [
@@ -286,7 +286,7 @@
       "type": "library",
       "name": "react-dom",
       "version": "19.3.1",
-      "bom-ref": "wdm-ui@2.5.0|react-dom@19.3.1",
+      "bom-ref": "wdm-ui@2.5.5|react-dom@19.3.1",
       "description": "React package for working with the DOM.",
       "licenses": [
         {
@@ -329,7 +329,7 @@
       "type": "library",
       "name": "react",
       "version": "19.3.1",
-      "bom-ref": "wdm-ui@2.5.0|react@19.3.1",
+      "bom-ref": "wdm-ui@2.5.5|react@19.3.1",
       "description": "React is a JavaScript library for building user interfaces.",
       "licenses": [
         {
@@ -376,7 +376,7 @@
       "type": "library",
       "name": "scheduler",
       "version": "0.28.0",
-      "bom-ref": "wdm-ui@2.5.0|scheduler@0.28.0",
+      "bom-ref": "wdm-ui@2.5.5|scheduler@0.28.0",
       "description": "Cooperative scheduler for the browser environment.",
       "licenses": [
         {
@@ -418,49 +418,49 @@
   ],
   "dependencies": [
     {
-      "ref": "wdm-ui@2.5.0",
+      "ref": "wdm-ui@2.5.5",
       "dependsOn": [
-        "wdm-ui@2.5.0|@tauri-apps/api@2.12.4",
-        "wdm-ui@2.5.0|@tauri-apps/plugin-dialog@2.8.4",
-        "wdm-ui@2.5.0|@tauri-apps/plugin-shell@2.6.0",
-        "wdm-ui@2.5.0|lucide-react@0.475.0",
-        "wdm-ui@2.5.0|react-dom@19.3.1",
-        "wdm-ui@2.5.0|react@19.3.1"
+        "wdm-ui@2.5.5|@tauri-apps/api@2.12.4",
+        "wdm-ui@2.5.5|@tauri-apps/plugin-dialog@2.8.4",
+        "wdm-ui@2.5.5|@tauri-apps/plugin-shell@2.6.0",
+        "wdm-ui@2.5.5|lucide-react@0.475.0",
+        "wdm-ui@2.5.5|react-dom@19.3.1",
+        "wdm-ui@2.5.5|react@19.3.1"
       ]
     },
     {
-      "ref": "wdm-ui@2.5.0|@tauri-apps/api@2.12.4"
+      "ref": "wdm-ui@2.5.5|@tauri-apps/api@2.12.4"
     },
     {
-      "ref": "wdm-ui@2.5.0|@tauri-apps/plugin-dialog@2.8.4",
+      "ref": "wdm-ui@2.5.5|@tauri-apps/plugin-dialog@2.8.4",
       "dependsOn": [
-        "wdm-ui@2.5.0|@tauri-apps/api@2.12.4"
+        "wdm-ui@2.5.5|@tauri-apps/api@2.12.4"
       ]
     },
     {
-      "ref": "wdm-ui@2.5.0|@tauri-apps/plugin-shell@2.6.0",
+      "ref": "wdm-ui@2.5.5|@tauri-apps/plugin-shell@2.6.0",
       "dependsOn": [
-        "wdm-ui@2.5.0|@tauri-apps/api@2.12.4"
+        "wdm-ui@2.5.5|@tauri-apps/api@2.12.4"
       ]
     },
     {
-      "ref": "wdm-ui@2.5.0|lucide-react@0.475.0",
+      "ref": "wdm-ui@2.5.5|lucide-react@0.475.0",
       "dependsOn": [
-        "wdm-ui@2.5.0|react@19.3.1"
+        "wdm-ui@2.5.5|react@19.3.1"
       ]
     },
     {
-      "ref": "wdm-ui@2.5.0|react-dom@19.3.1",
+      "ref": "wdm-ui@2.5.5|react-dom@19.3.1",
       "dependsOn": [
-        "wdm-ui@2.5.0|react@19.3.1",
-        "wdm-ui@2.5.0|scheduler@0.28.0"
+        "wdm-ui@2.5.5|react@19.3.1",
+        "wdm-ui@2.5.5|scheduler@0.28.0"
       ]
     },
     {
-      "ref": "wdm-ui@2.5.0|react@19.3.1"
+      "ref": "wdm-ui@2.5.5|react@19.3.1"
     },
     {
-      "ref": "wdm-ui@2.5.0|scheduler@0.28.0"
+      "ref": "wdm-ui@2.5.5|scheduler@0.28.0"
     }
   ]
 }

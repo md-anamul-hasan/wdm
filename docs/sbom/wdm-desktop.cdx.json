@@ -2,9 +2,9 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
   "version": 1,
-  "serialNumber": "urn:uuid:a00e35ef-c4d9-43b4-9ab5-936c289ba96e",
+  "serialNumber": "urn:uuid:8a28a489-31dc-41a2-b4ce-252808e89527",
   "metadata": {
-    "timestamp": "2026-11-13T11:16:55.900639300Z",
+    "timestamp": "2026-11-13T11:44:17.404532200Z",
     "tools": [
       {
         "vendor": "CycloneDX",
@@ -14,9 +14,9 @@
     ],
     "component": {
       "type": "application",
-      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-desktop#2.5.0",
+      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-desktop#2.5.5",
       "name": "wdm-desktop",
-      "version": "2.5.0",
+      "version": "2.5.5",
       "description": "WDM Tauri Desktop Application Core",
       "scope": "required",
       "licenses": [
@@ -24,19 +24,19 @@
           "expression": "MIT"
         }
       ],
-      "purl": "pkg:cargo/wdm-desktop@2.5.0?download_url=file://.",
+      "purl": "pkg:cargo/wdm-desktop@2.5.5?download_url=file://.",
       "components": [
         {
           "type": "application",
-          "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-desktop#2.5.0 bin-target-0",
+          "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-desktop#2.5.5 bin-target-0",
           "name": "wdm-desktop",
-          "version": "2.5.0",
+          "version": "2.5.5",
           "licenses": [
             {
               "expression": "MIT"
             }
           ],
-          "purl": "pkg:cargo/wdm-desktop@2.5.0?download_url=file://.#src/main.rs"
+          "purl": "pkg:cargo/wdm-desktop@2.5.5?download_url=file://.#src/main.rs"
         }
       ]
     },
@@ -50,9 +50,9 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.0",
+      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.5",
       "name": "wdm-core",
-      "version": "2.5.0",
+      "version": "2.5.5",
       "description": "WDM download engine: HTTP range segmentation, resume state, persistence. No UI references.",
       "scope": "required",
       "licenses": [
@@ -60,7 +60,7 @@
           "expression": "MIT"
         }
       ],
-      "purl": "pkg:cargo/wdm-core@2.5.0?download_url=file://..\\wdm-core"
+      "purl": "pkg:cargo/wdm-core@2.5.5?download_url=file://..\\wdm-core"
     },
     {
       "type": "library",
@@ -9673,7 +9673,7 @@
   ],
   "dependencies": [
     {
-      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.0",
+      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.5",
       "dependsOn": [
         "registry+https://github.com/rust-lang/crates.io-index#base64@0.22.1",
         "registry+https://github.com/rust-lang/crates.io-index#bytes@1.12.1",
@@ -9696,7 +9696,7 @@
       ]
     },
     {
-      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-desktop#2.5.0",
+      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-desktop#2.5.5",
       "dependsOn": [
         "registry+https://github.com/rust-lang/crates.io-index#chrono@0.4.45",
         "registry+https://github.com/rust-lang/crates.io-index#open@5.4.5",
@@ -9711,7 +9711,7 @@
         "registry+https://github.com/rust-lang/crates.io-index#tracing@0.1.44",
         "registry+https://github.com/rust-lang/crates.io-index#url@2.5.8",
         "registry+https://github.com/rust-lang/crates.io-index#uuid@1.29.0",
-        "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.0",
+        "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.5",
         "registry+https://github.com/rust-lang/crates.io-index#windows@0.58.0"
       ]
     },

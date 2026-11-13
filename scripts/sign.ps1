@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS  Authenticode-signs files with signtool (SHA-256, RFC 3161 timestamp) and verifies the result. Local alternative to the SignPath job in release.yml.
            Certificate: WDM_SIGN_THUMBPRINT (cert in CurrentUser\My) or WDM_SIGN_PFX + WDM_SIGN_PFX_PASSWORD. Never commit a PFX.
-.EXAMPLE   $env:WDM_SIGN_THUMBPRINT='...'; .\scripts\sign.ps1 dist\stage\*.exe dist\installer\WDM-Setup-2.5.0.exe
+.EXAMPLE   $env:WDM_SIGN_THUMBPRINT='...'; .\scripts\sign.ps1 dist\stage\*.exe dist\installer\WDM-Setup-2.5.5.exe
 #>
 param(
     [Parameter(Mandatory, Position = 0, ValueFromRemainingArguments)][string[]]$Path,
