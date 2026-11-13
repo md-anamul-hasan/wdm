@@ -8,11 +8,11 @@
   },
   "ffmpeg": {
     "version": "n8.1.3-25-g611cec792a (LGPL, win64)",
-    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-29-19-17/ffmpeg-n8.1.3-25-g611cec792a-win64-lgpl-8.1.zip",
-    "zipSha256": "74e7863feef0d40b72236caf53823b132bcd429657be742d0a9213c0581cb573",
+    "url": "https://github.com/md-anamul-hasan/wdm/releases/download/tools-ffmpeg-n8.1.3/ffmpeg-n8.1.3-25-g611cec792a-win64-lgpl-8.1.zip",
+    "zipSha256": "542a863306bc85ea1e79b14e7d8666f5987cd2eca56ae7e4cca60524f114ddc7",
     "exeEntry": "ffmpeg-n8.1.3-25-g611cec792a-win64-lgpl-8.1/bin/ffmpeg.exe",
     "exeSha256": "98fffa46446b0a2086fb8f1e31197ffa9e17d9b041e48d886d535d02fdb727cd",
     "licenseEntry": "ffmpeg-n8.1.3-25-g611cec792a-win64-lgpl-8.1/LICENSE.txt",
-    "source": "zip SHA-256 equals the value in the autobuild release's checksums.sha256 (checked 2026-10-30)"
+    "source": "mirror of the BtbN autobuild-2026-10-29-19-17 build (upstream tag was pruned, 2026-11-13): the zip was re-created from the cached binary, whose ffmpeg.exe SHA-256 equals the upstream value checked 2026-10-30; the mirror zip hash above is of the re-created zip"
   }
 }

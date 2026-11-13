@@ -15,7 +15,7 @@ const check = (n, ok, x = '') => { total++; if (ok) pass++; console.log(`${ok ? 
 const BROWSERS = [
   { name: 'Chrome', key: 'Google/Chrome', noLoad: true, exe: ['C:/Program Files/Google/Chrome/Application/chrome.exe'] },
   { name: 'Edge', key: 'Microsoft/Edge', exe: ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'] },
-  { name: 'Brave', key: 'BraveSoftware/Brave-Browser', exe: ['C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe'] },
+  { name: 'Brave', key: 'BraveSoftware/Brave-Browser', exe: ['C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe', (process.env.LOCALAPPDATA || '').replaceAll(String.fromCharCode(92), '/') +'/BraveSoftware/Brave-Browser/Application/brave.exe'] },
 ];
 
 execFileSync(HOST, ['--register'], { stdio: 'ignore' });
