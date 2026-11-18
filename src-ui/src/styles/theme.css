@@ -1,22 +1,22 @@
 :root {
-  --font-family: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --font-family: 'Google Sans', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
   
   /* Light Theme */
-  --bg-window: #f3f3f3;
+  --bg-window: #f8fafc;
   --bg-surface: #ffffff;
-  --bg-surface-alt: #f8f9fa;
-  --bg-surface-hover: #eaeaea;
-  --bg-surface-selected: #e0eef9;
-  --border: #e2e4e8;
-  --border-focus: #0067c0;
+  --bg-surface-alt: #f1f5f9;
+  --bg-surface-hover: #e2e8f0;
+  --bg-surface-selected: #dbeafe;
+  --border: #e2e8f0;
+  --border-focus: #2563eb;
   
-  --text-primary: #1c1c1c;
-  --text-secondary: #5c5c5c;
-  --text-muted: #8c8c8c;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
   
-  --accent: #0067c0;
-  --accent-hover: #1975c5;
-  --accent-pressed: #005fb8;
+  --accent: #1d4ed8;
+  --accent-hover: #1e40af;
+  --accent-pressed: #1e3a8a;
   --on-accent: #ffffff;
   
   --status-downloading: #107c41;
@@ -30,33 +30,33 @@
   --status-error: #a80000;
   --status-error-bg: #fde7e9;
   
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.18);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 8px 24px -4px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.18);
   
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
   --radius-full: 9999px;
 }
 
 [data-theme="dark"] {
-  --bg-window: #1e1e1e;
-  --bg-surface: #252526;
-  --bg-surface-alt: #2d2d30;
-  --bg-surface-hover: #333337;
-  --bg-surface-selected: #264f78;
-  --border: #3e3e42;
-  --border-focus: #60cdff;
+  --bg-window: #0b1120;
+  --bg-surface: #111827;
+  --bg-surface-alt: #162032;
+  --bg-surface-hover: #1c2638;
+  --bg-surface-selected: #13254a;
+  --border: #273247;
+  --border-focus: #60a5fa;
   
-  --text-primary: #ffffff;
-  --text-secondary: #cccccc;
-  --text-muted: #888888;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
   
-  --accent: #60cdff;
-  --accent-hover: #72d4ff;
-  --accent-pressed: #4cbbe8;
-  --on-accent: #000000;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-pressed: #2563eb;
+  --on-accent: #020617;
   
   --status-downloading: #4ec9b0;
   --status-downloading-bg: #1e3a34;
@@ -69,9 +69,9 @@
   --status-error: #f14c4c;
   --status-error-bg: #3e1b1b;
   
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 10px 30px -6px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 28px 60px -12px rgba(0, 0, 0, 0.65);
 }
 
 * {
