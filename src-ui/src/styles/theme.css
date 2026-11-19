@@ -1,5 +1,7 @@
+/* Inter (OFL, bundled in public/fonts; handoff --font-sans) */
+@font-face { font-family: 'Inter'; src: url('/fonts/Inter-Variable.woff2') format('woff2-variations'), url('/fonts/Inter-Variable.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
 :root {
-  --font-family: 'Google Sans', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --font-family: 'Inter', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
   
   /* Light Theme */
   --bg-window: #f8fafc;

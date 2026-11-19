@@ -51,7 +51,7 @@ body {
   padding: 16px;
   background: var(--bg);
   color: var(--text);
-  font: 13px/1.4 "Google Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font: 13px/1.4 "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 /* ---- header ------------------------------------------------------------------------------- */
