@@ -1,15 +1,15 @@
-/* Colours mirror the desktop app's palette (src/Wdm.Ui/Themes/Styles.xaml); the popup follows the system theme. */
+/* Technical Glassmorphism v1.0 (mdanamulhasan.com tokens): cobalt accent, CAD-canvas neutrals; the popup follows the system theme. */
 :root {
   --bg: #ffffff;
-  --surface-alt: #f1f4f9;
-  --border: #e3e8f0;
-  --border-strong: #c5cedb;
+  --surface-alt: #f1f5f9;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
   --text: #0f172a;
-  --text-muted: #6b7a90;
-  --accent: #2563eb;
-  --accent-hover: #1d4fd8;
-  --accent-pressed: #1a44ba;
-  --accent-soft: #e0eaff;
+  --text-muted: #64748b;
+  --accent: #1d4ed8;
+  --accent-hover: #1e40af;
+  --accent-pressed: #1e3a8a;
+  --accent-soft: #dbeafe;
   --on-accent: #ffffff;
   --success: #16a34a;
   --success-soft: #dcfce7;
@@ -22,17 +22,17 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #161b22;
-    --surface-alt: #1c222b;
-    --border: #262d38;
-    --border-strong: #3a4452;
-    --text: #e6eaf0;
-    --text-muted: #8091a6;
-    --accent: #4c8dff;
-    --accent-hover: #6ba0ff;
-    --accent-pressed: #3b7aeb;
-    --accent-soft: #1b2b4b;
-    --on-accent: #0b1220;
+    --bg: #111827;
+    --surface-alt: #162032;
+    --border: #273247;
+    --border-strong: #334155;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-hover: #60a5fa;
+    --accent-pressed: #2563eb;
+    --accent-soft: #13254a;
+    --on-accent: #020617;
     --success: #4ade80;
     --success-soft: #12301e;
     --danger: #f87171;
@@ -51,7 +51,7 @@ body {
   padding: 16px;
   background: var(--bg);
   color: var(--text);
-  font: 13px/1.4 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font: 13px/1.4 "Google Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 /* ---- header ------------------------------------------------------------------------------- */

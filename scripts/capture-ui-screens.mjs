@@ -56,7 +56,7 @@ const mockDownloads = [
     Id: 'dl-1',
     Url: 'https://releases.ubuntu.com/24.04/ubuntu-24.04-desktop-amd64.iso',
     FileName: 'ubuntu-24.04-desktop-amd64.iso',
-    TargetFilePath: 'C:\\Users\\anamm\\Downloads\\ubuntu-24.04-desktop-amd64.iso',
+    TargetFilePath: 'C:\\Users\\Public\\Downloads\\ubuntu-24.04-desktop-amd64.iso',
     Status: 'Downloading',
     TotalBytes: 4950000000,
     DownloadedBytes: 3564000000,
@@ -68,7 +68,7 @@ const mockDownloads = [
     Id: 'dl-2',
     Url: 'https://update.code.visualstudio.com/latest/win32-x64-user/stable',
     FileName: 'VSCodeUserSetup-x64-1.89.1.exe',
-    TargetFilePath: 'C:\\Users\\anamm\\Downloads\\VSCodeUserSetup-x64-1.89.1.exe',
+    TargetFilePath: 'C:\\Users\\Public\\Downloads\\VSCodeUserSetup-x64-1.89.1.exe',
     Status: 'Completed',
     TotalBytes: 100030000,
     DownloadedBytes: 100030000,
@@ -80,7 +80,7 @@ const mockDownloads = [
     Id: 'dl-3',
     Url: 'https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe',
     FileName: 'python-3.12.3-amd64.exe',
-    TargetFilePath: 'C:\\Users\\anamm\\Downloads\\python-3.12.3-amd64.exe',
+    TargetFilePath: 'C:\\Users\\Public\\Downloads\\python-3.12.3-amd64.exe',
     Status: 'Completed',
     TotalBytes: 26320000,
     DownloadedBytes: 26320000,
@@ -92,7 +92,7 @@ const mockDownloads = [
     Id: 'dl-4',
     Url: 'https://download.blender.org/release/Blender4.1/blender-4.1.0-windows-x64.msi',
     FileName: 'blender-4.1.0-windows-x64.msi',
-    TargetFilePath: 'C:\\Users\\anamm\\Downloads\\blender-4.1.0-windows-x64.msi',
+    TargetFilePath: 'C:\\Users\\Public\\Downloads\\blender-4.1.0-windows-x64.msi',
     Status: 'Paused',
     TotalBytes: 335544320,
     DownloadedBytes: 150994944,
@@ -104,7 +104,7 @@ const mockDownloads = [
     Id: 'dl-5',
     Url: 'https://nodejs.org/dist/v22.0.0/node-v22.0.0-x64.msi',
     FileName: 'node-v22.0.0-x64.msi',
-    TargetFilePath: 'C:\\Users\\anamm\\Downloads\\node-v22.0.0-x64.msi',
+    TargetFilePath: 'C:\\Users\\Public\\Downloads\\node-v22.0.0-x64.msi',
     Status: 'Completed',
     TotalBytes: 32700000,
     DownloadedBytes: 32700000,
@@ -116,7 +116,7 @@ const mockDownloads = [
     Id: 'dl-6',
     Url: 'https://github.com/git-for-windows/git/releases/download/v2.45.0.windows.1/Git-2.45.0-64-bit.exe',
     FileName: 'Git-2.45.0-64-bit.exe',
-    TargetFilePath: 'C:\\Users\\anamm\\Downloads\\Git-2.45.0-64-bit.exe',
+    TargetFilePath: 'C:\\Users\\Public\\Downloads\\Git-2.45.0-64-bit.exe',
     Status: 'Completed',
     TotalBytes: 61800000,
     DownloadedBytes: 61800000,
@@ -159,7 +159,7 @@ const mockProgress = {
 
 function getMockSettings(isDark) {
   return {
-    DefaultDownloadDirectory: 'C:\\Users\\anamm\\Downloads',
+    DefaultDownloadDirectory: 'C:\\Users\\Public\\Downloads',
     DefaultConnections: 16,
     MaxConcurrentDownloads: 5,
     DefaultSpeedLimitKb: 5000,
@@ -268,6 +268,9 @@ async function captureScreens() {
     if (addBtn) {
       await addBtn.click();
       await page.waitForSelector('.modal-card');
+      // a filled-in dialog (the website shows this scene): an example address and 8 connections
+      const url = await page.$('.modal-card input[aria-label="URL Address"]');
+      if (url) await url.fill('https://example.com/releases/design-assets-2026.zip');
       await page.waitForTimeout(300);
       const addPath = path.join(screenshotsDir, `add-${themeName}.png`);
       await page.screenshot({ path: addPath });
@@ -311,6 +314,16 @@ async function captureScreens() {
       const optPath = path.join(screenshotsDir, `options-${themeName}.png`);
       await page.screenshot({ path: optPath });
       console.log(`[WDM UI] Saved: ${optPath}`);
+      // the Speed and Engine tabs of the same dialog (website scenes "Bandwidth limiter" and "Engine and network")
+      for (const [label, file] of [['Bandwidth Limiter', 'options-network'], ['Engine & Network', 'options-connection']]) {
+        const tab = await page.$(`.modal-card button:has-text("${label}")`);
+        if (!tab) continue;
+        await tab.click();
+        await page.waitForTimeout(300);
+        const p = path.join(screenshotsDir, `${file}-${themeName}.png`);
+        await page.screenshot({ path: p });
+        console.log(`[WDM UI] Saved: ${p}`);
+      }
       await page.click('.modal-card button:has-text("Cancel")');
       await page.waitForTimeout(200);
     }
