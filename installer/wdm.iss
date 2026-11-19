@@ -2,7 +2,7 @@
 #define AppName "WDM"
 #define AppFullName "WDM - Windows Download Manager"
 #ifndef AppVersion
-  #define AppVersion "2.5.5"
+  #define AppVersion "2.6.0"
 #endif
 #define StageDir "..\dist\stage"
 

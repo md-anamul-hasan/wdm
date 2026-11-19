@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.6.0] - 2026-11-19
+
+### Changed
+- New look: Technical Glassmorphism v1.0, the design system of mdanamulhasan.com. Slate canvas, Precision Cobalt accent with PLM teal highlights in dark mode, hairline borders, crisp 6/10/14 px corners, restrained shadows.
+
 ## 2.5.5 - 2026-11-13
 
 Maintenance release; the app and the browser extension are both 2.5.5. Versions 2.5.1 to 2.5.4 were never published. No change to download behaviour, data formats, permissions or the native-messaging protocol.

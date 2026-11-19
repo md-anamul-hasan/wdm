@@ -2,9 +2,9 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
   "version": 1,
-  "serialNumber": "urn:uuid:fd338dc5-1f6f-4a20-8a9c-6c9fde9c5251",
+  "serialNumber": "urn:uuid:3227b756-b72f-4a89-8a88-3ee3c705046f",
   "metadata": {
-    "timestamp": "2026-11-13T11:44:17.393802600Z",
+    "timestamp": "2026-11-19T03:33:57.517200800Z",
     "tools": [
       {
         "vendor": "CycloneDX",
@@ -14,9 +14,9 @@
     ],
     "component": {
       "type": "application",
-      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-cli#2.5.5",
+      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-cli#2.6.0",
       "name": "wdm-cli",
-      "version": "2.5.5",
+      "version": "2.6.0",
       "description": "WDM standalone terminal downloader",
       "scope": "required",
       "licenses": [
@@ -24,19 +24,19 @@
           "expression": "MIT"
         }
       ],
-      "purl": "pkg:cargo/wdm-cli@2.5.5?download_url=file://.",
+      "purl": "pkg:cargo/wdm-cli@2.6.0?download_url=file://.",
       "components": [
         {
           "type": "application",
-          "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-cli#2.5.5 bin-target-0",
+          "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-cli#2.6.0 bin-target-0",
           "name": "wdm",
-          "version": "2.5.5",
+          "version": "2.6.0",
           "licenses": [
             {
               "expression": "MIT"
             }
           ],
-          "purl": "pkg:cargo/wdm-cli@2.5.5?download_url=file://.#src/main.rs"
+          "purl": "pkg:cargo/wdm-cli@2.6.0?download_url=file://.#src/main.rs"
         }
       ]
     },
@@ -50,9 +50,9 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.5",
+      "bom-ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.6.0",
       "name": "wdm-core",
-      "version": "2.5.5",
+      "version": "2.6.0",
       "description": "WDM download engine: HTTP range segmentation, resume state, persistence. No UI references.",
       "scope": "required",
       "licenses": [
@@ -60,7 +60,7 @@
           "expression": "MIT"
         }
       ],
-      "purl": "pkg:cargo/wdm-core@2.5.5?download_url=file://..\\wdm-core"
+      "purl": "pkg:cargo/wdm-core@2.6.0?download_url=file://..\\wdm-core"
     },
     {
       "type": "library",
@@ -4359,17 +4359,17 @@
   ],
   "dependencies": [
     {
-      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-cli#2.5.5",
+      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-cli#2.6.0",
       "dependsOn": [
         "registry+https://github.com/rust-lang/crates.io-index#chrono@0.4.45",
         "registry+https://github.com/rust-lang/crates.io-index#tokio@1.54.1",
         "registry+https://github.com/rust-lang/crates.io-index#tokio-util@0.7.20",
         "registry+https://github.com/rust-lang/crates.io-index#url@2.5.8",
-        "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.5"
+        "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.6.0"
       ]
     },
     {
-      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.5.5",
+      "ref": "path+file:///D:/00_DEV/Projects/wdm/crates/wdm-core#2.6.0",
       "dependsOn": [
         "registry+https://github.com/rust-lang/crates.io-index#base64@0.22.1",
         "registry+https://github.com/rust-lang/crates.io-index#bytes@1.12.1",
